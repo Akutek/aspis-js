@@ -41,17 +41,49 @@ class ComponentCleaner {
     }
 
     clean(element) {
+        if (!element || !this.#registry) return;
+
+        // Entfernt das Element aus den DOM-Abhängigkeiten des Stores (Memory-Leak-Schutz)
+        const store = this.#registry.get('store');
+        if (store && typeof store.removeDomDependencies === 'function') {
+            store.removeDomDependencies(element);
+        }
+
         const controller = this.#registry.get(element);
         if (!controller) return;
 
-        if (controller.classService && typeof controller.classService.cleanup === 'function') {
-            controller.classService.cleanup();
+        try {
+            if (controller.classService && typeof controller.classService.cleanup === 'function') {
+                controller.classService.cleanup();
+            }
+
+            if (typeof controller.destroy === 'function') {
+                controller.destroy();
+            }
+        } catch (error) {
+            console.error(`Aspis [ComponentCleaner]: Fehler beim Zerstören von ${controller.constructor?.name || 'Controller'}:`, error);
+        } finally {
+            this.#registry.delete(element);
+        }
+    }
+
+    cleanTree(rootElement) {
+        if (!rootElement || !(rootElement instanceof Element)) return;
+
+        const targets = [];
+
+        const children = rootElement.querySelectorAll('[data-controller]');
+        for (const child of children) {
+            targets.push(child);
         }
 
-        if (typeof controller.destroy === 'function') {
-            controller.destroy();
+        if (typeof rootElement.matches === 'function' && rootElement.matches('[data-controller]')) {
+            targets.push(rootElement);
         }
-        this.#registry.delete(element);
+
+        for (let i = targets.length - 1; i >= 0; i--) {
+            this.clean(targets[i]);
+        }
     }
 }
 
@@ -69,14 +101,20 @@ class Main {
                 fetch('./js/aspis/core/state-manifest.json').then(res => {
                     if (!res.ok) throw new Error("state-manifest.json konnte nicht geladen werden");
                     return res.json();
-                })
+                }),
+                fetch('./js/aspis/core/event-manifest.json').then(res => {
+                    if (!res.ok) return {};
+                    return res.json();
+                }).catch(() => ({}))
             ]);
 
-            const services = this.createServices(controllerRegistry, config, stateManifest);
-            TemplateService.init();
+            const services = this.createServices(controllerRegistry, config, stateManifest, eventManifest);
 
             const scanResults = ScannerDOM.scan(document.body);
             await this.assignControllers(scanResults, services);
+
+            console.info("Aspis [Main]: Anwendung erfolgreich gebootet.");
+            return services;
         } catch (error) {
             console.error("Aspis [Main]: Kritischer Fehler beim Bootstrapping der Anwendung:", error);
         }
@@ -88,12 +126,12 @@ class Main {
         registry.set('controllerRegistry', controllerRegistry);
         registry.set('config', config);
         registry.set('store', new Store(manifest));
-        registry.set('eventManifest', eventManifest);
+        registry.set('eventManifest', eventManifest || {});
         registry.set('fetcher', new DatenFetcher());
         registry.set('dispatcher', new EventDispatcher());
         registry.set('modifierDOM', ModifierDOM);
         registry.set('cleaner', new ComponentCleaner(registry));
-        registry.set('templates', TemplateService);
+        registry.set('templates', new TemplateService());
 
         return registry;
     }
@@ -135,7 +173,7 @@ class Main {
 
             const dependsOnAttr = item.element.dataset.dependsOn || item.element.getAttribute('data-depends-on');
             if (dependsOnAttr && typeof store.addDependency === 'function') {
-                const paths = dependsOnAttr.split(',').map(path => path.trim());
+                const paths = dependsOnAttr.split(',').map(path => path.trim()).filter(Boolean);
                 paths.forEach(path => {
                     store.addDependency(item.element, path);
                     console.info(`Aspis [Main]: Reaktive PHP-Abhängigkeit registriert: <${item.type}> lauscht auf Pfad '${path}'`);
@@ -183,7 +221,7 @@ class ReactiveEffect {
     }
 }
 
-class Store {
+class Store extends EventTarget {
     #listeners = new Map();
     #dependencies = new Map();
     #domDependencies = new Map();
@@ -193,12 +231,15 @@ class Store {
     #configs = {};
 
     #effectQueue = new Set();
+    #pendingDomUpdates = new Map();
     #isFlushPending = false;
 
     _activeEffect = null;
 
+    static ALLOWED_NAMESPACES = ['app', 'features', 'shared'];
 
     constructor(manifest = {}, initialData = {}) {
+        super();
         this.#data = initialData;
         
         const extractedState = {
@@ -210,16 +251,32 @@ class Store {
         if (manifest && manifest.slices) {
             Object.entries(manifest.slices).forEach(([slicePath, sliceContent]) => {
                 const parts = slicePath.split('.');
-                
-                if (parts.length === 2 && extractedState[parts[0]]) {
-                    const [namespace, sliceKey] = parts;
-                    extractedState[namespace][sliceKey] = sliceContent.initialState || {};
+                const namespace = parts[0];
+
+                if (parts.length >= 2 && Store.ALLOWED_NAMESPACES.includes(namespace)) {
+                    const sliceKey = parts.slice(1).join('.');
+                    if (!extractedState[namespace]) extractedState[namespace] = {};
+                    
+                    const sliceObj = sliceContent.initialState || {};
+                    
+                    Object.defineProperty(sliceObj, 'config', {
+                        value: sliceContent.config || {},
+                        writable: true,
+                        enumerable: false,
+                        configurable: true
+                    });
+
+                    extractedState[namespace][sliceKey] = sliceObj;
                     this.#configs[slicePath] = sliceContent.config || {};
                 } else {
-                    console.warn(`Aspis [Store-Bootstrap]: Ignoriere ungültigen Manifest-Pfad '${slicePath}'. Muss das Format 'namespace.key' besitzen.`);
+                    console.warn(
+                        `Aspis [Store-Bootstrap]: Ignoriere ungültigen Manifest-Pfad '${slicePath}'. ` +
+                        `Erlaubte Namespaces: ${Store.ALLOWED_NAMESPACES.join(', ')} (Format: 'namespace.key').`
+                    );
                 }
             });
         }
+        
         this.#stateProxy = this.#createDeepProxy(extractedState, "");
         console.log("Aspis [Store-Bootstrap]: Hierarchischer State-Baum erfolgreich initialisiert.", extractedState);
     }
@@ -232,14 +289,23 @@ class Store {
         return Object.freeze({ ...this.#data });
     }
 
-    getSlice(featureName) {
-        if (!this.#stateProxy[featureName]) {
-            throw new Error(`Aspis [Store-Schutzschild]: Zugriff verweigert! Das Feature "${featureName}" ist nicht im state-manifest.json deklariert.`);
+    getSlice(path) {
+        const parts = path.split('.');
+        let current = this.#stateProxy;
+
+        for (const part of parts) {
+            if (current && typeof current === 'object' && part in current) {
+                current = current[part];
+            } else {
+                throw new Error(`Aspis [Store-Schutzschild]: Zugriff verweigert! Das Feature/Slice "${path}" ist nicht im state-manifest.json deklariert.`);
+            }
         }
-        return {
-            ...this.#stateProxy[featureName],
-            config: this.#configs[featureName] || {}
-        };
+
+        return current;
+    }
+
+    getConfig(path) {
+        return this.#configs[path] || {};
     }
 
     updateData(newData) {
@@ -347,24 +413,39 @@ class Store {
         if (pathListeners) {
             pathListeners.forEach(effect => this.#effectQueue.add(effect));
         }
+
         this.#domDependencies.forEach((elements, registeredDataPath) => {
             if (path === registeredDataPath || path.startsWith(registeredDataPath + '.')) {
                 elements.forEach(element => {
-                    console.info(`Aspis [Store]: PHP-Abhängigkeit angeschlagen für Pfad '${registeredDataPath}'. UI-Update erzwungen.`);
-                    this.#triggerElementUpdate(element);
+                    if (!this.#pendingDomUpdates.has(element)) {
+                        this.#pendingDomUpdates.set(element, new Set());
+                    }
+                    this.#pendingDomUpdates.get(element).add(path);
                 });
             }
         });
 
-        if (pathListeners || this.#domDependencies.size > 0) {
+        this.dispatchEvent(new CustomEvent(`store:${path}`, { 
+            detail: { path, value } 
+        }));
+        this.dispatchEvent(new CustomEvent('store:mutation', { 
+            detail: { path, value } 
+        }));
+
+        if (this.#effectQueue.size > 0 || this.#pendingDomUpdates.size > 0) {
             this.#queueFlush();
         }
     }
 
-    #triggerElementUpdate(element) {
+    #triggerElementUpdate(element, triggeredPaths) {
+        const pathArray = Array.from(triggeredPaths);
         const customEvent = new CustomEvent('aspis:data-mutation', { 
             bubbles: true, 
-            detail: { path: element.dataset.dependsOn } 
+            detail: { 
+                path: pathArray.length === 1 ? pathArray[0] : pathArray,
+                paths: pathArray,
+                dependsOn: element.dataset.dependsOn 
+            } 
         });
         element.dispatchEvent(customEvent);
     }
@@ -380,8 +461,20 @@ class Store {
 
     #flushQueue() {
         try {
-            this.#effectQueue.forEach(effect => effect.run());
+            if (this.#pendingDomUpdates.size > 0) {
+                this.#pendingDomUpdates.forEach((paths, element) => {
+                    console.info(`Aspis [Store]: Batch-Flush -> PHP-Abhängigkeit getriggert für DOM-Knoten.`);
+                    this.#triggerElementUpdate(element, paths);
+                });
+            }
+
+            if (this.#effectQueue.size > 0) {
+                this.#effectQueue.forEach(effect => effect.run());
+            }
+        } catch (error) {
+            console.error("Aspis [Store]: Fehler während des Microtask-Flushes:", error);
         } finally {
+            this.#pendingDomUpdates.clear();
             this.#effectQueue.clear();
             this.#isFlushPending = false;
         }
@@ -415,6 +508,12 @@ class Store {
             }
         });
     }
+    removeDomDependencies(targetElement) {
+        if (!(targetElement instanceof HTMLElement)) return;
+        this.#domDependencies.forEach((elements) => {
+            elements.delete(targetElement);
+        });
+    }
 }
 
 class Registry {
@@ -426,11 +525,13 @@ class Registry {
         this.#services = new Map();
         this.#elements = new WeakMap();
 
-        this.#finalizer = new FinalizationRegistry(({ controllerRef }) => {
-            const controller = controllerRef?.deref();
-            if (controller && typeof controller.destroy === 'function') {
-                controller.destroy();
-                console.info("Aspis [Registry]: Controller wurde nach GC-Erfassung sauber zerstört.");
+        this.#finalizer = new FinalizationRegistry((cleanupFn) => {
+            try {
+                if (typeof cleanupFn === 'function') {
+                    cleanupFn();
+                }
+            } catch (error) {
+                console.error("Aspis [Registry]: Fehler beim GC-Cleanup:", error);
             }
         });
     }
@@ -438,50 +539,90 @@ class Registry {
     set(key, value) {
         if (typeof key === 'string') {
             if (this.#services.has(key)) {
-                throw new Error(`Aspis [Registry]: Kritischer Fehler! Der Service-Key '${key}' ist bereits registriert und darf nicht überschrieben werden.`);
+                throw new Error(`Aspis [Registry]: Key '${key}' ist bereits registriert.`);
             }
             this.#services.set(key, value);
-        } else if (key instanceof HTMLElement) {
-            const controllerRef = new WeakRef(value);
-            this.#elements.set(key, controllerRef);
-            this.#finalizer.register(key, { controllerRef }, key);
-        } else {
-            throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set(). Erlaubt sind Strings oder HTMLElements.");
+            return;
         }
+
+        if (key instanceof HTMLElement) {
+            if (this.#elements.has(key)) {
+                this.delete(key);
+            }
+
+            this.#elements.set(key, value);
+
+            if (value && typeof value.destroy === 'function') {
+                const cleanupFn = () => value.destroy();
+                this.#finalizer.register(key, cleanupFn, key);
+            }
+            return;
+        }
+
+        throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set(). Erlaubt sind Strings oder HTMLElements.");
     }
 
     get(key) {
         if (typeof key === 'string') {
             if (!this.#services.has(key)) {
-                throw new Error(`Aspis [Registry]: Der angeforderte Service '${key}' existiert nicht im Container. Überprüfe die Initialisierung in Main.js.`);
+                throw new Error(`Aspis [Registry]: Service '${key}' existiert nicht im Container.`);
             }
             return this.#services.get(key);
-        } else if (key instanceof HTMLElement) {
-            const ref = this.#elements.get(key);
-            return ref ? ref.deref() || null : null;
         }
+
+        if (key instanceof HTMLElement) {
+            return this.#elements.get(key) || null;
+        }
+
         return null;
+    }
+
+    has(key) {
+        if (typeof key === 'string') {
+            return this.#services.has(key);
+        }
+        if (key instanceof HTMLElement) {
+            return this.#elements.has(key);
+        }
+        return false;
     }
 
     delete(key) {
         if (typeof key === 'string') {
             return this.#services.delete(key);
-        } else if (key instanceof HTMLElement) {
-            const ref = this.#elements.get(key);
-            const controller = ref?.deref();
+        }
+
+        if (key instanceof HTMLElement) {
+            const controller = this.#elements.get(key);
+
             if (controller && typeof controller.destroy === 'function') {
-                controller.destroy();
+                try {
+                    controller.destroy();
+                } catch (error) {
+                    console.error("Aspis [Registry]: Fehler beim destroy() Aufruf:", error);
+                }
             }
 
             this.#finalizer.unregister(key);
             return this.#elements.delete(key);
         }
+
         return false;
+    }
+
+    clearServices() {
+        this.#services.clear();
     }
 }
 
 class DatenFetcher {
-    async request(url, { params = {}, signal = null, headers = {}, method = 'GET', body = null } = {}) {
+    #defaultTimeoutMs;
+
+    constructor(defaultTimeoutMs = 8000) {
+        this.#defaultTimeoutMs = defaultTimeoutMs;
+    }
+
+    async request(url, { params = {}, signal = null, timeout = this.#defaultTimeoutMs, headers = {}, method = 'GET', body = null } = {}) {
         if (!url || typeof url !== 'string') {
             throw new Error("DatenFetcher: Keine gültige URL übergeben.");
         }
@@ -493,10 +634,16 @@ class DatenFetcher {
             }
         });
 
+        const timeoutSignal = AbortSignal.timeout(timeout);
+
+        const combinedSignal = signal 
+            ? AbortSignal.any([signal, timeoutSignal])
+            : timeoutSignal;
+
         const fetchOptions = {
             method,
             headers: { ...headers },
-            signal
+            signal: combinedSignal
         };
 
         if (body && method !== 'GET') {
@@ -527,8 +674,13 @@ class DatenFetcher {
             return await response.text();
 
         } catch (error) {
+            if (error.name === 'TimeoutError') {
+                console.warn(`Aspis [DatenFetcher]: Request auf '${url}' überschritt das Timeout von ${timeout}ms.`);
+                return null;
+            }
+
             if (error.name === 'AbortError') {
-                const reason = signal?.reason || 'Abgebrochen';
+                const reason = combinedSignal.reason || signal?.reason || 'Abgebrochen';
                 console.info(`Aspis [DatenFetcher]: Request auf '${url}' storniert -> Grund: ${reason}`);
                 return null; 
             }
@@ -558,49 +710,149 @@ class DatenFetcher {
 class ScannerDOM {
     static scan(rootElement = document.body) {
         if (!rootElement || typeof rootElement.querySelectorAll !== 'function') {
-            console.warn("ScannerDOM: Ungültiges oder fehlendes Root-Element übergeben. Scan abgebrochen.");
+            console.warn("Aspis [ScannerDOM]: Ungültiges oder fehlendes Root-Element übergeben. Scan abgebrochen.");
             return [];
         }
 
-        const elements = rootElement.querySelectorAll('[data-controller]');
+        const scanResults = [];
 
-        return Array.from(elements, container => ({
+        if (typeof rootElement.matches === 'function' && rootElement.matches('[data-controller]')) {
+            const parsed = this.#parseNode(rootElement);
+            if (parsed) scanResults.push(parsed);
+        }
+
+        const elements = rootElement.querySelectorAll('[data-controller]');
+        for (const element of elements) {
+            const parsed = this.#parseNode(element);
+            if (parsed) scanResults.push(parsed);
+        }
+
+        return scanResults;
+    }
+
+    static #parseNode(container) {
+        const type = container.dataset.controller || container.getAttribute('data-controller');
+        if (!type || !type.trim()) {
+            console.warn("Aspis [ScannerDOM]: Element mit leerem 'data-controller'-Attribut übersprungen:", container);
+            return null;
+        }
+
+        const layout = container.dataset.layout || container.getAttribute('data-layout') || "default";
+
+        return {
             element: container,
-            type: container.dataset.controller,
-            layout: container.dataset.layout || "default"
-        }));
+            type: type.trim(),
+            layout: layout.trim()
+        };
     }
 }
 
-class Reactivity {
-    static #activeEffect = null;
+class Registry {
+    #services;
+    #elements;
+    #finalizer;
 
-    static createEffect(callback) {
-        const effect = () => {
+    constructor() {
+        this.#services = new Map();
+        this.#elements = new WeakMap();
+
+        this.#finalizer = new FinalizationRegistry((cleanupFn) => {
             try {
-                this.#activeEffect = effect;
-                callback();
-            } finally {
-                this.#activeEffect = null;
+                if (typeof cleanupFn === 'function') {
+                    cleanupFn();
+                }
+            } catch (error) {
+                console.error("Aspis [Registry]: Fehler beim GC-Cleanup:", error);
             }
-        };
-
-        effect();
-        return effect;
+        });
     }
 
-    static get currentEffect() {
-        return this.#activeEffect;
+    set(key, value) {
+        if (typeof key === 'string') {
+            if (this.#services.has(key)) {
+                throw new Error(`Aspis [Registry]: Key '${key}' ist bereits registriert.`);
+            }
+            this.#services.set(key, value);
+            return;
+        }
+
+        if (key instanceof HTMLElement) {
+            if (this.#elements.has(key)) {
+                this.delete(key);
+            }
+
+            this.#elements.set(key, value);
+
+            if (value && typeof value.destroy === 'function') {
+                const cleanupFn = () => value.destroy();
+                this.#finalizer.register(key, cleanupFn, key);
+            }
+            return;
+        }
+
+        throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set().");
+    }
+
+    get(key) {
+        if (typeof key === 'string') {
+            if (!this.#services.has(key)) {
+                throw new Error(`Aspis [Registry]: Service '${key}' existiert nicht.`);
+            }
+            return this.#services.get(key);
+        }
+
+        if (key instanceof HTMLElement) {
+            return this.#elements.get(key) || null;
+        }
+
+        return null;
+    }
+
+    has(key) {
+        if (typeof key === 'string') {
+            return this.#services.has(key);
+        }
+        if (key instanceof HTMLElement) {
+            return this.#elements.has(key);
+        }
+        return false;
+    }
+
+    delete(key) {
+        if (typeof key === 'string') {
+            return this.#services.delete(key);
+        }
+
+        if (key instanceof HTMLElement) {
+            const controller = this.#elements.get(key);
+
+            if (controller && typeof controller.destroy === 'function') {
+                try {
+                    controller.destroy();
+                } catch (error) {
+                    console.error("Aspis [Registry]: Fehler beim destroy() Aufruf:", error);
+                }
+            }
+
+            this.#finalizer.unregister(key);
+            return this.#elements.delete(key);
+        }
+
+        return false;
+    }
+
+    clearServices() {
+        this.#services.clear();
     }
 }
 
 class BaseController {
-_store;
+    _store;
     _dispatcher;
     _container;
     _options;
     _sliceKey = null;
-    
+
     #unsubscribeStore = null;
     #unsubscribeEvents = [];
 
@@ -613,7 +865,6 @@ _store;
         this._dispatcher = dispatcher;
         this._options = options;
 
-        // Falls sliceKey über app-config.json mitgegeben wurde, diesen nutzen:
         if (options.sliceKey) {
             this._sliceKey = options.sliceKey;
         }
@@ -635,7 +886,11 @@ _store;
         const taskController = new AbortController();
         this.#taskControllers.set(taskKey, taskController);
 
-        return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
+        if (typeof AbortSignal.any === 'function') {
+            return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
+        }
+
+        return taskController.signal;
     }
 
     clearTask(taskKey) {
@@ -647,9 +902,13 @@ _store;
     async start() {
         await this.#initEvents();
 
-        if (this._sliceKey && this._store) {
+        if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
             this.#unsubscribeStore = this._store.effect(() => {
-                const slice = this._store.getSlice(this._sliceKey);
+                if (!this._store) return;
+                const slice = typeof this._store.getSlice === 'function' 
+                    ? this._store.getSlice(this._sliceKey) 
+                    : null;
+
                 if (slice) {
                     this._onStateChange(slice);
                 }
@@ -681,17 +940,15 @@ _store;
             }
         }
 
-        const rawEvents = this._container.dataset.events;
-        if (rawEvents) {
+        if (this._container && this._container.dataset && this._container.dataset.events) {
             try {
-                const inlineMap = JSON.parse(rawEvents);
+                const inlineMap = JSON.parse(this._container.dataset.events);
                 eventMap = { ...eventMap, ...inlineMap };
             } catch (e) {
                 console.error(`Aspis [BaseController]: Fehler beim Parsen von data-events an <${this.constructor.name}>:`, e);
             }
         }
 
-        // 3. Im Dispatcher registrieren
         Object.entries(eventMap).forEach(([eventName, methodName]) => {
             if (typeof this[methodName] === 'function') {
                 const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
@@ -733,26 +990,31 @@ _store;
     }
 
     _onStateChange(slice) {
+        if (!this._container) return;
+
         if (!slice || !slice.config || !slice.config.targets) {
             if (typeof this.onStateChange === 'function') {
                 this.onStateChange(slice);
             }
             return;
         }
+
         const targets = slice.config.targets;
-        for (const [targetName, targetConfig] of Object.entries(targets)) {
+        for (const [, targetConfig] of Object.entries(targets)) {
             const element = targetConfig.selector === ':scope' 
                 ? this._container 
                 : this._container.querySelector(targetConfig.selector);
                 
             if (!element || !targetConfig.bindClasses) continue;
+
             for (const [stateProp, styleKey] of Object.entries(targetConfig.bindClasses)) {
                 const isActive = !!slice[stateProp]; 
-                if (typeof ModifierDOM.toggleSliceClass === 'function') {
+                if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleSliceClass === 'function') {
                     ModifierDOM.toggleSliceClass(element, slice, styleKey, isActive);
                 }
             }
         }
+
         if (typeof this.onStateChange === 'function') {
             this.onStateChange(slice);
         }
@@ -767,7 +1029,7 @@ class ControllerTable extends BaseController {
 
     constructor(container, store, dispatcher) {
         super(container, store, dispatcher);
-        this._sliceKey = 'tableFeature'; 
+        this._sliceKey = 'features.tableFeature';
     }
 
     async onInit() {
@@ -790,14 +1052,16 @@ class ControllerTable extends BaseController {
     }
 
     async loadData(url) {
-        const stateProxy = this._store.state[this._sliceKey];
+        const stateProxy = this._store.getSlice ? this._store.getSlice(this._sliceKey) : this._store.state[this._sliceKey];
         if (!stateProxy) return;
+
         try {
             stateProxy.isLoading = true;
             this._container.innerHTML = "<p>Lade Daten...</p>";
             const liveData = await this.#api.get(url);
+            
             if (liveData) {
-                stateProxy.model = Factory.create(Table, [TableRow], this.#layout, liveData);
+                stateProxy.model = new Table(this.#layout, liveData);
             }
         } catch (error) {
             this._container.innerHTML = `<div style="color:red;">Fehler beim Laden: ${error.message}</div>`;
@@ -827,22 +1091,52 @@ class ControllerTable extends BaseController {
 }
 
 class Table {
-    constructor(layout) {
-        this.layout = layout;
-        this.rows = [];
+    static Row = class TableRow {
+        constructor(data = {}) {
+            Object.assign(this, data);
+        }
+
+        toRenderData() {
+            return { ...this };
+        }
+
+        static canHandle(data) {
+            return data && typeof data === 'object';
+        }
+    };
+
+    #rows = [];
+    #layout;
+
+    constructor(layout = 'default', rawData = []) {
+        this.#layout = layout;
+        
+        // Fängt flache Arrays UND umhüllte Objekte ({ rows: [...] } oder { data: [...] }) ab
+        const list = Array.isArray(rawData) 
+            ? rawData 
+            : (rawData?.rows || rawData?.data || []);
+            
+        this.buildRows(list);
     }
 
-    appendRow(tableRowObject) {
-        if (tableRowObject instanceof TableRow) {
-            this.rows.push(tableRowObject);
-        } else {
-            console.error("Table: Es können nur Instanzen von TableRow übergeben werden.");
+    buildRows(rawData) {
+        this.#rows = rawData
+            .filter(data => Table.Row.canHandle(data))
+            .map(data => new Table.Row(data));
+    }
+
+    appendRow(data) {
+        if (data instanceof Table.Row) {
+            this.#rows.push(data);
+        } else if (data && typeof data === 'object') {
+            this.#rows.push(new Table.Row(data));
         }
     }
 
     toRenderData() {
         return {
-            rows: this.rows
+            layout: this.#layout,
+            rows: this.#rows.map(row => row.toRenderData())
         };
     }
 }
@@ -883,96 +1177,94 @@ class Factory {
 }
 
 class RenderService {
-    static paste(container, templateName, modelData = {}, append = false) {
-        try {
-            const element = TemplateService.compile(templateName, modelData);
-        
-            if (!element) {
-                throw new Error(`Kompilierung von Template '${templateName}' fehlgeschlagen.`);
-            }
-            const safeElement = this.#purifyElement(element);
-            if (!append) {
-                container.replaceChildren();
-            }
-            container.appendChild(safeElement);
-            return safeElement;
-
-        } catch (error) {
-            console.error(`Aspis [RenderService]: Fehler beim Rendern von '${templateName}':`, error);
-            
-            const errorBox = document.createElement('p');
-            errorBox.style.color = 'red';
-            errorBox.textContent = `Render-Fehler: ${error.message}`;
-            
-            if (!append) container.replaceChildren();
-            container.appendChild(errorBox);
-            return null;
-        }
-    }
-
-    static combine(template, modelData = {}) {
-        const element = TemplateService.compile(template.name, modelData);
-        if (!element) return '';
-        
-        const safeElement = this.#purifyElement(element);
-        return safeElement.outerHTML;
-    }
-
-    static loop(dataArray, templateName, transformFn = null) {
-        if (!Array.isArray(dataArray)) {
-            console.warn(`Aspis [RenderService.loop]: Erwartete ein Array, erhielt:`, dataArray);
-            return [];
+    static async paste(targetContainer, templateName, data = {}) {
+        if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
+            throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für paste().");
         }
 
-        return dataArray.map((item, index) => {
-            const payload = typeof transformFn === 'function' 
-                ? transformFn(item, index) 
-                : { data: item };
+        const element = await this.compile(templateName, data);
+        if (!element) {
+            throw new Error(`Aspis [RenderService]: Rendering für '${templateName}' fehlgeschlagen.`);
+        }
 
-            const element = TemplateService.compile(templateName, payload);
-            if (!element) {
-                console.error(`Aspis [RenderService.loop]: Eintrag an Index ${index} konnte nicht kompiliert werden.`);
-                return null;
+        const cleanElement = this.#purifyElement(element);
+        targetContainer.replaceChildren(cleanElement);
+        return cleanElement;
+    }
+
+    static async compile(templateName, data = {}) {
+        const registry = window.appRegistry;
+        const templateEngine = registry ? registry.get('templates') : null;
+
+        if (!templateEngine) {
+            throw new Error("Aspis [RenderService]: TemplateService nicht im Registry-Container gefunden.");
+        }
+
+        let element = templateEngine.compile(templateName, { data });
+
+        if (!element) {
+            const templateData = await templateEngine.get(templateName);
+            if (templateData) {
+                element = templateEngine.compile(templateName, { data });
             }
+        }
 
-            return this.#purifyElement(element);
-        }).filter(el => el !== null);
+        return element;
+    }
+
+    static async loop(templateName, list = []) {
+        if (!Array.isArray(list)) {
+            console.warn("Aspis [RenderService]: loop() erwartet ein Array.");
+            return document.createDocumentFragment();
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        for (const item of list) {
+            const renderData = item && typeof item.toRenderData === 'function' 
+                ? item.toRenderData() 
+                : item;
+
+            const element = await this.compile(templateName, renderData);
+            if (element) {
+                fragment.appendChild(this.#purifyElement(element));
+            }
+        }
+
+        return fragment;
+    }
+
+    static combine(targetContainer, elements = []) {
+        if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
+            throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für combine().");
+        }
+
+        const nodeList = Array.isArray(elements) ? elements : [elements];
+        targetContainer.replaceChildren(...nodeList);
     }
 
     static #purifyElement(element) {
-        const allElements = [element, ...element.querySelectorAll('*')];
-        
-        allElements.forEach(el => {
-            Array.from(el.attributes).forEach(attr => {
-                if (attr.name.startsWith('on')) {
-                    el.removeAttribute(attr.name);
-                    console.warn(`[GuardDOM/RenderService]: Gefährliches Attribut '${attr.name}' blockiert!`);
-                }
-            });
-
-            if (el.tagName === 'A' && el.hasAttribute('href')) {
-                const href = el.getAttribute('href').trim().toLowerCase();
-                if (href.startsWith('javascript:') || href.startsWith('data:')) {
-                    el.setAttribute('href', '#');
-                    console.warn(`[GuardDOM/RenderService]: 'javascript:'-Protokoll in Link blockiert.`);
-                }
-            }
-
-            if (el.tagName === 'SCRIPT') {
-                el.remove();
-                console.warn(`[GuardDOM/RenderService]: <script>-Tag im Template vernichtet.`);
-            }
-        });
-
+        if (!element) return null;
+        if (typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function') {
+            const cleanHtml = GuardDOM.purify(element.outerHTML);
+            const template = document.createElement('template');
+            template.innerHTML = cleanHtml;
+            return template.content.firstElementChild || element;
+        }
         return element;
     }
 }
 
 class TemplateService {
-    static #cache = new Map(); 
-    static #basePath = "./js/aspis/templates/";
+    #cache = new Map();
+    #basePath;
 
-    static init() {
+    constructor(basePath = "./js/aspis/templates/") {
+        this.#basePath = basePath;
+        this.init();
+    }
+
+    init() {
         const templateElements = document.querySelectorAll('template');
         
         templateElements.forEach(el => {
@@ -989,10 +1281,10 @@ class TemplateService {
             }
         });
 
-        console.info(`Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Template aus dem DOM geladen.`);
+        console.info(`Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
     }
 
-    static async get(name) {
+    async get(name) {
         if (this.#cache.has(name)) {
             return this.#cache.get(name);
         }
@@ -1005,7 +1297,7 @@ class TemplateService {
         }
     }
 
-    static compile(name, payload = {}) {
+    compile(name, payload = {}) {
         const template = this.#cache.get(name);
         if (!template) {
             console.error(`Aspis [TemplateService]: Template '${name}' nicht im Cache gefunden. Kompilierung abgebrochen.`);
@@ -1021,7 +1313,10 @@ class TemplateService {
         Object.keys(template.data).forEach(key => {
             const placeholder = template.data[key];
             const rawValue = payloadData[key] !== undefined ? payloadData[key] : "";
-            const cleanValue = GuardDOM.clean(rawValue);
+            const cleanValue = typeof GuardDOM !== 'undefined' && typeof GuardDOM.clean === 'function' 
+                ? GuardDOM.clean(rawValue) 
+                : (typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function' ? GuardDOM.purify(rawValue) : rawValue);
+            
             workingHtml = workingHtml.replaceAll(placeholder, cleanValue);
         });
 
@@ -1087,12 +1382,12 @@ class TemplateService {
         return element;
     }
 
-    static getTemplateEvents(name) {
+    getTemplateEvents(name) {
         const template = this.#cache.get(name);
         return template ? template.events : {};
     }
 
-    static async #loadFromServer(name) {
+    async #loadFromServer(name) {
         const url = `${this.#basePath}${name}/${name}.json`;
         
         try {
@@ -1123,7 +1418,7 @@ class TemplateService {
         }
     }
 
-    static #normalizeTemplate(id, config, htmlString) {
+    #normalizeTemplate(id, config, htmlString) {
         const placeholders = config.placeholder || { ...config.slots, ...config.attributes } || {};
         const slots = {}, attributes = {}, data = {};
 
@@ -1141,6 +1436,7 @@ class TemplateService {
                 data[cleanKey] = placeholder;
             }
         });
+
         const defaults = {
             id: id || config.name,
             role: config.partial ? 'partial' : 'container',
@@ -1168,8 +1464,11 @@ class TemplateService {
 
 class EventDispatcher {
     #listeners = new Map();
+    #eventManifest;
+    #clickTrackerHandler = null;
 
-    constructor() {
+    constructor(eventManifest = {}) {
+        this.#eventManifest = eventManifest;
         this.#initGlobalClickTracker();
     }
 
@@ -1182,6 +1481,17 @@ class EventDispatcher {
 
         this.#listeners.get(eventName).add(callback);
         return () => this.off(eventName, callback);
+    }
+
+    once(eventName, callback) {
+        if (typeof callback !== 'function') return () => {};
+
+        const unsubscribe = this.on(eventName, (data) => {
+            unsubscribe();
+            callback(data);
+        });
+
+        return unsubscribe;
     }
 
     off(eventName, callback) {
@@ -1198,11 +1508,12 @@ class EventDispatcher {
         const eventListeners = this.#listeners.get(eventName);
         if (!eventListeners) return;
 
-        eventListeners.forEach(callback => {
+        const targets = Array.from(eventListeners);
+        targets.forEach(callback => {
             try {
                 callback(data);
             } catch (error) {
-                console.error(`[EventDispatcher Error] '${eventName}':`, error);
+                console.error(`Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
             }
         });
     }
@@ -1218,23 +1529,38 @@ class EventDispatcher {
         });
     }
 
+    clear() {
+        this.#listeners.clear();
+    }
+
+    destroy() {
+        this.clear();
+        if (this.#clickTrackerHandler) {
+            document.removeEventListener('click', this.#clickTrackerHandler);
+            this.#clickTrackerHandler = null;
+        }
+    }
+
     #initGlobalClickTracker() {
-        document.addEventListener('click', (event) => {
+        this.#clickTrackerHandler = (event) => {
             this.emit('document:click', event.target);
-        });
-        console.log("EventDispatcher: Zentraler Click-Outside-Wächter aktiv.");
+        };
+        document.addEventListener('click', this.#clickTrackerHandler);
     }
 }
 
 class ModifierDOM {
     static #isValid(target) {
-        return target instanceof HTMLElement;
+        return target instanceof Element;
     }
 
     static #normalize(target) {
         if (!target) return [];
-        if (target instanceof NodeList) return Array.from(target);
-        return Array.isArray(target) ? target : [target];
+        if (target instanceof Element) return [target];
+        if (typeof target[Symbol.iterator] === 'function' && typeof target !== 'string') {
+            return Array.from(target);
+        }
+        return [];
     }
 
     static show(target) {
@@ -1256,7 +1582,8 @@ class ModifierDOM {
     static addClass(target, classNames) {
         if (!classNames || typeof classNames !== 'string') return;
         const classes = classNames.split(/\s+/).filter(Boolean);
-        
+        if (classes.length === 0) return;
+
         this.#normalize(target).forEach(el => {
             if (!this.#isValid(el)) return;
             el.classList.add(...classes);
@@ -1266,7 +1593,8 @@ class ModifierDOM {
     static removeClass(target, classNames) {
         if (!classNames || typeof classNames !== 'string') return;
         const classes = classNames.split(/\s+/).filter(Boolean);
-        
+        if (classes.length === 0) return;
+
         this.#normalize(target).forEach(el => {
             if (!this.#isValid(el)) return;
             el.classList.remove(...classes);
@@ -1275,16 +1603,36 @@ class ModifierDOM {
 
     static toggleClass(target, className, force) {
         if (!className || typeof className !== 'string') return;
-        
+        const classes = className.split(/\s+/).filter(Boolean);
+
         this.#normalize(target).forEach(el => {
             if (!this.#isValid(el)) return;
-            
-            if (force !== undefined) {
-                el.classList.toggle(className, !!force);
-            } else {
-                el.classList.toggle(className);
-            }
+
+            classes.forEach(cls => {
+                if (force !== undefined) {
+                    el.classList.toggle(cls, !!force);
+                } else {
+                    el.classList.toggle(cls);
+                }
+            });
         });
+    }
+
+    static toggleSliceClass(target, slice, styleKey, isActive) {
+        if (!slice) return;
+
+        const classMapping = slice?.config?.styles?.[styleKey] 
+            || slice?.styles?.[styleKey] 
+            || slice?.[styleKey] 
+            || styleKey;
+
+        if (typeof classMapping === 'string') {
+            if (isActive) {
+                this.addClass(target, classMapping);
+            } else {
+                this.removeClass(target, classMapping);
+            }
+        }
     }
 
     static attr(target, attrName, value) {
@@ -1328,6 +1676,7 @@ class TargetResolver {
         return resolvedTargets;
     }
 }
+
 class ManifestBinder {
     #container;
     #store;
@@ -1429,6 +1778,7 @@ class BaseObserver {
         this.#registry = null;
     }
 }
+
 class MutationObserverDOM extends BaseObserver {
     #nativeObserver = null;
 
@@ -1466,9 +1816,7 @@ class MutationObserverDOM extends BaseObserver {
         for (const mutation of mutations) {
             mutation.removedNodes.forEach(node => {
                 if (node instanceof HTMLElement) {
-                    cleaner?.clean(node);
-                    const subComponents = node.querySelectorAll('[data-controller]');
-                    subComponents.forEach(subEl => cleaner?.clean(subEl));
+                    cleaner?.cleanTree(node);
                 }
             });
 
@@ -1495,11 +1843,13 @@ class MutationObserverDOM extends BaseObserver {
         super.destroy();
     }
 }
+
 class GuardDOM {
     static clean(unsafeText) {
-        if (typeof unsafeText !== 'string') return unsafeText;
+        if (unsafeText === null || unsafeText === undefined) return '';
+        const str = String(unsafeText);
         
-        return unsafeText
+        return str
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -1512,28 +1862,32 @@ class GuardDOM {
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(rawHTML, 'text/html');
+        const forbiddenTags = new Set(['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'FRAME', 'FRAMESET']);
         const allElements = doc.body.querySelectorAll('*');
         
         allElements.forEach(element => {
+            if (forbiddenTags.has(element.tagName)) {
+                element.remove();
+                console.warn(`Aspis [GuardDOM]: Gefährlicher Tag <${element.tagName.toLowerCase()}> wurde entfernt.`);
+                return;
+            }
+
             Array.from(element.attributes).forEach(attr => {
-                if (attr.name.startsWith('on')) {
+                const attrName = attr.name.toLowerCase();
+                const attrValue = attr.value.trim().toLowerCase();
+
+                if (attrName.startsWith('on')) {
                     element.removeAttribute(attr.name);
-                    console.warn(`[GuardDOM]: Gefährliches Attribut '${attr.name}' wurde blockiert und gelöscht!`);
+                    console.warn(`Aspis [GuardDOM]: Event-Handler '${attr.name}' entfernt.`);
+                }
+
+                if (['href', 'src', 'action', 'data'].includes(attrName)) {
+                    if (attrValue.startsWith('javascript:') || attrValue.startsWith('vbscript:') || attrValue.startsWith('data:text/html')) {
+                        element.setAttribute(attr.name, '#');
+                        console.warn(`Aspis [GuardDOM]: Unsichere URL in '${attr.name}' auf '#' zurückgesetzt.`);
+                    }
                 }
             });
-
-            if (element.tagName === 'A' && element.hasAttribute('href')) {
-                const href = element.getAttribute('href').trim().toLowerCase();
-                if (href.startsWith('javascript:') || href.startsWith('data:')) {
-                    element.setAttribute('href', '#');
-                    console.warn(`[GuardDOM]: 'javascript:'-Protokoll in Link blockiert und auf '#' gesetzt.`);
-                }
-            }
-            
-            if (element.tagName === 'SCRIPT') {
-                element.remove();
-                console.warn(`[GuardDOM]: <script>-Tag im Template entdeckt und vernichtet.`);
-            }
         });
 
         return doc.body.innerHTML;

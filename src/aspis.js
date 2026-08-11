@@ -61,7 +61,7 @@ class Main {
             throw new Error("Aspis [Main]: Ungültige oder fehlende ControllerRegistry übergeben.");
         }
         try {
-            const [config, stateManifest] = await Promise.all([
+            const [config, stateManifest, eventManifest] = await Promise.all([
                 fetch('./js/aspis/core/app-config.json').then(res => {
                     if (!res.ok) throw new Error("app-config.json konnte nicht geladen werden");
                     return res.json();
@@ -71,9 +71,10 @@ class Main {
                     return res.json();
                 })
             ]);
+
             const services = this.createServices(controllerRegistry, config, stateManifest);
             TemplateService.init();
-            
+
             const scanResults = ScannerDOM.scan(document.body);
             await this.assignControllers(scanResults, services);
         } catch (error) {
@@ -81,12 +82,13 @@ class Main {
         }
     }
 
-    static createServices(controllerRegistry, config, manifest) {
+    static createServices(controllerRegistry, config, manifest, eventManifest) {
         const registry = new Registry();
 
         registry.set('controllerRegistry', controllerRegistry);
         registry.set('config', config);
         registry.set('store', new Store(manifest));
+        registry.set('eventManifest', eventManifest);
         registry.set('fetcher', new DatenFetcher());
         registry.set('dispatcher', new EventDispatcher());
         registry.set('modifierDOM', ModifierDOM);
@@ -100,27 +102,37 @@ class Main {
         const promises = scanResults.map(detectedNode => {
             return this.startController(detectedNode, registry);
         });
-        
+
         await Promise.all(promises);
     }
 
     static async startController(item, registry) {
+        const config = registry.get('config');
+        const componentConfig = config.components?.[item.type] || {};
+        const controllerClassName = componentConfig.type || item.type;
         const controllerRegistry = registry.get('controllerRegistry');
-        const ControllerClass = await controllerRegistry.getAsync(item.type);
+        const ControllerClass = await controllerRegistry.getAsync(controllerClassName);
 
         if (!ControllerClass) {
-            console.warn(`Aspis [Main]: Dynamischer Lookup fehlgeschlagen. Controller für Typ '${item.type}' ist nicht in der Registry registriert.`);
+            console.warn(`Aspis [Main]: Dynamischer Lookup fehlgeschlagen. Controller '${controllerClassName}' ist nicht in der Registry registriert.`);
             return;
         }
 
         try {
             const store = registry.get('store');
             const dispatcher = registry.get('dispatcher');
-            const controllerInstance = new ControllerClass(item.element, store, dispatcher);
-            controllerInstance.layout = item.layout; 
+            const eventsBase = config.publicPaths?.events || '/src/events';
+            const eventPath = componentConfig.events ? `${eventsBase}/${componentConfig.events}` : null;
+            const sliceKey = componentConfig.sliceKey || null;
+            const controllerInstance = new ControllerClass(item.element, store, dispatcher, { 
+                eventPath, 
+                sliceKey 
+            });
             
+            controllerInstance.layout = item.layout;
 
             registry.set(item.element, controllerInstance);
+
             const dependsOnAttr = item.element.dataset.dependsOn || item.element.getAttribute('data-depends-on');
             if (dependsOnAttr && typeof store.addDependency === 'function') {
                 const paths = dependsOnAttr.split(',').map(path => path.trim());
@@ -129,8 +141,9 @@ class Main {
                     console.info(`Aspis [Main]: Reaktive PHP-Abhängigkeit registriert: <${item.type}> lauscht auf Pfad '${path}'`);
                 });
             }
+
             await controllerInstance.start();
-            
+
         } catch (error) {
             console.error(`Aspis [Main]: Fehler im Lebenszyklus beim Starten des Controllers '${item.type}':`, error);
         }
@@ -542,7 +555,6 @@ class DatenFetcher {
     }
 }
 
-
 class ScannerDOM {
     static scan(rootElement = document.body) {
         if (!rootElement || typeof rootElement.querySelectorAll !== 'function') {
@@ -583,9 +595,10 @@ class Reactivity {
 }
 
 class BaseController {
-    _store;
+_store;
     _dispatcher;
     _container;
+    _options;
     _sliceKey = null;
     
     #unsubscribeStore = null;
@@ -594,10 +607,16 @@ class BaseController {
     #lifecycleController = new AbortController();
     #taskControllers = new Map();
 
-    constructor(container, store, dispatcher) {
+    constructor(container, store, dispatcher, options = {}) {
         this._container = container;
         this._store = store;
         this._dispatcher = dispatcher;
+        this._options = options;
+
+        // Falls sliceKey über app-config.json mitgegeben wurde, diesen nutzen:
+        if (options.sliceKey) {
+            this._sliceKey = options.sliceKey;
+        }
     }
 
     get signal() {
@@ -605,18 +624,18 @@ class BaseController {
     }
 
     getSignal(taskKey = null) {
-    if (!taskKey) {
-        return this.#lifecycleController.signal;
-    }
+        if (!taskKey) {
+            return this.#lifecycleController.signal;
+        }
 
-    if (this.#taskControllers.has(taskKey)) {
-        this.#taskControllers.get(taskKey).abort(`Task '${taskKey}' überschrieben.`);
-    }
+        if (this.#taskControllers.has(taskKey)) {
+            this.#taskControllers.get(taskKey).abort(`Task '${taskKey}' überschrieben.`);
+        }
 
-    const taskController = new AbortController();
-    this.#taskControllers.set(taskKey, taskController);
+        const taskController = new AbortController();
+        this.#taskControllers.set(taskKey, taskController);
 
-    return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
+        return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
     }
 
     clearTask(taskKey) {
@@ -626,22 +645,8 @@ class BaseController {
     }
 
     async start() {
-        const rawEvents = this._container.dataset.events;
-        if (rawEvents && this._dispatcher) {
-            try {
-                const eventMap = JSON.parse(rawEvents);
-                Object.entries(eventMap).forEach(([eventName, methodName]) => {
-                    if (typeof this[methodName] === 'function') {
-                        const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
-                        this.#unsubscribeEvents.push(unsub);
-                    } else {
-                        console.warn(`Aspis [BaseController]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.constructor.name}.`);
-                    }
-                });
-            } catch (e) {
-                console.error(`Aspis [BaseController]: Fehler beim Parsen der data-events an <${this.constructor.name}>:`, e);
-            }
-        }
+        await this.#initEvents();
+
         if (this._sliceKey && this._store) {
             this.#unsubscribeStore = this._store.effect(() => {
                 const slice = this._store.getSlice(this._sliceKey);
@@ -650,9 +655,51 @@ class BaseController {
                 }
             });
         }
+
         if (typeof this.onInit === 'function') {
             await this.onInit();
         }
+    }
+
+    async #initEvents() {
+        if (!this._dispatcher) return;
+
+        let eventMap = {};
+
+        if (this._options?.eventPath) {
+            try {
+                const res = await fetch(this._options.eventPath, { signal: this.signal });
+                if (res.ok) {
+                    eventMap = await res.json();
+                } else {
+                    console.warn(`Aspis [BaseController]: Event-Config unter '${this._options.eventPath}' konnte nicht geladen werden.`);
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error(`Aspis [BaseController]: Fehler beim Laden von '${this._options.eventPath}':`, e);
+                }
+            }
+        }
+
+        const rawEvents = this._container.dataset.events;
+        if (rawEvents) {
+            try {
+                const inlineMap = JSON.parse(rawEvents);
+                eventMap = { ...eventMap, ...inlineMap };
+            } catch (e) {
+                console.error(`Aspis [BaseController]: Fehler beim Parsen von data-events an <${this.constructor.name}>:`, e);
+            }
+        }
+
+        // 3. Im Dispatcher registrieren
+        Object.entries(eventMap).forEach(([eventName, methodName]) => {
+            if (typeof this[methodName] === 'function') {
+                const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
+                this.#unsubscribeEvents.push(unsub);
+            } else {
+                console.warn(`Aspis [BaseController]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.constructor.name}.`);
+            }
+        });
     }
 
     destroy() {
@@ -679,6 +726,7 @@ class BaseController {
             this._container = null;
             this._store = null;
             this._dispatcher = null;
+            this._options = null;
         }
 
         console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich aus dem Speicher entfernt und gereinigt.`);

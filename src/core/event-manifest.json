@@ -1,0 +1,11 @@
+{
+    "userProfile": {
+        "events": "/src/controllers/userprofil-events.json"
+    },
+    "headerNav": {
+        "events": "/src/controllers/header-events.json"
+    },
+    "userList": {
+        "events": "/src/controllers/userlist-events.json"
+    }
+}

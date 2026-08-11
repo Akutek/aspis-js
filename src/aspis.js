@@ -72,7 +72,6 @@ class Main {
                 })
             ]);
             const services = this.createServices(controllerRegistry, config, stateManifest);
-            this.setupMutationObserver(services);
             TemplateService.init();
             
             const scanResults = ScannerDOM.scan(document.body);
@@ -90,28 +89,11 @@ class Main {
         registry.set('store', new Store(manifest));
         registry.set('fetcher', new DatenFetcher());
         registry.set('dispatcher', new EventDispatcher());
-        registry.set('modifierDOM', new ModifierDOM());
+        registry.set('modifierDOM', ModifierDOM);
         registry.set('cleaner', new ComponentCleaner(registry));
         registry.set('templates', TemplateService);
 
         return registry;
-    }
-
-    static setupMutationObserver(registry) {
-        const cleaner = registry.get('cleaner');
-
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                mutation.removedNodes.forEach(node => {
-                    if (node instanceof HTMLElement) {
-                        cleaner.clean(node);
-                        const subComponents = node.querySelectorAll('[data-controller]');
-                        subComponents.forEach(subEl => cleaner.clean(subEl));
-                    }
-                });
-            });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
     }
 
     static async assignControllers(scanResults, registry) {
@@ -425,10 +407,19 @@ class Store {
 class Registry {
     #services;
     #elements;
+    #finalizer;
 
     constructor() {
         this.#services = new Map();
         this.#elements = new WeakMap();
+
+        this.#finalizer = new FinalizationRegistry(({ controllerRef }) => {
+            const controller = controllerRef?.deref();
+            if (controller && typeof controller.destroy === 'function') {
+                controller.destroy();
+                console.info("Aspis [Registry]: Controller wurde nach GC-Erfassung sauber zerstört.");
+            }
+        });
     }
 
     set(key, value) {
@@ -438,7 +429,9 @@ class Registry {
             }
             this.#services.set(key, value);
         } else if (key instanceof HTMLElement) {
-            this.#elements.set(key, value);
+            const controllerRef = new WeakRef(value);
+            this.#elements.set(key, controllerRef);
+            this.#finalizer.register(key, { controllerRef }, key);
         } else {
             throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set(). Erlaubt sind Strings oder HTMLElements.");
         }
@@ -451,7 +444,8 @@ class Registry {
             }
             return this.#services.get(key);
         } else if (key instanceof HTMLElement) {
-            return this.#elements.get(key) || null;
+            const ref = this.#elements.get(key);
+            return ref ? ref.deref() || null : null;
         }
         return null;
     }
@@ -460,6 +454,13 @@ class Registry {
         if (typeof key === 'string') {
             return this.#services.delete(key);
         } else if (key instanceof HTMLElement) {
+            const ref = this.#elements.get(key);
+            const controller = ref?.deref();
+            if (controller && typeof controller.destroy === 'function') {
+                controller.destroy();
+            }
+
+            this.#finalizer.unregister(key);
             return this.#elements.delete(key);
         }
         return false;
@@ -467,39 +468,80 @@ class Registry {
 }
 
 class DatenFetcher {
-    async get(url, params = {}, signal = null) {
+    async request(url, { params = {}, signal = null, headers = {}, method = 'GET', body = null } = {}) {
         if (!url || typeof url !== 'string') {
-            throw new Error("DatenFetcher: Keine gültige Basis-URL übergeben.");
+            throw new Error("DatenFetcher: Keine gültige URL übergeben.");
         }
 
         const endpointUrl = new URL(url, window.location.origin);
-        
         Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
                 endpointUrl.searchParams.append(key, value);
             }
         });
 
+        const fetchOptions = {
+            method,
+            headers: { ...headers },
+            signal
+        };
+
+        if (body && method !== 'GET') {
+            if (typeof body === 'object' && !(body instanceof FormData)) {
+                fetchOptions.headers['Content-Type'] = 'application/json';
+                fetchOptions.body = JSON.stringify(body);
+            } else {
+                fetchOptions.body = body;
+            }
+        }
+
         try {
-            const response = await fetch(endpointUrl.toString(), { signal });
+            const response = await fetch(endpointUrl.toString(), fetchOptions);
 
             if (!response.ok) {
                 throw new Error(`HTTP-Fehler: Status ${response.status} (${response.statusText})`);
             }
 
-            return await response.json();
+            if (response.status === 204) {
+                return true;
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
+
+            return await response.text();
 
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log(`DatenFetcher: Request auf ${url} wurde sauber abgebrochen. Speicher freigegeben.`);
+                const reason = signal?.reason || 'Abgebrochen';
+                console.info(`Aspis [DatenFetcher]: Request auf '${url}' storniert -> Grund: ${reason}`);
                 return null; 
             }
 
-            console.error(`DatenFetcher-Fehler bei ${url}:`, error);
+            console.error(`Aspis [DatenFetcher]: Fehler bei ${method} ${url}:`, error);
             throw error;
         }
     }
+
+    async get(url, params = {}, options = {}) {
+        return this.request(url, { ...options, method: 'GET', params });
+    }
+
+    async post(url, body = {}, options = {}) {
+        return this.request(url, { ...options, method: 'POST', body });
+    }
+
+    async put(url, body = {}, options = {}) {
+        return this.request(url, { ...options, method: 'PUT', body });
+    }
+
+    async delete(url, options = {}) {
+        return this.request(url, { ...options, method: 'DELETE' });
+    }
 }
+
 
 class ScannerDOM {
     static scan(rootElement = document.body) {
@@ -549,10 +591,38 @@ class BaseController {
     #unsubscribeStore = null;
     #unsubscribeEvents = [];
 
+    #lifecycleController = new AbortController();
+    #taskControllers = new Map();
+
     constructor(container, store, dispatcher) {
         this._container = container;
         this._store = store;
         this._dispatcher = dispatcher;
+    }
+
+    get signal() {
+        return this.#lifecycleController.signal;
+    }
+
+    getSignal(taskKey = null) {
+    if (!taskKey) {
+        return this.#lifecycleController.signal;
+    }
+
+    if (this.#taskControllers.has(taskKey)) {
+        this.#taskControllers.get(taskKey).abort(`Task '${taskKey}' überschrieben.`);
+    }
+
+    const taskController = new AbortController();
+    this.#taskControllers.set(taskKey, taskController);
+
+    return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
+    }
+
+    clearTask(taskKey) {
+        if (this.#taskControllers.has(taskKey)) {
+            this.#taskControllers.delete(taskKey);
+        }
     }
 
     async start() {
@@ -586,6 +656,12 @@ class BaseController {
     }
 
     destroy() {
+        this.#lifecycleController.abort("Controller zerstört.");
+        for (const taskCtrl of this.#taskControllers.values()) {
+            taskCtrl.abort("Controller zerstört.");
+        }
+        this.#taskControllers.clear();
+
         if (this.#unsubscribeStore) {
             this.#unsubscribeStore();
             this.#unsubscribeStore = null;
@@ -593,10 +669,18 @@ class BaseController {
         this.#unsubscribeEvents.forEach(unsub => unsub());
         this.#unsubscribeEvents = [];
 
-        if (typeof this.onDestroy === 'function') {
-            this.onDestroy();
+        try {
+            if (typeof this.onDestroy === 'function') {
+                this.onDestroy();
+            }
+        } catch (e) {
+            console.error(`Aspis [BaseController]: Fehler in onDestroy() von ${this.constructor.name}:`, e);
+        } finally {
+            this._container = null;
+            this._store = null;
+            this._dispatcher = null;
         }
-        
+
         console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich aus dem Speicher entfernt und gereinigt.`);
     }
 
@@ -694,7 +778,6 @@ class ControllerTable extends BaseController {
     }
 }
 
-
 class Table {
     constructor(layout) {
         this.layout = layout;
@@ -715,7 +798,6 @@ class Table {
         };
     }
 }
-
 
 class Factory {
     static create(MainClass, ChildClasses, layout, jsonData) {
@@ -1246,6 +1328,123 @@ class ManifestBinder {
         this.#unsubscribeEffects = [];
         this.#resolvedTargets.clear();
         console.log(`[ManifestBinder]: Auto-Bindings für '${this.#sliceKey}' sauber gelöst.`);
+    }
+}
+
+class BaseObserver {
+    #registry;
+    #isObserving = false;
+    #targets = new Set();
+
+    constructor(registry) {
+        if (new.target === BaseObserver) {
+            throw new TypeError("Aspis [BaseObserver]: Instanziierung der abstrakten Basisklasse ist nicht erlaubt.");
+        }
+        this.#registry = registry;
+    }
+
+    get registry() {
+        return this.#registry;
+    }
+
+    get isObserving() {
+        return this.#isObserving;
+    }
+
+    get targets() {
+        return Array.from(this.#targets);
+    }
+
+    start(target) {
+        this.#isObserving = true;
+        if (target) {
+            this.#targets.add(target);
+        }
+    }
+
+    stop() {
+        this.#isObserving = false;
+        this.#targets.clear();
+    }
+
+    observe(target) {
+        if (!(target instanceof Node)) return;
+        this.#targets.add(target);
+    }
+
+    unobserve(target) {
+        this.#targets.delete(target);
+    }
+
+    destroy() {
+        this.stop();
+        this.#registry = null;
+    }
+}
+class MutationObserverDOM extends BaseObserver {
+    #nativeObserver = null;
+
+    start(target = document.body, config = { childList: true, subtree: true }) {
+        if (this.isObserving) return;
+
+        this.#nativeObserver = new MutationObserver((mutations) => this.#handleMutations(mutations));
+        this.#nativeObserver.observe(target, config);
+
+        super.start(target);
+        console.info("Aspis [MutationObserverDOM]: Wächter aktiv.");
+    }
+
+    observe(target, config = { childList: true, subtree: true }) {
+        if (!(target instanceof Node)) return;
+        super.observe(target);
+        if (this.#nativeObserver) {
+            this.#nativeObserver.observe(target, config);
+        }
+    }
+
+    stop() {
+        if (this.#nativeObserver) {
+            this.#nativeObserver.disconnect();
+            this.#nativeObserver = null;
+        }
+        super.stop();
+        console.info("Aspis [MutationObserverDOM]: Wächter gestoppt.");
+    }
+
+    async #handleMutations(mutations) {
+        const addedNodes = [];
+        const cleaner = this.registry?.get('cleaner');
+
+        for (const mutation of mutations) {
+            mutation.removedNodes.forEach(node => {
+                if (node instanceof HTMLElement) {
+                    cleaner?.clean(node);
+                    const subComponents = node.querySelectorAll('[data-controller]');
+                    subComponents.forEach(subEl => cleaner?.clean(subEl));
+                }
+            });
+
+            mutation.addedNodes.forEach(node => {
+                if (node instanceof HTMLElement) {
+                    addedNodes.push(node);
+                }
+            });
+        }
+
+        if (addedNodes.length > 0 && typeof ScannerDOM !== 'undefined' && typeof Main !== 'undefined') {
+            for (const rootNode of addedNodes) {
+                const scanResults = ScannerDOM.scan(rootNode);
+                if (scanResults.length > 0) {
+                    await Main.assignControllers(scanResults, this.registry);
+                    console.info(`Aspis [MutationObserverDOM]: ${scanResults.length} neue Controller im nachgeladenen DOM entdeckt und initialisiert.`);
+                }
+            }
+        }
+    }
+
+    destroy() {
+        this.stop();
+        super.destroy();
     }
 }
 class GuardDOM {

@@ -779,306 +779,6 @@ class ScannerDOM {
     }
 }
 
-class BaseController {
-    _store;
-    _dispatcher;
-    _container;
-    _options;
-    _sliceKey = null;
-
-    #unsubscribeStore = null;
-    #unsubscribeEvents = [];
-
-    #lifecycleController = new AbortController();
-    #taskControllers = new Map();
-
-    constructor(container, store, dispatcher, options = {}) {
-        this._container = container;
-        this._store = store;
-        this._dispatcher = dispatcher;
-        this._options = options;
-
-        if (options.sliceKey) {
-            this._sliceKey = options.sliceKey;
-        }
-    }
-
-    get signal() {
-        return this.#lifecycleController.signal;
-    }
-
-    getSignal(taskKey = null) {
-        if (!taskKey) {
-            return this.#lifecycleController.signal;
-        }
-
-        if (this.#taskControllers.has(taskKey)) {
-            this.#taskControllers.get(taskKey).abort(`Task '${taskKey}' überschrieben.`);
-        }
-
-        const taskController = new AbortController();
-        this.#taskControllers.set(taskKey, taskController);
-
-        if (typeof AbortSignal.any === 'function') {
-            return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
-        }
-
-        return taskController.signal;
-    }
-
-    clearTask(taskKey) {
-        if (this.#taskControllers.has(taskKey)) {
-            this.#taskControllers.delete(taskKey);
-        }
-    }
-
-    async start() {
-        await this.#initEvents();
-
-        if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
-            this.#unsubscribeStore = this._store.effect(() => {
-                if (!this._store) return;
-                const slice = typeof this._store.getSlice === 'function' 
-                    ? this._store.getSlice(this._sliceKey) 
-                    : null;
-
-                if (slice) {
-                    this._onStateChange(slice);
-                }
-            });
-        }
-
-        if (typeof this.onInit === 'function') {
-            await this.onInit();
-        }
-    }
-
-    async #initEvents() {
-        if (!this._dispatcher) return;
-
-        let eventMap = {};
-
-        if (this._options?.eventPath) {
-            try {
-                const res = await fetch(this._options.eventPath, { signal: this.signal });
-                if (res.ok) {
-                    eventMap = await res.json();
-                } else {
-                    console.warn(`Aspis [BaseController]: Event-Config unter '${this._options.eventPath}' konnte nicht geladen werden.`);
-                }
-            } catch (e) {
-                if (e.name !== 'AbortError') {
-                    console.error(`Aspis [BaseController]: Fehler beim Laden von '${this._options.eventPath}':`, e);
-                }
-            }
-        }
-
-        if (this.signal?.aborted) return;
-        if (this._container && this._container.dataset && this._container.dataset.events) {
-            try {
-                const inlineMap = JSON.parse(this._container.dataset.events);
-                eventMap = { ...eventMap, ...inlineMap };
-            } catch (e) {
-                console.error(`Aspis [BaseController]: Fehler beim Parsen von data-events an <${this.constructor.name}>:`, e);
-            }
-        }
-
-        Object.entries(eventMap).forEach(([eventName, methodName]) => {
-            if (typeof this[methodName] === 'function') {
-                const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
-                this.#unsubscribeEvents.push(unsub);
-            } else {
-                console.warn(`Aspis [BaseController]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.constructor.name}.`);
-            }
-        });
-    }
-
-    destroy() {
-        this.#lifecycleController.abort("Controller zerstört.");
-        for (const taskCtrl of this.#taskControllers.values()) {
-            taskCtrl.abort("Controller zerstört.");
-        }
-        this.#taskControllers.clear();
-
-        if (this.#unsubscribeStore) {
-            this.#unsubscribeStore();
-            this.#unsubscribeStore = null;
-        }
-        this.#unsubscribeEvents.forEach(unsub => unsub());
-        this.#unsubscribeEvents = [];
-
-        try {
-            if (typeof this.onDestroy === 'function') {
-                this.onDestroy();
-            }
-        } catch (e) {
-            console.error(`Aspis [BaseController]: Fehler in onDestroy() von ${this.constructor.name}:`, e);
-        } finally {
-            this._container = null;
-            this._store = null;
-            this._dispatcher = null;
-            this._options = null;
-        }
-
-        console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich aus dem Speicher entfernt und gereinigt.`);
-    }
-
-    _onStateChange(slice) {
-        if (!this._container) return;
-
-        if (!slice || !slice.config || !slice.config.targets) {
-            if (typeof this.onStateChange === 'function') {
-                this.onStateChange(slice);
-            }
-            return;
-        }
-
-        const targets = slice.config.targets;
-        for (const [, targetConfig] of Object.entries(targets)) {
-            const element = targetConfig.selector === ':scope' 
-                ? this._container 
-                : this._container.querySelector(targetConfig.selector);
-                
-            if (!element || !targetConfig.bindClasses) continue;
-
-            for (const [stateProp, styleKey] of Object.entries(targetConfig.bindClasses)) {
-                const isActive = !!slice[stateProp]; 
-                if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleSliceClass === 'function') {
-                    ModifierDOM.toggleSliceClass(element, slice, styleKey, isActive);
-                }
-            }
-        }
-
-        if (typeof this.onStateChange === 'function') {
-            this.onStateChange(slice);
-        }
-    }
-}
-
-class ControllerTable extends BaseController {
-    #api;
-    #layout;
-    
-    table = null;
-
-    constructor(container, store, dispatcher) {
-        super(container, store, dispatcher);
-        this._sliceKey = 'features.tableFeature';
-    }
-
-    async onInit() {
-        this.#layout = this.layout;
-        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
-
-        const url = this._container.dataset.url;
-        if (!url) {
-            this._container.innerHTML = `<p style="color:red;">Fehler: data-url fehlt am Container.</p>`;
-            return;
-        }
-        await this.loadData(url);
-    }
-
-    onStateChange(slice) {
-        if (!slice.isLoading && slice.model && this.table !== slice.model) {
-            this.table = slice.model;
-            this.#render();
-        }
-    }
-
-    async loadData(url) {
-        const stateProxy = this._store.getSlice ? this._store.getSlice(this._sliceKey) : this._store.state[this._sliceKey];
-        if (!stateProxy) return;
-
-        try {
-            stateProxy.isLoading = true;
-            this._container.innerHTML = "<p>Lade Daten...</p>";
-            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
-            
-            if (liveData) {
-                stateProxy.model = new Table(this.#layout, liveData);
-            }
-        } catch (error) {
-            this._container.innerHTML = `<div style="color:red;">Fehler beim Laden: ${error.message}</div>`;
-            console.error("[ControllerTable]: Fehler im loadData-Ablauf", error);
-        } finally {
-            stateProxy.isLoading = false; 
-        }
-    }
-
-    reload(filterPayload) {
-    const baseUrl = this._container.dataset.url;
-    if (!baseUrl) return;
-
-    let url = baseUrl;
-
-    if (filterPayload && filterPayload.classId) {
-        const separator = baseUrl.includes('?') ? '&' : '?';
-        url += `${separator}class=${encodeURIComponent(filterPayload.classId)}`;
-    }
-
-    this.loadData(url);
-}
-
-    async #render() {
-        if (!this.table) return;
-        try {
-            await RenderService.paste(this._container, "meine-tabelle", this.table.toRenderData());
-            console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
-        } catch (error) {
-            console.error("[ControllerTable]: Render-Fehler", error);
-        }
-    }
-}
-
-class Table {
-    static Row = class TableRow {
-        constructor(data = {}) {
-            Object.assign(this, data);
-        }
-
-        toRenderData() {
-            return { ...this };
-        }
-
-        static canHandle(data) {
-            return data && typeof data === 'object';
-        }
-    };
-
-    #rows = [];
-    #layout;
-
-    constructor(layout = 'default', rawData = []) {
-        this.#layout = layout;
-        
-        const list = Array.isArray(rawData) 
-            ? rawData 
-            : (rawData?.rows || rawData?.data || []);
-            
-        this.buildRows(list);
-    }
-
-    buildRows(rawData) {
-        this.#rows = rawData
-            .filter(data => Table.Row.canHandle(data))
-            .map(data => new Table.Row(data));
-    }
-
-    appendRow(data) {
-        if (data instanceof Table.Row) {
-            this.#rows.push(data);
-        } else if (data && typeof data === 'object') {
-            this.#rows.push(new Table.Row(data));
-        }
-    }
-
-    toRenderData() {
-        return {
-            layout: this.#layout,
-            rows: this.#rows.map(row => row.toRenderData())
-        };
-    }
-}
 
 class Factory {
     static create(MainClass, ChildClasses, layout, jsonData) {
@@ -1869,6 +1569,609 @@ class GuardDOM {
 
         return doc.body.innerHTML;
     }
+}
+// ----------------------------------------------------------------------------
+
+class BaseController {
+    _store;
+    _dispatcher;
+    _container;
+    _options;
+    _sliceKey = null;
+
+    #unsubscribeStore = null;
+    #unsubscribeEvents = [];
+
+    #lifecycleController = new AbortController();
+    #taskControllers = new Map();
+
+    constructor(container, store, dispatcher, options = {}) {
+        this._container = container;
+        this._store = store;
+        this._dispatcher = dispatcher;
+        this._options = options;
+
+        if (options.sliceKey) {
+            this._sliceKey = options.sliceKey;
+        }
+    }
+
+    get signal() {
+        return this.#lifecycleController.signal;
+    }
+
+getSignal(taskKey = null) {
+    if (!taskKey) {
+        return this.#lifecycleController.signal;
+    }
+
+    if (this.#taskControllers.has(taskKey)) {
+        this.#taskControllers.get(taskKey).abort(`Task '${taskKey}' überschrieben.`);
+    }
+
+    const taskController = new AbortController();
+    this.#taskControllers.set(taskKey, taskController);
+
+    if (typeof AbortSignal.any === 'function') {
+        return AbortSignal.any([this.#lifecycleController.signal, taskController.signal]);
+    }
+
+    if (this.#lifecycleController.signal.aborted) {
+        taskController.abort(this.#lifecycleController.signal.reason);
+    } else {
+        this.#lifecycleController.signal.addEventListener('abort', () => {
+            taskController.abort(this.#lifecycleController.signal.reason);
+        }, { once: true });
+    }
+
+    return taskController.signal;
+}
+
+    clearTask(taskKey) {
+        if (this.#taskControllers.has(taskKey)) {
+            this.#taskControllers.delete(taskKey);
+        }
+    }
+
+    async start() {
+        await this.#initEvents();
+
+        if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
+            this.#unsubscribeStore = this._store.effect(() => {
+                if (!this._store) return;
+                const slice = typeof this._store.getSlice === 'function' 
+                    ? this._store.getSlice(this._sliceKey) 
+                    : null;
+
+                if (slice) {
+                    this._onStateChange(slice);
+                }
+            });
+        }
+
+        if (typeof this.onInit === 'function') {
+            await this.onInit();
+        }
+    }
+
+    async #initEvents() {
+        if (!this._dispatcher) return;
+
+        let eventMap = {};
+
+        if (this._options?.eventPath) {
+            try {
+                const res = await fetch(this._options.eventPath, { signal: this.signal });
+                if (res.ok) {
+                    eventMap = await res.json();
+                } else {
+                    console.warn(`Aspis [BaseController]: Event-Config unter '${this._options.eventPath}' konnte nicht geladen werden.`);
+                }
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    console.error(`Aspis [BaseController]: Fehler beim Laden von '${this._options.eventPath}':`, e);
+                }
+            }
+        }
+
+        if (this.signal?.aborted) return;
+        if (this._container && this._container.dataset && this._container.dataset.events) {
+            try {
+                const inlineMap = JSON.parse(this._container.dataset.events);
+                eventMap = { ...eventMap, ...inlineMap };
+            } catch (e) {
+                console.error(`Aspis [BaseController]: Fehler beim Parsen von data-events an <${this.constructor.name}>:`, e);
+            }
+        }
+
+        Object.entries(eventMap).forEach(([eventName, methodName]) => {
+            if (typeof this[methodName] === 'function') {
+                const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
+                this.#unsubscribeEvents.push(unsub);
+            } else {
+                console.warn(`Aspis [BaseController]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.constructor.name}.`);
+            }
+        });
+    }
+
+    destroy() {
+        this.#lifecycleController.abort("Controller zerstört.");
+        for (const taskCtrl of this.#taskControllers.values()) {
+            taskCtrl.abort("Controller zerstört.");
+        }
+        this.#taskControllers.clear();
+
+        if (this.#unsubscribeStore) {
+            this.#unsubscribeStore();
+            this.#unsubscribeStore = null;
+        }
+        this.#unsubscribeEvents.forEach(unsub => unsub());
+        this.#unsubscribeEvents = [];
+
+        try {
+            if (typeof this.onDestroy === 'function') {
+                this.onDestroy();
+            }
+        } catch (e) {
+            console.error(`Aspis [BaseController]: Fehler in onDestroy() von ${this.constructor.name}:`, e);
+        } finally {
+            this._container = null;
+            this._store = null;
+            this._dispatcher = null;
+            this._options = null;
+        }
+
+        console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich aus dem Speicher entfernt und gereinigt.`);
+    }
+
+    _onStateChange(slice) {
+        if (!this._container) return;
+
+        if (!slice || !slice.config || !slice.config.targets) {
+            if (typeof this.onStateChange === 'function') {
+                this.onStateChange(slice);
+            }
+            return;
+        }
+
+        const targets = slice.config.targets;
+        for (const [, targetConfig] of Object.entries(targets)) {
+            const element = targetConfig.selector === ':scope' 
+                ? this._container 
+                : this._container.querySelector(targetConfig.selector);
+                
+            if (!element || !targetConfig.bindClasses) continue;
+
+            for (const [stateProp, styleKey] of Object.entries(targetConfig.bindClasses)) {
+                const isActive = !!slice[stateProp]; 
+                if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleSliceClass === 'function') {
+                    ModifierDOM.toggleSliceClass(element, slice, styleKey, isActive);
+                }
+            }
+        }
+
+        if (typeof this.onStateChange === 'function') {
+            this.onStateChange(slice);
+        }
+    }
+
+    setLoadingState(stateProxy, message = 'Lade...') {
+        if (!stateProxy) return;
+
+        stateProxy.error = null;
+        stateProxy.isLoading = true;
+
+        const loaderType = this._container?.dataset?.loader || 'spinner';
+        const loaderTemplate = this._container?.dataset?.loaderTemplate || 'defaultSpinner';
+
+        if (loaderType === 'bar') {
+            stateProxy.model = new ModelLoadingBar({ layout: loaderTemplate, message, progress: 0 });
+        } else {
+            stateProxy.model = new ModelSpinner({ layout: loaderTemplate, message });
+        }
+    }
+}
+class BaseModel {
+    _layout = 'default';
+    _options = {};
+
+    constructor(options = {}) {
+        this._options = options;
+        if (options.layout) {
+            this._layout = options.layout;
+        }
+    }
+
+    setLayout(layout) {
+        this._layout = layout;
+    }
+
+    get layout() {
+        return this._layout;
+    }
+
+    toRenderData() {
+        throw new Error(`Aspis [BaseModel]: '${this.constructor.name}' muss die Methode 'toRenderData()' implementieren.`);
+    }
+}
+
+class ModelLoader extends BaseModel {
+    #message;
+
+    constructor(options = {}) {
+        super(options);
+        this.#message = options.message || 'Lade...';
+    }
+
+    get message() {
+        return this.#message;
+    }
+
+    setMessage(msg) {
+        this.#message = msg;
+    }
+
+    toRenderData() {
+        return {
+            layout: this._layout,
+            message: this.#message
+        };
+    }
+}
+class ModelSpinner extends ModelLoader {
+    constructor(options = {}) {
+        const opts = typeof options === 'string' ? { message: options } : options;
+        
+        super({
+            layout: opts.layout || 'spinner',
+            message: opts.message || 'Lade Daten...'
+        });
+    }
+}
+class ModelLoadingBar extends ModelLoader {
+    #progress = 0;
+
+    constructor(options = {}) {
+        const opts = typeof options === 'number' ? { progress: options } : options;
+        
+        super({
+            layout: opts.layout || 'bar',
+            message: opts.message || 'Lade...'
+        });
+
+        this.setProgress(opts.progress || 0);
+    }
+
+    get progress() {
+        return this.#progress;
+    }
+
+    setProgress(percent) {
+        this.#progress = Math.min(100, Math.max(0, Number(percent) || 0));
+    }
+
+    toRenderData() {
+        return {
+            ...super.toRenderData(),
+            progress: this.#progress
+        };
+    }
+}
+
+class ControllerTable extends BaseController {
+    #api = null;
+    #model = null;
+
+    constructor(container, store, dispatcher, options = {}) {
+        super(container, store, dispatcher, options);
+        this._sliceKey = 'features.tableFeature';
+    }
+
+    async onInit() {
+        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+
+        const url = this._container.dataset.url;
+        if (!url) {
+            throw new Error(`Aspis [ControllerTable]: Fehlendes 'data-url'-Attribut am Container <${this._container.tagName.toLowerCase()}>.`);
+        }
+
+        await this.loadData(url);
+    }
+
+    onStateChange(slice) {
+        if (slice && slice.model && this.#model !== slice.model) {
+            this.#model = slice.model;
+            this.#render();
+        }
+    }
+
+    async loadData(url) {
+        const stateProxy = this._store.getSlice(this._sliceKey);
+        if (!stateProxy) return;
+
+        try {
+            this.setLoadingState(stateProxy, 'Tabelle wird geladen...');
+            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
+
+            if (liveData) {
+                const layout = this._container.dataset.layout || this._options?.layout || 'default';
+                stateProxy.model = new ModelTable(liveData, { layout });
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                stateProxy.error = error.message;
+                console.error("[ControllerTable]: Fehler im loadData-Ablauf", error);
+            }
+        } finally {
+            stateProxy.isLoading = false; 
+            this.clearTask('loadData'); 
+        }
+    }
+
+    reload(filterPayload) {
+        const baseUrl = this._container.dataset.url;
+        if (!baseUrl) return;
+
+        let url = baseUrl;
+
+        if (filterPayload && filterPayload.classId) {
+            const separator = baseUrl.includes('?') ? '&' : '?';
+            url += `${separator}class=${encodeURIComponent(filterPayload.classId)}`;
+        }
+
+        this.loadData(url);
+    }
+
+    async #render() {
+        if (!this.#model) return;
+        try {
+            let templateName = this._container.dataset.template || "meine-tabelle";
+
+            if (this.#model instanceof ModelLoader) {
+                templateName = this._container.dataset.loaderTemplate || "defaultSpinner";
+            }
+
+            await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+            console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
+        } catch (error) {
+            console.error("[ControllerTable]: Render-Fehler", error);
+        }
+    }
+}
+class ModelTable extends BaseModel {
+    static Row = class ModelTableRow {
+        constructor(data = {}) {
+            Object.assign(this, data);
+        }
+
+        toRenderData() {
+            return { ...this };
+        }
+
+        static canHandle(data) {
+            return data && typeof data === 'object';
+        }
+    };
+
+    static Item = ModelTable.Row;
+    #rows = [];
+
+    constructor(rawData = [], options = {}) {
+        const opts = typeof options === 'string' ? { layout: options } : options;
+        super(opts); 
+        
+        const list = Array.isArray(rawData) 
+            ? rawData 
+            : (rawData?.rows || rawData?.data || []);
+            
+        this.buildRows(list);
+    }
+
+    buildRows(rawData) {
+        this.#rows = rawData
+            .filter(data => ModelTable.Row.canHandle(data))
+            .map(data => new ModelTable.Row(data));
+    }
+
+    appendRow(data) {
+        if (data instanceof ModelTable.Row) {
+            this.#rows.push(data);
+        } else if (data && typeof data === 'object') {
+            this.#rows.push(new ModelTable.Row(data));
+        }
+    }
+
+    toRenderData() {
+        return {
+            layout: this._layout,
+            rows: this.#rows.map(row => row.toRenderData())
+        };
+    }
+}
+
+class ControllerAccordion extends BaseController {
+    #api = null;
+    #model = null;
+
+    constructor(container, store, dispatcher, options = {}) {
+        super(container, store, dispatcher, options);
+        this._sliceKey = options.sliceKey || 'features.accordionFeature';
+    }
+
+    async onInit() {
+        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+
+        const url = this._container.dataset.url;
+        if (url) {
+            await this.loadData(url);
+        }
+    }
+
+    onStateChange(slice) {
+        if (slice && slice.model && this.#model !== slice.model) {
+            this.#model = slice.model;
+            this.#render();
+        }
+    }
+
+    async loadData(url) {
+        const stateProxy = this._store.getSlice(this._sliceKey);
+        if (!stateProxy) return;
+
+        try {
+            this.setLoadingState(stateProxy, 'Akkordeon-Inhalte werden geladen...');
+
+            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
+
+            if (liveData) {
+                const layout = this._container.dataset.layout || this._options?.layout || 'default';
+                const singleOpen = this._container.dataset.singleOpen === 'true';
+
+                stateProxy.model = new ModelAccordion(liveData, { layout, singleOpen });
+            }
+        } catch (error) {
+            stateProxy.error = error.message;
+            console.error("[ControllerAccordion]: Fehler im loadData-Ablauf", error);
+        } finally {
+            stateProxy.isLoading = false;
+        }
+    }
+
+    toggle(payload) {
+        const itemId = typeof payload === 'object' ? payload.id : payload;
+        if (!itemId || !this.#model || !(this.#model instanceof ModelAccordion)) return;
+
+        this.#model.toggleItem(itemId);
+
+        const stateProxy = this._store.getSlice(this._sliceKey);
+        if (stateProxy) {
+            stateProxy.model = this.#model;
+        }
+
+        this.#render();
+    }
+
+    async #render() {
+        if (!this.#model) return;
+
+        try {
+            let templateName = this._container.dataset.template || "mein-accordion";
+
+            if (this.#model instanceof Loader) {
+                templateName = this._container.dataset.loaderTemplate || "defaultSpinner";
+            }
+
+            await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+            console.log(`[ControllerAccordion]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
+        } catch (error) {
+            console.error("[ControllerAccordion]: Render-Fehler", error);
+        }
+    }
+}
+class ModelAccordion extends BaseModel {
+    static Item = class AccordionItem {
+        #id;
+        #title;
+        #content;
+        #isOpen;
+
+        constructor(data = {}) {
+            this.#id = data.id || `acc-item-${Math.random().toString(36).substr(2, 9)}`;
+            this.#title = data.title || 'Unbenannt';
+            this.#content = data.content || '';
+            this.#isOpen = Boolean(data.isOpen);
+        }
+
+        get id() { return this.#id; }
+        get isOpen() { return this.#isOpen; }
+
+        setOpen(open) {
+            this.#isOpen = Boolean(open);
+        }
+
+        toggle() {
+            this.#isOpen = !this.#isOpen;
+        }
+
+        toRenderData() {
+            return {
+                id: this.#id,
+                title: this.#title,
+                content: this.#content,
+                isOpen: this.#isOpen
+            };
+        }
+
+        static canHandle(data) {
+            return data && typeof data === 'object';
+        }
+    };
+
+    #items = [];
+    #singleOpen = false;
+
+    constructor(rawData = [], options = {}) {
+        const opts = typeof options === 'string' ? { layout: options } : options;
+        super(opts);
+
+        this.#singleOpen = Boolean(opts.singleOpen);
+
+        const list = Array.isArray(rawData)
+            ? rawData
+            : (rawData?.items || rawData?.data || []);
+
+        this.buildItems(list);
+    }
+
+    buildItems(rawData) {
+        this.#items = rawData
+            .filter(data => ModelAccordion.Item.canHandle(data))
+            .map(data => new ModelAccordion.Item(data));
+    }
+
+    toggleItem(itemId) {
+        const targetItem = this.#items.find(item => item.id === itemId);
+        if (!targetItem) return;
+
+        const nextState = !targetItem.isOpen;
+
+        if (this.#singleOpen && nextState) {
+            this.#items.forEach(item => item.setOpen(false));
+        }
+
+        targetItem.setOpen(nextState);
+    }
+
+    toRenderData() {
+        return {
+            layout: this._layout,
+            items: this.#items.map(item => item.toRenderData())
+        };
+    }
+}
+
+class ControllerForm extends BaseController {
+    // Platzhalter
+}
+class ModelForm extends BaseModel {
+    // Platzhalter
+}
+
+class BaseInputController extends BaseController {
+    // Platzhalter
+}
+class ModelInputs extends BaseModel {
+    // Platzhalter
+}
+
+class ControllerCustomDropdown extends BaseInputController {
+    // Platzhalter
+}
+class ModelCustomDropdown extends BaseModel {
+    #platzhalter = class ModelCustomDropdownItem {
+        // Platzhalter
+    }
+    // Platzhalter
 }
 
 Main.autoBoot();

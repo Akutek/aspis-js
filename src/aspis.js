@@ -43,7 +43,6 @@ class ComponentCleaner {
     clean(element) {
         if (!element || !this.#registry) return;
 
-        // Entfernt das Element aus den DOM-Abhängigkeiten des Stores (Memory-Leak-Schutz)
         const store = this.#registry.get('store');
         if (store && typeof store.removeDomDependencies === 'function') {
             store.removeDomDependencies(element);
@@ -109,6 +108,7 @@ class Main {
             ]);
 
             const services = this.createServices(controllerRegistry, config, stateManifest, eventManifest);
+            window.appRegistry = services;
 
             const scanResults = ScannerDOM.scan(document.body);
             await this.assignControllers(scanResults, services);
@@ -117,6 +117,19 @@ class Main {
             return services;
         } catch (error) {
             console.error("Aspis [Main]: Kritischer Fehler beim Bootstrapping der Anwendung:", error);
+        }
+    }
+
+    static autoBoot(registryPath = './controllers') {
+        const start = () => {
+            const loader = new ControllerRegistry(registryPath);
+            this.boot(loader);
+        };
+
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', start);
+        } else {
+            start();
         }
     }
 
@@ -187,10 +200,6 @@ class Main {
         }
     }
 }
-window.addEventListener("DOMContentLoaded", () => {
-    const loader = new ControllerRegistry('./controllers');
-    Main.boot(loader).catch(err => console.error("App-Crash beim Booten:", err));
-});
 
 class ReactiveEffect {
     #store;
@@ -204,10 +213,10 @@ class ReactiveEffect {
 
     run() {
         try {
-            this.#store._activeEffect = this;
+            this.#store.pushEffect(this);
             return this.#fn();
         } finally {
-            this.#store._activeEffect = null;
+            this.#store.popEffect();
         }
     }
 
@@ -233,12 +242,14 @@ class Store extends EventTarget {
     #effectQueue = new Set();
     #pendingDomUpdates = new Map();
     #isFlushPending = false;
-
-    _activeEffect = null;
+    #effectStack = [];
+    #strictMode;
 
     static ALLOWED_NAMESPACES = ['app', 'features', 'shared'];
 
     constructor(manifest = {}, initialData = {}) {
+        this.manifest = manifest;
+        this.#strictMode = manifest.settings?.strictMode ?? true;
         super();
         this.#data = initialData;
         
@@ -279,6 +290,10 @@ class Store extends EventTarget {
         
         this.#stateProxy = this.#createDeepProxy(extractedState, "");
         console.log("Aspis [Store-Bootstrap]: Hierarchischer State-Baum erfolgreich initialisiert.", extractedState);
+    }
+
+    get _activeEffect() {
+        return this.#effectStack[this.#effectStack.length - 1] || null;
     }
 
     get state() {
@@ -324,6 +339,14 @@ class Store extends EventTarget {
         };
     }
 
+    pushEffect(effect) {
+        this.#effectStack.push(effect);
+    }
+
+    popEffect() {
+        this.#effectStack.pop();
+    }
+
     addDependency(targetOrPath, childPathOrDataPath) {
         if (targetOrPath instanceof HTMLElement) {
             if (!this.#domDependencies.has(childPathOrDataPath)) {
@@ -358,7 +381,7 @@ class Store extends EventTarget {
             get(obj, prop) {
                 const value = obj[prop];
                 if (typeof prop === 'symbol') return value;
-                
+
                 const nextPath = currentPath ? `${currentPath}.${String(prop)}` : String(prop);
                 storeContext.#track(nextPath);
 
@@ -377,12 +400,17 @@ class Store extends EventTarget {
                 const nextPath = currentPath ? `${currentPath}.${String(prop)}` : String(prop);
                 const oldValue = obj[prop];
                 const pathDepth = nextPath.split('.').length;
-                
+
                 if (pathDepth <= 2 && !(prop in obj)) {
-                    throw new Error(
-                        `Aspis [Store-Schutzschild]: Mutation abgelehnt! Der State-Parameter "${nextPath}" ` +
-                        `wurde nicht im state-manifest.json deklariert.`
-                    );
+                    const errorMsg = `Aspis [Store-Schutzschild]: Mutation abgelehnt! Der State-Parameter "${nextPath}" ` +
+                        `wurde nicht im state-manifest.json deklariert.`;
+
+                    if (storeContext.#strictMode) {
+                        throw new Error(errorMsg);
+                    } else {
+                        console.error(errorMsg);
+                        return true;
+                    }
                 }
 
                 if (oldValue !== value) {
@@ -417,6 +445,10 @@ class Store extends EventTarget {
         this.#domDependencies.forEach((elements, registeredDataPath) => {
             if (path === registeredDataPath || path.startsWith(registeredDataPath + '.')) {
                 elements.forEach(element => {
+                    if (!element.isConnected) {
+                        elements.delete(element);
+                        return;
+                    }
                     if (!this.#pendingDomUpdates.has(element)) {
                         this.#pendingDomUpdates.set(element, new Set());
                     }
@@ -525,10 +557,11 @@ class Registry {
         this.#services = new Map();
         this.#elements = new WeakMap();
 
-        this.#finalizer = new FinalizationRegistry((cleanupFn) => {
+        this.#finalizer = new FinalizationRegistry((weakController) => {
             try {
-                if (typeof cleanupFn === 'function') {
-                    cleanupFn();
+                const controller = weakController.deref();
+                if (controller && typeof controller.destroy === 'function') {
+                    controller.destroy();
                 }
             } catch (error) {
                 console.error("Aspis [Registry]: Fehler beim GC-Cleanup:", error);
@@ -553,13 +586,12 @@ class Registry {
             this.#elements.set(key, value);
 
             if (value && typeof value.destroy === 'function') {
-                const cleanupFn = () => value.destroy();
-                this.#finalizer.register(key, cleanupFn, key);
+                this.#finalizer.register(key, new WeakRef(value), key);
             }
             return;
         }
 
-        throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set(). Erlaubt sind Strings oder HTMLElements.");
+        throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set().");
     }
 
     get(key) {
@@ -747,105 +779,6 @@ class ScannerDOM {
     }
 }
 
-class Registry {
-    #services;
-    #elements;
-    #finalizer;
-
-    constructor() {
-        this.#services = new Map();
-        this.#elements = new WeakMap();
-
-        this.#finalizer = new FinalizationRegistry((cleanupFn) => {
-            try {
-                if (typeof cleanupFn === 'function') {
-                    cleanupFn();
-                }
-            } catch (error) {
-                console.error("Aspis [Registry]: Fehler beim GC-Cleanup:", error);
-            }
-        });
-    }
-
-    set(key, value) {
-        if (typeof key === 'string') {
-            if (this.#services.has(key)) {
-                throw new Error(`Aspis [Registry]: Key '${key}' ist bereits registriert.`);
-            }
-            this.#services.set(key, value);
-            return;
-        }
-
-        if (key instanceof HTMLElement) {
-            if (this.#elements.has(key)) {
-                this.delete(key);
-            }
-
-            this.#elements.set(key, value);
-
-            if (value && typeof value.destroy === 'function') {
-                const cleanupFn = () => value.destroy();
-                this.#finalizer.register(key, cleanupFn, key);
-            }
-            return;
-        }
-
-        throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set().");
-    }
-
-    get(key) {
-        if (typeof key === 'string') {
-            if (!this.#services.has(key)) {
-                throw new Error(`Aspis [Registry]: Service '${key}' existiert nicht.`);
-            }
-            return this.#services.get(key);
-        }
-
-        if (key instanceof HTMLElement) {
-            return this.#elements.get(key) || null;
-        }
-
-        return null;
-    }
-
-    has(key) {
-        if (typeof key === 'string') {
-            return this.#services.has(key);
-        }
-        if (key instanceof HTMLElement) {
-            return this.#elements.has(key);
-        }
-        return false;
-    }
-
-    delete(key) {
-        if (typeof key === 'string') {
-            return this.#services.delete(key);
-        }
-
-        if (key instanceof HTMLElement) {
-            const controller = this.#elements.get(key);
-
-            if (controller && typeof controller.destroy === 'function') {
-                try {
-                    controller.destroy();
-                } catch (error) {
-                    console.error("Aspis [Registry]: Fehler beim destroy() Aufruf:", error);
-                }
-            }
-
-            this.#finalizer.unregister(key);
-            return this.#elements.delete(key);
-        }
-
-        return false;
-    }
-
-    clearServices() {
-        this.#services.clear();
-    }
-}
-
 class BaseController {
     _store;
     _dispatcher;
@@ -940,6 +873,7 @@ class BaseController {
             }
         }
 
+        if (this.signal?.aborted) return;
         if (this._container && this._container.dataset && this._container.dataset.events) {
             try {
                 const inlineMap = JSON.parse(this._container.dataset.events);
@@ -1058,7 +992,7 @@ class ControllerTable extends BaseController {
         try {
             stateProxy.isLoading = true;
             this._container.innerHTML = "<p>Lade Daten...</p>";
-            const liveData = await this.#api.get(url);
+            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
             
             if (liveData) {
                 stateProxy.model = new Table(this.#layout, liveData);
@@ -1072,12 +1006,18 @@ class ControllerTable extends BaseController {
     }
 
     reload(filterPayload) {
-        const baseUrl = this._container.dataset.url;
-        if (!baseUrl) return;
-        
-        const filterParam = filterPayload && filterPayload.classId ? `?class=${filterPayload.classId}` : '';
-        this.loadData(`${baseUrl}${filterParam}`);
+    const baseUrl = this._container.dataset.url;
+    if (!baseUrl) return;
+
+    let url = baseUrl;
+
+    if (filterPayload && filterPayload.classId) {
+        const separator = baseUrl.includes('?') ? '&' : '?';
+        url += `${separator}class=${encodeURIComponent(filterPayload.classId)}`;
     }
+
+    this.loadData(url);
+}
 
     async #render() {
         if (!this.table) return;
@@ -1111,7 +1051,6 @@ class Table {
     constructor(layout = 'default', rawData = []) {
         this.#layout = layout;
         
-        // Fängt flache Arrays UND umhüllte Objekte ({ rows: [...] } oder { data: [...] }) ab
         const list = Array.isArray(rawData) 
             ? rawData 
             : (rawData?.rows || rawData?.data || []);
@@ -1186,6 +1125,10 @@ class RenderService {
         if (!element) {
             throw new Error(`Aspis [RenderService]: Rendering für '${templateName}' fehlgeschlagen.`);
         }
+        const cleaner = window.appRegistry?.get('cleaner');
+        if (cleaner && typeof cleaner.cleanTree === 'function') {
+            cleaner.cleanTree(targetContainer);
+        }
 
         const cleanElement = this.#purifyElement(element);
         targetContainer.replaceChildren(cleanElement);
@@ -1258,10 +1201,22 @@ class RenderService {
 class TemplateService {
     #cache = new Map();
     #basePath;
+    #sanitizer;
 
-    constructor(basePath = "./js/aspis/templates/") {
-        this.#basePath = basePath;
-        this.init();
+    constructor(config = {}) {
+        const options = typeof config === 'string' ? { basePath: config } : config;
+        const { 
+            basePath = "./js/aspis/templates/", 
+            sanitizer = null, 
+            autoInit = true 
+        } = options;
+
+        this.#basePath = basePath.endsWith('/') ? basePath : `${basePath}/`;
+        this.#sanitizer = sanitizer || this.#defaultSanitizer.bind(this);
+
+        if (autoInit) {
+            this.init();
+        }
     }
 
     init() {
@@ -1274,7 +1229,6 @@ class TemplateService {
             try {
                 const config = JSON.parse(configAttr);
                 const templateData = this.#normalizeTemplate(el.id, config, el.innerHTML);
-                
                 this.#cache.set(config.name || el.id, templateData);
             } catch (error) {
                 console.error(`Aspis [TemplateService]: JSON-Parse-Fehler bei Template #${el.id}`, error);
@@ -1282,6 +1236,14 @@ class TemplateService {
         });
 
         console.info(`Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
+    }
+
+    has(name) {
+        return this.#cache.has(name);
+    }
+
+    clearCache() {
+        this.#cache.clear();
     }
 
     async get(name) {
@@ -1304,33 +1266,14 @@ class TemplateService {
             return null;
         }
 
-        const payloadData = payload.data || {};
-        const payloadAttributes = payload.attributes || {};
-        const payloadSlots = payload.slots || {};
+        const payloadData = payload.data ?? {};
+        const payloadAttributes = payload.attributes ?? {};
+        const payloadSlots = payload.slots ?? {};
 
         let workingHtml = template.html;
 
-        Object.keys(template.data).forEach(key => {
-            const placeholder = template.data[key];
-            const rawValue = payloadData[key] !== undefined ? payloadData[key] : "";
-            const cleanValue = typeof GuardDOM !== 'undefined' && typeof GuardDOM.clean === 'function' 
-                ? GuardDOM.clean(rawValue) 
-                : (typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function' ? GuardDOM.purify(rawValue) : rawValue);
-            
-            workingHtml = workingHtml.replaceAll(placeholder, cleanValue);
-        });
-
-        Object.keys(template.attributes).forEach(key => {
-            const placeholder = template.attributes[key];
-            const rawValue = payloadAttributes[key];
-
-            if (rawValue && String(rawValue).trim() !== "") {
-                const formattedAttr = ` ${String(rawValue).trim()}`;
-                workingHtml = workingHtml.replaceAll(placeholder, formattedAttr);
-            } else {
-                workingHtml = workingHtml.replaceAll(placeholder, "");
-            }
-        });
+        workingHtml = this.#replacePlaceholders(workingHtml, template.sortedData, payloadData);
+        workingHtml = this.#replacePlaceholders(workingHtml, template.sortedAttributes, payloadAttributes);
 
         const fragment = document.createRange().createContextualFragment(workingHtml);
         const element = fragment.firstElementChild;
@@ -1340,11 +1283,30 @@ class TemplateService {
             return null;
         }
 
-        Object.keys(template.slots).forEach(key => {
-            const placeholder = template.slots[key];
-            const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-            let currentNode;
+        this.#processSlots(element, template.slots, payloadSlots);
+
+        return element;
+    }
+
+    getTemplateEvents(name) {
+        return this.#cache.get(name)?.events ?? {};
+    }
+
+    #replacePlaceholders(html, sortedEntries, values) {
+        let result = html;
+        for (const [key, placeholder] of sortedEntries) {
+            const rawValue = values[key] ?? "";
+            const cleanValue = this.#sanitizer(rawValue);
+            result = result.replaceAll(placeholder, cleanValue);
+        }
+        return result;
+    }
+
+    #processSlots(rootElement, slotsMap, payloadSlots) {
+        Object.entries(slotsMap).forEach(([key, placeholder]) => {
+            const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT);
             let targetNode = null;
+            let currentNode;
 
             while ((currentNode = walker.nextNode())) {
                 if (currentNode.nodeValue.includes(placeholder)) {
@@ -1364,27 +1326,37 @@ class TemplateService {
             }
 
             if (Array.isArray(slotContent)) {
-                slotContent.forEach(childNode => {
-                    if (childNode instanceof Node) {
-                        parent.insertBefore(childNode, targetNode);
-                    }
-                });
-            } else if (slotContent instanceof Node) {
-                parent.insertBefore(slotContent, targetNode);
-            } else if (typeof slotContent === "string") {
-                const childFragment = document.createRange().createContextualFragment(slotContent);
-                parent.insertBefore(childFragment, targetNode);
+                slotContent.forEach(child => this.#appendSlotChild(parent, targetNode, child));
+            } else {
+                this.#appendSlotChild(parent, targetNode, slotContent);
             }
 
             targetNode.remove();
         });
-
-        return element;
     }
 
-    getTemplateEvents(name) {
-        const template = this.#cache.get(name);
-        return template ? template.events : {};
+    #appendSlotChild(parent, targetNode, content) {
+        if (content instanceof Node) {
+            parent.insertBefore(content, targetNode);
+        } else if (typeof content === "string") {
+            const fragment = document.createRange().createContextualFragment(content);
+            parent.insertBefore(fragment, targetNode);
+        }
+    }
+
+    #defaultSanitizer(val) {
+        if (typeof GuardDOM !== 'undefined') {
+            if (typeof GuardDOM.clean === 'function') return GuardDOM.clean(val);
+            if (typeof GuardDOM.purify === 'function') return GuardDOM.purify(val);
+        }
+        
+        if (val === null || val === undefined) return '';
+        return String(val)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     async #loadFromServer(name) {
@@ -1392,12 +1364,12 @@ class TemplateService {
         
         try {
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`Manifest für '${name}' nicht gefunden (404)`);
+            if (!response.ok) throw new Error(`Manifest für '${name}' nicht gefunden (Status ${response.status})`);
             const manifest = await response.json();
 
             let htmlString = "";
             if (manifest.files) {
-                const fetchTasks = Object.entries(manifest.files).map(async ([key, fileName]) => {
+                const fetchTasks = Object.entries(manifest.files).map(async ([, fileName]) => {
                     const htmlRes = await fetch(`${this.#basePath}${name}/${fileName}`);
                     if (!htmlRes.ok) throw new Error(`Teil-Datei '${fileName}' fehlt`);
                     return await htmlRes.text();
@@ -1437,6 +1409,9 @@ class TemplateService {
             }
         });
 
+        const sortByLengthDesc = (obj) => Object.entries(obj)
+            .sort(([, a], [, b]) => b.length - a.length);
+
         const defaults = {
             id: id || config.name,
             role: config.partial ? 'partial' : 'container',
@@ -1456,6 +1431,8 @@ class TemplateService {
             slots,
             attributes,
             data,
+            sortedData: sortByLengthDesc(data),
+            sortedAttributes: sortByLengthDesc(attributes),
             placeholder: placeholders,
             config
         };
@@ -1510,11 +1487,11 @@ class EventDispatcher {
 
         const targets = Array.from(eventListeners);
         targets.forEach(callback => {
-            try {
-                callback(data);
-            } catch (error) {
-                console.error(`Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
-            }
+            Promise.resolve()
+                .then(() => callback(data))
+                .catch(error => {
+                    console.error(`Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
+                });
         });
     }
 
@@ -1893,3 +1870,5 @@ class GuardDOM {
         return doc.body.innerHTML;
     }
 }
+
+Main.autoBoot();

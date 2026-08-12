@@ -1,4 +1,7 @@
 {
+    "settings": {
+        "strictMode": true
+    },
     "globalStyles": {
         "HIDDEN": "is-hidden",
         "ACTIVE": "is-active",

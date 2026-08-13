@@ -242,6 +242,7 @@ class Store extends EventTarget {
     #effectQueue = new Set();
     #pendingDomUpdates = new Map();
     #isFlushPending = false;
+    #flushTimerId = null;
     #effectStack = [];
     #strictMode;
 
@@ -305,6 +306,10 @@ class Store extends EventTarget {
     }
 
     getSlice(path) {
+        if (!path || typeof path !== 'string') {
+            throw new Error("Aspis [Store-Schutzschild]: getSlice verlangt einen gültigen Pfad-String.");
+        }
+
         const parts = path.split('.');
         let current = this.#stateProxy;
 
@@ -348,23 +353,64 @@ class Store extends EventTarget {
     }
 
     addDependency(targetOrPath, childPathOrDataPath) {
-        if (targetOrPath instanceof HTMLElement) {
-            if (!this.#domDependencies.has(childPathOrDataPath)) {
-                this.#domDependencies.set(childPathOrDataPath, new Set());
-            }
-            this.#domDependencies.get(childPathOrDataPath).add(targetOrPath);
+        if (!targetOrPath || !childPathOrDataPath) {
+            console.warn("Aspis [Store]: addDependency() abgebrochen - Parameter dürfen nicht leer sein.");
             return;
         }
-        if (typeof targetOrPath === 'string' && typeof childPathOrDataPath === 'string') {
-            if (!this.#dependencies.has(targetOrPath)) {
-                this.#dependencies.set(targetOrPath, new Set());
+
+        if (targetOrPath instanceof HTMLElement) {
+            if (typeof childPathOrDataPath !== 'string' || !childPathOrDataPath.trim()) {
+                console.warn("Aspis [Store]: DOM-Abhängigkeit benötigt einen gültigen Pfad-String.");
+                return;
             }
-            this.#dependencies.get(targetOrPath).add(childPathOrDataPath);
-            console.log(`Aspis [Store]: Logische Kaskade registriert [${targetOrPath} ──> ${childPathOrDataPath}]`);
+            const path = childPathOrDataPath.trim();
+            if (!this.#domDependencies.has(path)) {
+                this.#domDependencies.set(path, new Set());
+            }
+            this.#domDependencies.get(path).add(targetOrPath);
+            return;
+        }
+
+        if (typeof targetOrPath === 'string' && typeof childPathOrDataPath === 'string') {
+            const parentPath = targetOrPath.trim();
+            const childPath = childPathOrDataPath.trim();
+
+            if (!parentPath || !childPath) {
+                console.warn("Aspis [Store]: Pfad-Abhängigkeit enthält leere Pfad-Strings.");
+                return;
+            }
+
+            if (!this.#dependencies.has(parentPath)) {
+                this.#dependencies.set(parentPath, new Set());
+            }
+            this.#dependencies.get(parentPath).add(childPath);
+            console.log(`Aspis [Store]: Logische Kaskade registriert [${parentPath} ──> ${childPath}]`);
             return;
         }
 
         throw new Error("Aspis [Store]: Ungültige Signatur in addDependency(). Erlaubt: (HTMLElement, String) oder (String, String).");
+    }
+
+    removeDomDependencies(targetElement) {
+        if (!(targetElement instanceof HTMLElement)) return;
+
+        this.#domDependencies.forEach((elements, path) => {
+            elements.delete(targetElement);
+            if (elements.size === 0) {
+                this.#domDependencies.delete(path);
+            }
+        });
+    }
+
+    flush() {
+        if (!this.#isFlushPending) return;
+
+        if (this.#flushTimerId !== null && typeof cancelAnimationFrame !== 'undefined') {
+            cancelAnimationFrame(this.#flushTimerId);
+            this.#flushTimerId = null;
+        }
+
+        this.#flushQueue();
     }
 
     #createDeepProxy(target, currentPath) {
@@ -486,16 +532,22 @@ class Store extends EventTarget {
         if (this.#isFlushPending) return;
         this.#isFlushPending = true;
 
-        queueMicrotask(() => {
-            this.#flushQueue();
-        });
+        if (typeof requestAnimationFrame !== 'undefined') {
+            this.#flushTimerId = requestAnimationFrame(() => {
+                this.#flushTimerId = null;
+                this.#flushQueue();
+            });
+        } else {
+            queueMicrotask(() => {
+                this.#flushQueue();
+            });
+        }
     }
 
     #flushQueue() {
         try {
             if (this.#pendingDomUpdates.size > 0) {
                 this.#pendingDomUpdates.forEach((paths, element) => {
-                    console.info(`Aspis [Store]: Batch-Flush -> PHP-Abhängigkeit getriggert für DOM-Knoten.`);
                     this.#triggerElementUpdate(element, paths);
                 });
             }
@@ -504,11 +556,12 @@ class Store extends EventTarget {
                 this.#effectQueue.forEach(effect => effect.run());
             }
         } catch (error) {
-            console.error("Aspis [Store]: Fehler während des Microtask-Flushes:", error);
+            console.error("Aspis [Store]: Fehler während des Queue-Flushes:", error);
         } finally {
             this.#pendingDomUpdates.clear();
             this.#effectQueue.clear();
             this.#isFlushPending = false;
+            this.#flushTimerId = null;
         }
     }
 
@@ -538,12 +591,6 @@ class Store extends EventTarget {
                     this.#listeners.delete(path);
                 }
             }
-        });
-    }
-    removeDomDependencies(targetElement) {
-        if (!(targetElement instanceof HTMLElement)) return;
-        this.#domDependencies.forEach((elements) => {
-            elements.delete(targetElement);
         });
     }
 }
@@ -1694,6 +1741,7 @@ class BaseController {
     _container;
     _options;
     _sliceKey = null;
+    _isStarted = false;
 
     #unsubscribeStore = null;
     #unsubscribeEvents = [];
@@ -1715,11 +1763,15 @@ class BaseController {
     get signal() {
         return this.#lifecycleController.signal;
     }
+
     get fetcher() {
         if (this._options?.fetcher) return this._options.fetcher;
-        if (typeof window !== 'undefined' && window.appRegistry?.has('fetcher')) {
-            return window.appRegistry.get('fetcher');
+
+        const registry = this._options?.registry || (typeof window !== 'undefined' ? window.appRegistry : null);
+        if (registry && typeof registry.has === 'function' && registry.has('fetcher')) {
+            return registry.get('fetcher');
         }
+
         return {
             get: async (url, params, opts) => {
                 const res = await fetch(url, opts);
@@ -1769,8 +1821,16 @@ class BaseController {
     }
 
     async start() {
+        if (this._isStarted || this.signal.aborted) return;
+        this._isStarted = true;
+        
         await this.#initEvents();
         if (this.signal.aborted) return;
+
+        await this.onInit();
+        if (this.signal.aborted) return;
+
+        this.#initDomDependencies();
 
         if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
             this.#unsubscribeStore = this._store.effect(() => {
@@ -1785,12 +1845,6 @@ class BaseController {
                 }
             });
         }
-
-        if (this.signal.aborted) return;
-
-        await this.onInit();
-
-        if (this.signal.aborted) return;
     }
 
     async #initEvents() {
@@ -1799,23 +1853,15 @@ class BaseController {
         let eventMap = {};
 
         if (this._options?.eventPath) {
+            const initSignal = this.getSignal('initEvents');
             try {
-                const fetcher = window.appRegistry?.get('fetcher');
-
-                if (fetcher && typeof fetcher.get === 'function') {
-                    eventMap = await fetcher.get(this._options.eventPath, {}, { signal: this.signal }) || {};
-                } else {
-                    const res = await fetch(this._options.eventPath, { signal: this.signal });
-                    if (res.ok) {
-                        eventMap = await res.json();
-                    } else {
-                        console.warn(`Aspis [BaseController]: Event-Config unter '${this._options.eventPath}' konnte nicht geladen werden.`);
-                    }
-                }
+                eventMap = await this.fetcher.get(this._options.eventPath, {}, { signal: initSignal }) || {};
             } catch (e) {
-                if (e.name !== 'AbortError') {
+                if (e.name !== 'AbortError' && !this.signal.aborted) {
                     console.error(`Aspis [BaseController]: Fehler beim Laden von '${this._options.eventPath}':`, e);
                 }
+            } finally {
+                this.clearTask('initEvents');
             }
         }
 
@@ -1840,6 +1886,28 @@ class BaseController {
         });
     }
 
+    #initDomDependencies() {
+        if (!this._container || !this._store || typeof this._store.addDependency !== 'function') return;
+
+        const elements = [];
+        if (this._container.dataset?.dependsOn) {
+            elements.push(this._container);
+        }
+
+        const childElements = this._container.querySelectorAll('[data-depends-on]');
+        elements.push(...childElements);
+
+        elements.forEach(element => {
+            const rawAttr = element.dataset.dependsOn;
+            if (!rawAttr) return;
+
+            const paths = rawAttr.split(/[\s,]+/).map(p => p.trim()).filter(Boolean);
+            paths.forEach(path => {
+                this._store.addDependency(element, path);
+            });
+        });
+    }
+
     destroy() {
         this.#lifecycleController.abort("Controller zerstört.");
         for (const taskCtrl of this.#taskControllers.values()) {
@@ -1853,6 +1921,12 @@ class BaseController {
         }
         this.#unsubscribeEvents.forEach(unsub => unsub());
         this.#unsubscribeEvents = [];
+
+        if (this._store && typeof this._store.removeDomDependencies === 'function' && this._container) {
+            this._store.removeDomDependencies(this._container);
+            const childElements = this._container.querySelectorAll('[data-depends-on]');
+            childElements.forEach(child => this._store.removeDomDependencies(child));
+        }
 
         try {
             if (typeof this.onDestroy === 'function') {
@@ -1938,8 +2012,6 @@ class BaseModel {
         throw new Error(`Aspis [BaseModel]: '${this.constructor.name}' muss die Methode 'toRenderData()' implementieren.`);
     }
 }
-
-
 
 class ModelLoader extends BaseModel {
     #message;
@@ -2031,7 +2103,7 @@ class ControllerTable extends BaseController {
     }
 
     onStateChange(slice) {
-        if (slice && slice.model && this.#model !== slice.model) {
+        if (slice?.model && this.#model !== slice.model) {
             this.#model = slice.model;
             this.#render();
         }
@@ -2041,24 +2113,27 @@ class ControllerTable extends BaseController {
         const stateProxy = this._store?.getSlice(this._sliceKey);
         if (!stateProxy) return;
 
+        // Erzeugt ein Signal, das sowohl bei Controller-Destroy ALS AUCH bei erneutem loadData() feuert
+        const signal = this.getSignal('loadData');
+
         try {
             this.setLoadingState(stateProxy, 'Tabelle wird geladen...');
-            
-            const liveData = await this.fetcher.get(url, {}, { signal: this.getSignal('loadData') });
 
-            if (this.signal.aborted) return;
+            const liveData = await this.fetcher.get(url, {}, { signal });
+
+            if (signal.aborted) return;
 
             if (liveData) {
                 const layout = this._container.dataset.layout || this._options?.layout || 'default';
                 stateProxy.model = new ModelTable(liveData, { layout });
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
+            if (error.name !== 'AbortError' && !signal.aborted) {
                 stateProxy.error = error.message;
                 console.error("[ControllerTable]: Fehler im loadData-Ablauf", error);
             }
         } finally {
-            if (stateProxy) {
+            if (stateProxy && !signal.aborted) {
                 stateProxy.isLoading = false;
             }
             this.clearTask('loadData');
@@ -2066,7 +2141,7 @@ class ControllerTable extends BaseController {
     }
 
     reload(filterPayload = {}) {
-        const baseUrl = this._container.dataset.url;
+        const baseUrl = this._container?.dataset?.url;
         if (!baseUrl) return;
 
         try {
@@ -2085,7 +2160,8 @@ class ControllerTable extends BaseController {
     }
 
     async #render() {
-        if (!this.#model) return;
+        if (!this.#model || this.signal.aborted) return;
+
         try {
             let templateName = this._container.dataset.template || "meine-tabelle";
 
@@ -2095,12 +2171,16 @@ class ControllerTable extends BaseController {
 
             if (typeof RenderService !== 'undefined' && typeof RenderService.paste === 'function') {
                 await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+
+                if (this.signal.aborted) return;
                 console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
             } else {
                 console.warn("[ControllerTable]: RenderService ist nicht verfügbar.");
             }
         } catch (error) {
-            console.error("[ControllerTable]: Render-Fehler", error);
+            if (!this.signal.aborted) {
+                console.error("[ControllerTable]: Render-Fehler", error);
+            }
         }
     }
 }
@@ -2203,13 +2283,77 @@ class ControllerAccordion extends BaseController {
     }
 
     onStateChange(slice) {
-        if (slice && slice.model && this.#model !== slice.model) {
+        if (slice?.model && this.#model !== slice.model) {
             this.#model = slice.model;
             this.#renderFull();
         }
     }
 
+    async loadData(url) {
+        const stateProxy = this._store?.getSlice(this._sliceKey);
+        const signal = this.getSignal('loadData');
+
+        try {
+            if (stateProxy) {
+                this.setLoadingState(stateProxy, 'Akkordeon-Inhalte werden geladen...');
+            }
+
+            const liveData = await this.fetcher.get(url, {}, { signal });
+
+            if (signal.aborted) return;
+
+            if (liveData) {
+                const layout = this._container.dataset.layout || this._options?.layout || 'default';
+                const singleOpen = this._container.dataset.singleOpen === 'true';
+
+                if (typeof ModelAccordion !== 'undefined') {
+                    this.#model = new ModelAccordion(liveData, { layout, singleOpen });
+                }
+
+                if (stateProxy) {
+                    stateProxy.model = this.#model;
+                }
+
+                await this.#renderFull();
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError' && !signal.aborted) {
+                if (stateProxy) stateProxy.error = error.message;
+                console.error("[ControllerAccordion]: Fehler im loadData-Ablauf", error);
+            }
+        } finally {
+            if (stateProxy && !signal.aborted) {
+                stateProxy.isLoading = false;
+            }
+            this.clearTask('loadData');
+        }
+    }
+
+    toggle(itemId) {
+        if (!this.#model) return;
+
+        const toggledItem = this.#model.toggleItem(itemId);
+        if (!toggledItem) return;
+
+        if (this.#model.singleOpen) {
+            this.#model.items.forEach(item => this.#updateItemUI(item));
+        } else {
+            this.#updateItemUI(toggledItem);
+        }
+
+        if (this._dispatcher) {
+            this._dispatcher.emit('accordion:toggle', {
+                id: toggledItem.id,
+                isOpen: toggledItem.isOpen,
+                item: typeof toggledItem.toRenderData === 'function' ? toggledItem.toRenderData() : toggledItem,
+                container: this._container
+            });
+        }
+    }
+
     #scanDOMAndBuildModel() {
+        if (!this._container) return;
+
         const itemEls = this._container.querySelectorAll('[data-accordion-item]');
         const rawItems = [];
 
@@ -2238,6 +2382,7 @@ class ControllerAccordion extends BaseController {
     #bindDOMEvents() {
         if (!this._container) return;
 
+        // Nutzt this.signal: Entfernt Event-Listener automatisch bei Controller.destroy()
         this._container.addEventListener('click', (e) => {
             const trigger = e.target.closest('[data-target="trigger"]');
             if (!trigger) return;
@@ -2256,6 +2401,8 @@ class ControllerAccordion extends BaseController {
     }
 
     #handleKeyDown(e) {
+        if (!this._container) return;
+
         const triggers = Array.from(this._container.querySelectorAll('[data-target="trigger"]:not([disabled])'));
         if (triggers.length === 0) return;
 
@@ -2289,66 +2436,9 @@ class ControllerAccordion extends BaseController {
         }
     }
 
-    async loadData(url) {
-        const stateProxy = this._store?.getSlice(this._sliceKey);
-
-        try {
-            if (stateProxy) {
-                this.setLoadingState(stateProxy, 'Akkordeon-Inhalte werden geladen...');
-            }
-
-            const liveData = await this.fetcher.get(url, {}, { signal: this.getSignal('loadData') });
-
-            if (this.signal.aborted) return;
-
-            if (liveData) {
-                const layout = this._container.dataset.layout || this._options?.layout || 'default';
-                const singleOpen = this._container.dataset.singleOpen === 'true';
-
-                if (typeof ModelAccordion !== 'undefined') {
-                    this.#model = new ModelAccordion(liveData, { layout, singleOpen });
-                }
-
-                if (stateProxy) {
-                    stateProxy.model = this.#model;
-                }
-
-                await this.#renderFull();
-            }
-        } catch (error) {
-            if (error.name !== 'AbortError') {
-                if (stateProxy) stateProxy.error = error.message;
-                console.error("[ControllerAccordion]: Fehler im loadData-Ablauf", error);
-            }
-        } finally {
-            if (stateProxy) stateProxy.isLoading = false;
-            this.clearTask('loadData');
-        }
-    }
-
-    toggle(itemId) {
-        if (!this.#model) return;
-
-        const toggledItem = this.#model.toggleItem(itemId);
-        if (!toggledItem) return;
-
-        if (this.#model.singleOpen) {
-            this.#model.items.forEach(item => this.#updateItemUI(item));
-        } else {
-            this.#updateItemUI(toggledItem);
-        }
-
-        if (this._dispatcher) {
-            this._dispatcher.emit('accordion:toggle', {
-                id: toggledItem.id,
-                isOpen: toggledItem.isOpen,
-                item: toggledItem.toRenderData(),
-                container: this._container
-            });
-        }
-    }
-
     #updateItemUI(item) {
+        if (!this._container) return;
+
         const itemEl = this._container.querySelector(`[data-accordion-item][data-id="${CSS.escape(item.id)}"]`) 
                     || this._container.querySelector(`#${CSS.escape(item.id)}`);
         
@@ -2375,7 +2465,7 @@ class ControllerAccordion extends BaseController {
     }
 
     async #renderFull() {
-        if (!this.#model) return;
+        if (!this.#model || this.signal.aborted) return;
 
         try {
             let templateName = this._container.dataset.template || "accordion-component";
@@ -2386,12 +2476,16 @@ class ControllerAccordion extends BaseController {
 
             if (typeof RenderService !== 'undefined' && typeof RenderService.paste === 'function') {
                 await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+
+                if (this.signal.aborted) return;
                 console.log(`[ControllerAccordion]: HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
             } else {
                 console.warn("[ControllerAccordion]: RenderService ist nicht verfügbar.");
             }
         } catch (error) {
-            console.error("[ControllerAccordion]: Render-Fehler", error);
+            if (!this.signal.aborted) {
+                console.error("[ControllerAccordion]: Render-Fehler", error);
+            }
         }
     }
 }
@@ -2548,8 +2642,9 @@ class ControllerForm extends BaseController {
     }
 
     #initializeFormModel() {
-        const initialFields = {};
+        if (!this._container) return;
 
+        const initialFields = {};
         const formElements = this._container.querySelectorAll('input, select, textarea, [data-name]');
 
         formElements.forEach(el => {
@@ -2604,6 +2699,8 @@ class ControllerForm extends BaseController {
     }
 
     #bindFormEvents() {
+        if (!this._container) return;
+
         this._container.addEventListener('input', (e) => this.#handleInput(e), { signal: this.signal });
         this._container.addEventListener('change', (e) => this.#handleChange(e), { signal: this.signal });
         this._container.addEventListener('focusout', (e) => this.#handleBlur(e), { signal: this.signal });
@@ -2681,7 +2778,7 @@ class ControllerForm extends BaseController {
     }
 
     updateFieldUI(name) {
-        if (!this.#model) return;
+        if (!this.#model || !this._container) return;
 
         const field = this.#model.getField(name);
         if (!field) return;
@@ -2715,7 +2812,7 @@ class ControllerForm extends BaseController {
     }
 
     async submit() {
-        if (!this.#model || this.#model.isSubmitting) return;
+        if (!this.#model || this.#model.isSubmitting || !this._container) return;
 
         const isValid = this.#model.validateAll();
         const payload = this.#model.toPayload();
@@ -2736,13 +2833,13 @@ class ControllerForm extends BaseController {
 
         try {
             let response;
-            if (typeof this.fetcher.request === 'function') {
+            if (typeof this.fetcher?.request === 'function') {
                 response = await this.fetcher.request(url, {
                     method: method,
                     body: payload,
                     signal: submitSignal
                 });
-            } else if (method === 'POST' && typeof this.fetcher.post === 'function') {
+            } else if (method === 'POST' && typeof this.fetcher?.post === 'function') {
                 response = await this.fetcher.post(url, payload, { signal: submitSignal });
             } else {
                 const res = await fetch(url, {
@@ -2755,7 +2852,7 @@ class ControllerForm extends BaseController {
                 response = await res.json();
             }
 
-            if (this.signal.aborted) return;
+            if (submitSignal.aborted || this.signal.aborted) return;
 
             this.#model.setSubmitResult(true);
             this.#showFormMessage('Formular erfolgreich abgesendet!', 'success');
@@ -2769,7 +2866,7 @@ class ControllerForm extends BaseController {
             }
 
         } catch (error) {
-            if (error.name !== 'AbortError' && !this.signal.aborted) {
+            if (error.name !== 'AbortError' && !submitSignal.aborted && !this.signal.aborted) {
                 const errorMsg = error.message || 'Beim Absenden ist ein Fehler aufgetreten.';
                 this.#model.setSubmitResult(false, errorMsg);
                 this.#showFormMessage(errorMsg, 'error');
@@ -2788,34 +2885,34 @@ class ControllerForm extends BaseController {
     }
 
     reset() {
-        if (this.#model) {
-            this.#model.reset();
-            if (typeof this._container.reset === 'function') {
-                this._container.reset();
-            }
+        if (!this.#model || !this._container) return;
 
-            const fields = this.#model.toPayload();
-            Object.keys(fields).forEach(name => {
-                const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
-                const fieldEl = this._container.querySelector(`[name="${escapedName}"]`);
-                if (fieldEl) {
-                    const wrapper = fieldEl.closest('.form-group') || fieldEl.parentElement;
-                    if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.removeClass === 'function') {
-                        ModifierDOM.removeClass(wrapper, 'has-error');
-                        ModifierDOM.removeClass(fieldEl, 'is-invalid');
-                    } else {
-                        if (wrapper) wrapper.classList.remove('has-error');
-                        fieldEl.classList.remove('is-invalid');
-                    }
-                }
-            });
-
-            this.#hideFormMessage();
+        this.#model.reset();
+        if (typeof this._container.reset === 'function') {
+            this._container.reset();
         }
+
+        const fields = this.#model.toPayload();
+        Object.keys(fields).forEach(name => {
+            const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+            const fieldEl = this._container.querySelector(`[name="${escapedName}"]`);
+            if (fieldEl) {
+                const wrapper = fieldEl.closest('.form-group') || fieldEl.parentElement;
+                if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.removeClass === 'function') {
+                    ModifierDOM.removeClass(wrapper, 'has-error');
+                    ModifierDOM.removeClass(fieldEl, 'is-invalid');
+                } else {
+                    if (wrapper) wrapper.classList.remove('has-error');
+                    fieldEl.classList.remove('is-invalid');
+                }
+            }
+        });
+
+        this.#hideFormMessage();
     }
 
     #focusFirstInvalidField() {
-        if (!this.#model) return;
+        if (!this.#model || !this._container) return;
         const errors = this.#model.getErrors();
         const firstErrorName = Object.keys(errors)[0];
         if (firstErrorName) {
@@ -2828,6 +2925,8 @@ class ControllerForm extends BaseController {
     }
 
     #toggleSubmittingUI(isSubmitting) {
+        if (!this._container) return;
+
         const submitBtn = this._container.querySelector('[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = isSubmitting;
@@ -2846,6 +2945,8 @@ class ControllerForm extends BaseController {
     }
 
     #showFormMessage(msg, type = 'error') {
+        if (!this._container) return;
+
         const msgEl = this._container.querySelector('[data-target="form-message"]');
         if (msgEl) {
             msgEl.textContent = msg;
@@ -2860,6 +2961,8 @@ class ControllerForm extends BaseController {
     }
 
     #hideFormMessage() {
+        if (!this._container) return;
+
         const msgEl = this._container.querySelector('[data-target="form-message"]');
         if (msgEl) {
             if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.addClass === 'function') {
@@ -3233,7 +3336,7 @@ class ControllerCustomDropdown extends BaseController {
         if (!this.#model) return;
 
         const isValid = this.#model.validate();
-        
+
         if (typeof ModifierDOM !== 'undefined') {
             ModifierDOM.toggleClass(this._container, 'is-invalid', !isValid);
             ModifierDOM.toggleClass(this._container, 'is-valid', isValid && this.#model.value !== '');

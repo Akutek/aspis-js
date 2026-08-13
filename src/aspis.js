@@ -1685,6 +1685,7 @@ class ValidationService {
         return errors;
     }
 }
+
 // ----------------------------------------------------------------------------
 
 class BaseController {
@@ -1713,6 +1714,19 @@ class BaseController {
 
     get signal() {
         return this.#lifecycleController.signal;
+    }
+    get fetcher() {
+        if (this._options?.fetcher) return this._options.fetcher;
+        if (typeof window !== 'undefined' && window.appRegistry?.has('fetcher')) {
+            return window.appRegistry.get('fetcher');
+        }
+        return {
+            get: async (url, params, opts) => {
+                const res = await fetch(url, opts);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res.json();
+            }
+        };
     }
 
     getSignal(taskKey = null) {
@@ -1748,12 +1762,20 @@ class BaseController {
         }
     }
 
+    async onInit() {
+        if (!this._container) {
+            throw new Error(`Aspis [${this.constructor.name}]: Kein Container-Element übergeben.`);
+        }
+    }
+
     async start() {
         await this.#initEvents();
         if (this.signal.aborted) return;
+
         if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
             this.#unsubscribeStore = this._store.effect(() => {
-                if (!this._store) return;
+                if (!this._store || this.signal.aborted) return;
+
                 const slice = typeof this._store.getSlice === 'function' 
                     ? this._store.getSlice(this._sliceKey) 
                     : null;
@@ -1765,9 +1787,10 @@ class BaseController {
         }
 
         if (this.signal.aborted) return;
-        if (typeof this.onInit === 'function') {
-            await this.onInit();
-        }
+
+        await this.onInit();
+
+        if (this.signal.aborted) return;
     }
 
     async #initEvents() {
@@ -1916,6 +1939,8 @@ class BaseModel {
     }
 }
 
+
+
 class ModelLoader extends BaseModel {
     #message;
 
@@ -1986,7 +2011,6 @@ class ModelLoadingBar extends ModelLoader {
 }
 
 class ControllerTable extends BaseController {
-    #api = null;
     #model = null;
 
     constructor(container, store, dispatcher, options = {}) {
@@ -1995,7 +2019,8 @@ class ControllerTable extends BaseController {
     }
 
     async onInit() {
-        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+        await super.onInit();
+        if (this.signal.aborted) return;
 
         const url = this._container.dataset.url;
         if (!url) {
@@ -2018,7 +2043,10 @@ class ControllerTable extends BaseController {
 
         try {
             this.setLoadingState(stateProxy, 'Tabelle wird geladen...');
-            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
+            
+            const liveData = await this.fetcher.get(url, {}, { signal: this.getSignal('loadData') });
+
+            if (this.signal.aborted) return;
 
             if (liveData) {
                 const layout = this._container.dataset.layout || this._options?.layout || 'default';
@@ -2030,7 +2058,9 @@ class ControllerTable extends BaseController {
                 console.error("[ControllerTable]: Fehler im loadData-Ablauf", error);
             }
         } finally {
-            stateProxy.isLoading = false;
+            if (stateProxy) {
+                stateProxy.isLoading = false;
+            }
             this.clearTask('loadData');
         }
     }
@@ -2059,12 +2089,16 @@ class ControllerTable extends BaseController {
         try {
             let templateName = this._container.dataset.template || "meine-tabelle";
 
-            if (this.#model instanceof ModelLoader) {
+            if (typeof ModelLoader !== 'undefined' && this.#model instanceof ModelLoader) {
                 templateName = this._container.dataset.loaderTemplate || "defaultSpinner";
             }
 
-            await RenderService.paste(this._container, templateName, this.#model.toRenderData());
-            console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
+            if (typeof RenderService !== 'undefined' && typeof RenderService.paste === 'function') {
+                await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+                console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
+            } else {
+                console.warn("[ControllerTable]: RenderService ist nicht verfügbar.");
+            }
         } catch (error) {
             console.error("[ControllerTable]: Render-Fehler", error);
         }
@@ -2145,7 +2179,6 @@ class ModelTable extends BaseModel {
 }
 
 class ControllerAccordion extends BaseController {
-    #api = null;
     #model = null;
 
     constructor(container, store, dispatcher, options = {}) {
@@ -2154,7 +2187,8 @@ class ControllerAccordion extends BaseController {
     }
 
     async onInit() {
-        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+        await super.onInit();
+        if (this.signal.aborted) return;
 
         const url = this._container.dataset.url;
         if (url) {
@@ -2162,6 +2196,8 @@ class ControllerAccordion extends BaseController {
         } else {
             this.#scanDOMAndBuildModel();
         }
+
+        if (this.signal.aborted) return;
 
         this.#bindDOMEvents();
     }
@@ -2194,7 +2230,9 @@ class ControllerAccordion extends BaseController {
         const singleOpen = this._container.dataset.singleOpen === 'true';
         const layout = this._container.dataset.layout || this._options?.layout || 'default';
 
-        this.#model = new ModelAccordion(rawItems, { layout, singleOpen });
+        if (typeof ModelAccordion !== 'undefined') {
+            this.#model = new ModelAccordion(rawItems, { layout, singleOpen });
+        }
     }
 
     #bindDOMEvents() {
@@ -2259,13 +2297,17 @@ class ControllerAccordion extends BaseController {
                 this.setLoadingState(stateProxy, 'Akkordeon-Inhalte werden geladen...');
             }
 
-            const liveData = await this.#api.get(url, {}, { signal: this.getSignal('loadData') });
+            const liveData = await this.fetcher.get(url, {}, { signal: this.getSignal('loadData') });
+
+            if (this.signal.aborted) return;
 
             if (liveData) {
                 const layout = this._container.dataset.layout || this._options?.layout || 'default';
                 const singleOpen = this._container.dataset.singleOpen === 'true';
 
-                this.#model = new ModelAccordion(liveData, { layout, singleOpen });
+                if (typeof ModelAccordion !== 'undefined') {
+                    this.#model = new ModelAccordion(liveData, { layout, singleOpen });
+                }
 
                 if (stateProxy) {
                     stateProxy.model = this.#model;
@@ -2315,15 +2357,20 @@ class ControllerAccordion extends BaseController {
         const triggerEl = itemEl.querySelector('[data-target="trigger"]');
         const panelEl = itemEl.querySelector('[data-target="panel"]');
 
-        ModifierDOM.toggleClass(itemEl, 'is-open', item.isOpen);
-
-        if (triggerEl) {
-            ModifierDOM.attr(triggerEl, 'aria-expanded', item.isOpen);
-        }
-
-        if (panelEl) {
-            ModifierDOM.toggleClass(panelEl, 'is-hidden', !item.isOpen);
-            ModifierDOM.attr(panelEl, 'aria-hidden', !item.isOpen);
+        if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleClass === 'function') {
+            ModifierDOM.toggleClass(itemEl, 'is-open', item.isOpen);
+            if (triggerEl) ModifierDOM.attr(triggerEl, 'aria-expanded', item.isOpen);
+            if (panelEl) {
+                ModifierDOM.toggleClass(panelEl, 'is-hidden', !item.isOpen);
+                ModifierDOM.attr(panelEl, 'aria-hidden', !item.isOpen);
+            }
+        } else {
+            itemEl.classList.toggle('is-open', Boolean(item.isOpen));
+            if (triggerEl) triggerEl.setAttribute('aria-expanded', String(item.isOpen));
+            if (panelEl) {
+                panelEl.classList.toggle('is-hidden', !item.isOpen);
+                panelEl.setAttribute('aria-hidden', String(!item.isOpen));
+            }
         }
     }
 
@@ -2333,12 +2380,16 @@ class ControllerAccordion extends BaseController {
         try {
             let templateName = this._container.dataset.template || "accordion-component";
 
-            if (this.#model instanceof ModelLoader) {
+            if (typeof ModelLoader !== 'undefined' && this.#model instanceof ModelLoader) {
                 templateName = this._container.dataset.loaderTemplate || "defaultSpinner";
             }
 
-            await RenderService.paste(this._container, templateName, this.#model.toRenderData());
-            console.log(`[ControllerAccordion]: HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
+            if (typeof RenderService !== 'undefined' && typeof RenderService.paste === 'function') {
+                await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+                console.log(`[ControllerAccordion]: HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
+            } else {
+                console.warn("[ControllerAccordion]: RenderService ist nicht verfügbar.");
+            }
         } catch (error) {
             console.error("[ControllerAccordion]: Render-Fehler", error);
         }
@@ -2477,7 +2528,6 @@ class ModelAccordion extends BaseModel {
 }
 
 class ControllerForm extends BaseController {
-    #api = null;
     #model = null;
     #validateOnBlur = true;
     #validateOnChange = false;
@@ -2490,7 +2540,9 @@ class ControllerForm extends BaseController {
     }
 
     async onInit() {
-        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+        await super.onInit();
+        if (this.signal.aborted) return;
+
         this.#initializeFormModel();
         this.#bindFormEvents();
     }
@@ -2501,11 +2553,16 @@ class ControllerForm extends BaseController {
         const formElements = this._container.querySelectorAll('input, select, textarea, [data-name]');
 
         formElements.forEach(el => {
-            const name = FormFieldService.getFieldName(el);
+            const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+                ? FormFieldService.getFieldName(el)
+                : (el.name || el.dataset.name);
+
             if (!name || initialFields[name]) return;
 
-            const val = FormFieldService.getValue(el);
-            
+            const val = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getValue === 'function'
+                ? FormFieldService.getValue(el)
+                : el.value;
+
             const rules = this.#extractRulesFromElement(el);
 
             initialFields[name] = {
@@ -2514,7 +2571,9 @@ class ControllerForm extends BaseController {
             };
         });
 
-        this.#model = new ModelForm(initialFields, { layout: this._options?.layout });
+        if (typeof ModelForm !== 'undefined') {
+            this.#model = new ModelForm(initialFields, { layout: this._options?.layout });
+        }
     }
 
     #extractRulesFromElement(el) {
@@ -2564,32 +2623,56 @@ class ControllerForm extends BaseController {
     }
 
     #handleInput(e) {
-        const name = FormFieldService.getFieldName(e.target);
-        if (!name) return;
+        const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+            ? FormFieldService.getFieldName(e.target)
+            : (e.target.name || e.target.dataset.name);
+
+        if (!name || !this.#model) return;
+
+        const val = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getValue === 'function'
+            ? FormFieldService.getValue(e.target)
+            : e.target.value;
 
         if (this.#validateOnChange) {
-            this.#updateField(name, FormFieldService.getValue(e.target), true);
+            this.#updateField(name, val, true);
         } else {
-            this.#model.setFieldValue(name, FormFieldService.getValue(e.target), false);
+            this.#model.setFieldValue(name, val, false);
         }
     }
 
     #handleChange(e) {
-        const name = FormFieldService.getFieldName(e.target);
-        if (name) {
-            this.#updateField(name, FormFieldService.getValue(e.target), true);
+        const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+            ? FormFieldService.getFieldName(e.target)
+            : (e.target.name || e.target.dataset.name);
+
+        if (name && this.#model) {
+            const val = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getValue === 'function'
+                ? FormFieldService.getValue(e.target)
+                : e.target.value;
+
+            this.#updateField(name, val, true);
         }
     }
 
     #handleBlur(e) {
-        if (!this.#validateOnBlur) return;
-        const name = FormFieldService.getFieldName(e.target);
+        if (!this.#validateOnBlur || !this.#model) return;
+
+        const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+            ? FormFieldService.getFieldName(e.target)
+            : (e.target.name || e.target.dataset.name);
+
         if (name) {
-            this.#updateField(name, FormFieldService.getValue(e.target), true);
+            const val = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getValue === 'function'
+                ? FormFieldService.getValue(e.target)
+                : e.target.value;
+
+            this.#updateField(name, val, true);
         }
     }
 
     #updateField(name, value, triggerValidation = true) {
+        if (!this.#model) return;
+
         this.#model.setFieldValue(name, value, true);
 
         if (triggerValidation) {
@@ -2598,32 +2681,45 @@ class ControllerForm extends BaseController {
     }
 
     updateFieldUI(name) {
+        if (!this.#model) return;
+
         const field = this.#model.getField(name);
         if (!field) return;
 
-        const fieldEl = this._container.querySelector(`[name="${CSS.escape(name)}"], [data-name="${CSS.escape(name)}"]`);
+        const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+        const fieldEl = this._container.querySelector(`[name="${escapedName}"], [data-name="${escapedName}"]`);
         if (!fieldEl) return;
 
         const wrapper = fieldEl.closest('.form-group') || fieldEl.parentElement;
         const hasError = Boolean(field.error && field.isTouched);
 
-        ModifierDOM.toggleClass(wrapper, 'has-error', hasError);
-        ModifierDOM.toggleClass(fieldEl, 'is-invalid', hasError);
-        ModifierDOM.attr(fieldEl, 'aria-invalid', hasError);
+        if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleClass === 'function') {
+            ModifierDOM.toggleClass(wrapper, 'has-error', hasError);
+            ModifierDOM.toggleClass(fieldEl, 'is-invalid', hasError);
+            ModifierDOM.attr(fieldEl, 'aria-invalid', hasError);
+        } else {
+            if (wrapper) wrapper.classList.toggle('has-error', hasError);
+            fieldEl.classList.toggle('is-invalid', hasError);
+            fieldEl.setAttribute('aria-invalid', String(hasError));
+        }
 
-        const errorEl = wrapper.querySelector('[data-target="field-error"]') || wrapper.querySelector('.error-message');
+        const errorEl = wrapper?.querySelector('[data-target="field-error"]') || wrapper?.querySelector('.error-message');
         if (errorEl) {
             errorEl.textContent = hasError ? field.error : '';
-            ModifierDOM.toggleClass(errorEl, 'is-hidden', !hasError);
+            if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleClass === 'function') {
+                ModifierDOM.toggleClass(errorEl, 'is-hidden', !hasError);
+            } else {
+                errorEl.classList.toggle('is-hidden', !hasError);
+            }
         }
     }
 
     async submit() {
-        if (this.#model.isSubmitting) return;
+        if (!this.#model || this.#model.isSubmitting) return;
 
         const isValid = this.#model.validateAll();
-
         const payload = this.#model.toPayload();
+
         Object.keys(payload).forEach(name => this.updateFieldUI(name));
 
         if (!isValid) {
@@ -2636,13 +2732,30 @@ class ControllerForm extends BaseController {
 
         const url = this._container.action || this._container.dataset.url;
         const method = (this._container.method || this._container.dataset.method || 'POST').toUpperCase();
+        const submitSignal = this.getSignal('formSubmit');
 
         try {
-            const response = await this.#api.request(url, {
-                method: method,
-                body: this.#model.toPayload(),
-                signal: this.getSignal('formSubmit')
-            });
+            let response;
+            if (typeof this.fetcher.request === 'function') {
+                response = await this.fetcher.request(url, {
+                    method: method,
+                    body: payload,
+                    signal: submitSignal
+                });
+            } else if (method === 'POST' && typeof this.fetcher.post === 'function') {
+                response = await this.fetcher.post(url, payload, { signal: submitSignal });
+            } else {
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    signal: submitSignal
+                });
+                if (!res.ok) throw new Error(`HTTP Fehler ${res.status}`);
+                response = await res.json();
+            }
+
+            if (this.signal.aborted) return;
 
             this.#model.setSubmitResult(true);
             this.#showFormMessage('Formular erfolgreich abgesendet!', 'success');
@@ -2656,7 +2769,7 @@ class ControllerForm extends BaseController {
             }
 
         } catch (error) {
-            if (error.name !== 'AbortError') {
+            if (error.name !== 'AbortError' && !this.signal.aborted) {
                 const errorMsg = error.message || 'Beim Absenden ist ein Fehler aufgetreten.';
                 this.#model.setSubmitResult(false, errorMsg);
                 this.#showFormMessage(errorMsg, 'error');
@@ -2666,7 +2779,10 @@ class ControllerForm extends BaseController {
                 }
             }
         } finally {
-            this.#toggleSubmittingUI(false);
+            if (!this.signal.aborted && this.#model) {
+                this.#model.setSubmitting(false);
+                this.#toggleSubmittingUI(false);
+            }
             this.clearTask('formSubmit');
         }
     }
@@ -2680,11 +2796,17 @@ class ControllerForm extends BaseController {
 
             const fields = this.#model.toPayload();
             Object.keys(fields).forEach(name => {
-                const fieldEl = this._container.querySelector(`[name="${CSS.escape(name)}"]`);
+                const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(name) : name;
+                const fieldEl = this._container.querySelector(`[name="${escapedName}"]`);
                 if (fieldEl) {
                     const wrapper = fieldEl.closest('.form-group') || fieldEl.parentElement;
-                    ModifierDOM.removeClass(wrapper, 'has-error');
-                    ModifierDOM.removeClass(fieldEl, 'is-invalid');
+                    if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.removeClass === 'function') {
+                        ModifierDOM.removeClass(wrapper, 'has-error');
+                        ModifierDOM.removeClass(fieldEl, 'is-invalid');
+                    } else {
+                        if (wrapper) wrapper.classList.remove('has-error');
+                        fieldEl.classList.remove('is-invalid');
+                    }
                 }
             });
 
@@ -2693,10 +2815,12 @@ class ControllerForm extends BaseController {
     }
 
     #focusFirstInvalidField() {
+        if (!this.#model) return;
         const errors = this.#model.getErrors();
         const firstErrorName = Object.keys(errors)[0];
         if (firstErrorName) {
-            const el = this._container.querySelector(`[name="${CSS.escape(firstErrorName)}", [data-name="${CSS.escape(firstErrorName)}"]`);
+            const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(firstErrorName) : firstErrorName;
+            const el = this._container.querySelector(`[name="${escapedName}"], [data-name="${escapedName}"]`);
             if (el && typeof el.focus === 'function') {
                 el.focus();
             }
@@ -2707,24 +2831,42 @@ class ControllerForm extends BaseController {
         const submitBtn = this._container.querySelector('[type="submit"]');
         if (submitBtn) {
             submitBtn.disabled = isSubmitting;
-            ModifierDOM.toggleClass(submitBtn, 'is-loading', isSubmitting);
+            if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleClass === 'function') {
+                ModifierDOM.toggleClass(submitBtn, 'is-loading', isSubmitting);
+            } else {
+                submitBtn.classList.toggle('is-loading', isSubmitting);
+            }
         }
-        ModifierDOM.toggleClass(this._container, 'is-submitting', isSubmitting);
+
+        if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.toggleClass === 'function') {
+            ModifierDOM.toggleClass(this._container, 'is-submitting', isSubmitting);
+        } else {
+            this._container.classList.toggle('is-submitting', isSubmitting);
+        }
     }
 
     #showFormMessage(msg, type = 'error') {
         const msgEl = this._container.querySelector('[data-target="form-message"]');
         if (msgEl) {
             msgEl.textContent = msg;
-            ModifierDOM.removeClass(msgEl, 'is-hidden success error');
-            ModifierDOM.addClass(msgEl, type);
+            if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.removeClass === 'function') {
+                ModifierDOM.removeClass(msgEl, 'is-hidden success error');
+                ModifierDOM.addClass(msgEl, type);
+            } else {
+                msgEl.classList.remove('is-hidden', 'success', 'error');
+                msgEl.classList.add(type);
+            }
         }
     }
 
     #hideFormMessage() {
         const msgEl = this._container.querySelector('[data-target="form-message"]');
         if (msgEl) {
-            ModifierDOM.addClass(msgEl, 'is-hidden');
+            if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.addClass === 'function') {
+                ModifierDOM.addClass(msgEl, 'is-hidden');
+            } else {
+                msgEl.classList.add('is-hidden');
+            }
         }
     }
 }
@@ -2858,9 +3000,7 @@ class ModelForm extends BaseModel {
     }
 }
 
-
 class ControllerCustomDropdown extends BaseController {
-    #api = null;
     #model = null;
     #clickOutsideUnsub = null;
 
@@ -2870,16 +3010,28 @@ class ControllerCustomDropdown extends BaseController {
     }
 
     async onInit() {
-        this.#api = window.appRegistry ? window.appRegistry.get('fetcher') : new DatenFetcher();
+        await super.onInit();
+        if (this.signal.aborted) return;
 
         const initialVal = this._container.dataset.value || '';
-        const rules = this._container.dataset.rules ? JSON.parse(this._container.dataset.rules) : {};
+        let rules = {};
+        if (this._container.dataset.rules) {
+            try {
+                rules = JSON.parse(this._container.dataset.rules);
+            } catch (e) {
+                console.warn('[ControllerCustomDropdown]: Ungültiges JSON in data-rules', e);
+            }
+        }
         
-        this.#model = new ModelCustomDropdown([], { 
-            layout: this._options?.layout || this._container.dataset.layout || 'default',
-            value: initialVal,
-            rules: rules
-        });
+        const layout = this._options?.layout || this._container.dataset.layout || 'default';
+
+        if (typeof ModelCustomDropdown !== 'undefined') {
+            this.#model = new ModelCustomDropdown([], { 
+                layout: layout,
+                value: initialVal,
+                rules: rules
+            });
+        }
 
         this.#bindDOMEvents();
 
@@ -2902,8 +3054,11 @@ class ControllerCustomDropdown extends BaseController {
         try {
             if (stateProxy) this.setLoadingState(stateProxy, 'Optionen laden...');
 
-            const data = await this.#api.get(url, {}, { signal: this.getSignal('loadOptions') });
-            if (data) {
+            const data = await this.fetcher.get(url, {}, { signal: this.getSignal('loadOptions') });
+
+            if (this.signal.aborted) return;
+
+            if (data && this.#model) {
                 this.#model.setOptions(data);
                 if (stateProxy) stateProxy.model = this.#model;
                 await this.#renderFull();
@@ -2921,8 +3076,13 @@ class ControllerCustomDropdown extends BaseController {
     #bindDOMEvents() {
         if (!this._container) return;
 
-        ModifierDOM.attr(this._container, 'tabindex', '0');
-        ModifierDOM.attr(this._container, 'role', 'combobox');
+        if (typeof ModifierDOM !== 'undefined' && typeof ModifierDOM.attr === 'function') {
+            ModifierDOM.attr(this._container, 'tabindex', '0');
+            ModifierDOM.attr(this._container, 'role', 'combobox');
+        } else {
+            this._container.setAttribute('tabindex', '0');
+            this._container.setAttribute('role', 'combobox');
+        }
 
         this._container.addEventListener('click', (e) => {
             const trigger = e.target.closest('[data-target="trigger"]');
@@ -2999,12 +3159,19 @@ class ControllerCustomDropdown extends BaseController {
         this.#model.setOpen(true);
         const listEl = this._container.querySelector('[data-target="list"]');
 
-        ModifierDOM.show(listEl);
-        ModifierDOM.addClass(this._container, 'is-open');
-        ModifierDOM.attr(this._container, 'aria-expanded', 'true');
+        if (typeof ModifierDOM !== 'undefined') {
+            if (listEl) ModifierDOM.show(listEl);
+            ModifierDOM.addClass(this._container, 'is-open');
+            ModifierDOM.attr(this._container, 'aria-expanded', 'true');
+        } else {
+            if (listEl) listEl.style.display = '';
+            this._container.classList.add('is-open');
+            this._container.setAttribute('aria-expanded', 'true');
+        }
+
         this.#updateFocusUI();
 
-        if (this._dispatcher) {
+        if (this._dispatcher && typeof this._dispatcher.onClickOutside === 'function') {
             this.#clickOutsideUnsub = this._dispatcher.onClickOutside(this._container, () => this.close());
         }
     }
@@ -3015,9 +3182,15 @@ class ControllerCustomDropdown extends BaseController {
         this.#model.setOpen(false);
         const listEl = this._container.querySelector('[data-target="list"]');
 
-        ModifierDOM.hide(listEl);
-        ModifierDOM.removeClass(this._container, 'is-open');
-        ModifierDOM.attr(this._container, 'aria-expanded', 'false');
+        if (typeof ModifierDOM !== 'undefined') {
+            if (listEl) ModifierDOM.hide(listEl);
+            ModifierDOM.removeClass(this._container, 'is-open');
+            ModifierDOM.attr(this._container, 'aria-expanded', 'false');
+        } else {
+            if (listEl) listEl.style.display = 'none';
+            this._container.classList.remove('is-open');
+            this._container.setAttribute('aria-expanded', 'false');
+        }
 
         if (this.#clickOutsideUnsub) {
             this.#clickOutsideUnsub();
@@ -3033,9 +3206,13 @@ class ControllerCustomDropdown extends BaseController {
         if (changed) {
             this.#syncWithNativeInput();
 
+            const fieldName = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+                ? FormFieldService.getFieldName(this._container)
+                : (this._container.name || this._container.dataset.name);
+
             if (this._dispatcher) {
                 this._dispatcher.emit('dropdown:change', {
-                    name: FormFieldService.getFieldName(this._container),
+                    name: fieldName,
                     value: this.#model.value,
                     label: this.#model.selectedItem?.label,
                     container: this._container
@@ -3057,32 +3234,55 @@ class ControllerCustomDropdown extends BaseController {
 
         const isValid = this.#model.validate();
         
-        ModifierDOM.toggleClass(this._container, 'is-invalid', !isValid);
-        ModifierDOM.toggleClass(this._container, 'is-valid', isValid && this.#model.value !== '');
+        if (typeof ModifierDOM !== 'undefined') {
+            ModifierDOM.toggleClass(this._container, 'is-invalid', !isValid);
+            ModifierDOM.toggleClass(this._container, 'is-valid', isValid && this.#model.value !== '');
+        } else {
+            this._container.classList.toggle('is-invalid', !isValid);
+            this._container.classList.toggle('is-valid', isValid && this.#model.value !== '');
+        }
 
         const errorEl = this._container.querySelector('[data-target="error"]');
         if (errorEl) {
             errorEl.textContent = this.#model.error || '';
-            ModifierDOM.toggleClass(errorEl, 'is-hidden', isValid);
+            if (typeof ModifierDOM !== 'undefined') {
+                ModifierDOM.toggleClass(errorEl, 'is-hidden', isValid);
+            } else {
+                errorEl.classList.toggle('is-hidden', isValid);
+            }
         }
     }
 
     #updateFocusUI() {
+        if (!this.#model) return;
+
         const optionEls = this._container.querySelectorAll('[data-option-value]');
         optionEls.forEach((el, idx) => {
             const isFocused = idx === this.#model.focusedIndex;
-            ModifierDOM.toggleClass(el, 'is-focused', isFocused);
-            if (isFocused) {
+            if (typeof ModifierDOM !== 'undefined') {
+                ModifierDOM.toggleClass(el, 'is-focused', isFocused);
+            } else {
+                el.classList.toggle('is-focused', isFocused);
+            }
+
+            if (isFocused && typeof el.scrollIntoView === 'function') {
                 el.scrollIntoView({ block: 'nearest' });
             }
         });
     }
 
     #syncWithNativeInput() {
-        const fieldName = FormFieldService.getFieldName(this._container);
+        if (!this.#model) return;
+
+        const fieldName = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
+            ? FormFieldService.getFieldName(this._container)
+            : (this._container.name || this._container.dataset.name);
+
         if (!fieldName) return;
 
-        let hiddenInput = this._container.querySelector(`input[name="${CSS.escape(fieldName)}"]`);
+        const escapedName = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(fieldName) : fieldName;
+        let hiddenInput = this._container.querySelector(`input[name="${escapedName}"]`);
+
         if (!hiddenInput) {
             hiddenInput = document.createElement('input');
             hiddenInput.type = 'hidden';
@@ -3094,11 +3294,26 @@ class ControllerCustomDropdown extends BaseController {
 
     async #renderFull() {
         if (!this.#model) return;
-        const templateName = this._container.dataset.template || "custom-dropdown";
-        await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+
+        try {
+            let templateName = this._container.dataset.template || "custom-dropdown";
+
+            if (typeof ModelLoader !== 'undefined' && this.#model instanceof ModelLoader) {
+                templateName = this._container.dataset.loaderTemplate || "defaultSpinner";
+            }
+
+            if (typeof RenderService !== 'undefined' && typeof RenderService.paste === 'function') {
+                await RenderService.paste(this._container, templateName, this.#model.toRenderData());
+            } else {
+                console.warn("[ControllerCustomDropdown]: RenderService ist nicht verfügbar.");
+            }
+        } catch (error) {
+            console.error("[ControllerCustomDropdown]: Render-Fehler", error);
+        }
     }
 
     onDestroy() {
+        super.onDestroy();
         if (this.#clickOutsideUnsub) {
             this.#clickOutsideUnsub();
             this.#clickOutsideUnsub = null;

@@ -2145,8 +2145,12 @@ class ModelLoader extends BaseModel {
     #message;
 
     constructor(options = {}) {
-        super(options);
-        this.setMessage(options.message || 'Lade...');
+        const opts = typeof options === 'string'
+            ? { message: options }
+            : (options && typeof options === 'object' ? options : {});
+
+        super(opts);
+        this.setMessage(opts.message);
     }
 
     get message() {
@@ -2154,7 +2158,8 @@ class ModelLoader extends BaseModel {
     }
 
     setMessage(msg) {
-        const rawMsg = msg || 'Lade...';
+        const str = (msg !== null && msg !== undefined) ? String(msg) : '';
+        const rawMsg = str || 'Lade...';
         this.#message = this._sanitize(rawMsg);
     }
 
@@ -2167,9 +2172,15 @@ class ModelLoader extends BaseModel {
 }
 class ModelSpinner extends ModelLoader {
     constructor(options = {}) {
-        const isString = typeof options === 'string';
-        const message = isString ? options : (options.message || 'Lade Daten...');
-        const layout = isString ? 'spinner' : (options.layout || 'spinner');
+        let message = 'Lade Daten...';
+        let layout = 'spinner';
+
+        if (typeof options === 'string') {
+            message = options;
+        } else if (options && typeof options === 'object') {
+            message = options.message || 'Lade Daten...';
+            layout = options.layout || 'spinner';
+        }
 
         super({
             layout: layout,
@@ -2181,10 +2192,19 @@ class ModelLoadingBar extends ModelLoader {
     #progress = 0;
 
     constructor(options = {}) {
-        const isNumber = typeof options === 'number';
-        const progressVal = isNumber ? options : (options.progress || 0);
-        const message = isNumber ? 'Lade...' : (options.message || 'Lade...');
-        const layout = isNumber ? 'bar' : (options.layout || 'bar');
+        let progressVal = 0;
+        let message = 'Lade...';
+        let layout = 'bar';
+
+        if (typeof options === 'number') {
+            progressVal = options;
+        } else if (typeof options === 'string') {
+            message = options;
+        } else if (options && typeof options === 'object') {
+            progressVal = options.progress;
+            message = options.message || 'Lade...';
+            layout = options.layout || 'bar';
+        }
 
         super({
             layout: layout,
@@ -2199,7 +2219,12 @@ class ModelLoadingBar extends ModelLoader {
     }
 
     setProgress(percent) {
-        this.#progress = Math.min(100, Math.max(0, Number(percent) || 0));
+        const val = Number(percent);
+        if (Number.isNaN(val)) {
+            this.#progress = 0;
+            return;
+        }
+        this.#progress = Math.min(100, Math.max(0, val));
     }
 
     toRenderData() {

@@ -1814,6 +1814,32 @@ class BaseController {
         }
     }
 
+    delegate(eventName, selector, handler, options = {}) {
+        if (!this._container) {
+            console.warn(`Aspis [${this.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
+            return;
+        }
+
+        if (typeof handler !== 'function') {
+            console.warn(`Aspis [${this.constructor.name}]: Handler für Event '${eventName}' ist keine Funktion.`);
+            return;
+        }
+
+        const signal = this.getSignal();
+
+        this._container.addEventListener(
+            eventName,
+            (event) => {
+                const target = event.target.closest(selector);
+
+                if (target && this._container.contains(target)) {
+                    handler.call(this, event, target);
+                }
+            },
+            { ...options, signal }
+        );
+    }
+
     async onInit() {
         if (!this._container) {
             throw new Error(`Aspis [${this.constructor.name}]: Kein Container-Element übergeben.`);
@@ -2000,6 +2026,23 @@ class BaseModel {
         }
     }
 
+    _sanitize(data) {
+        if (typeof data === 'string') {
+            return typeof GuardDOM !== 'undefined' ? GuardDOM.clean(data) : data;
+        }
+        if (Array.isArray(data)) {
+            return data.map(item => this._sanitize(item));
+        }
+        if (data !== null && typeof data === 'object' && !(data instanceof Node)) {
+            const cleanObj = {};
+            for (const [key, value] of Object.entries(data)) {
+                cleanObj[key] = this._sanitize(value);
+            }
+            return cleanObj;
+        }
+        return data;
+    }
+
     setLayout(layout) {
         this._layout = String(layout);
     }
@@ -2027,7 +2070,7 @@ class ModelLoader extends BaseModel {
 
     setMessage(msg) {
         const rawMsg = msg || 'Lade...';
-        this.#message = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(rawMsg) : String(rawMsg);
+        this.#message = this._sanitize(rawMsg);
     }
 
     toRenderData() {
@@ -2094,6 +2137,29 @@ class ControllerTable extends BaseController {
         await super.onInit();
         if (this.signal.aborted) return;
 
+        this.delegate('click', 'th[data-sort-key]', (event, target) => {
+            const sortKey = target.dataset.sortKey;
+            const currentOrder = target.dataset.sortOrder || 'asc';
+            const nextOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+            this.reload({ sort: sortKey, order: nextOrder });
+        });
+
+        this.delegate('click', '[data-action]', (event, target) => {
+            const action = target.dataset.action;
+            const row = target.closest('[data-row-id]');
+            const rowId = row?.dataset.rowId;
+            if (action && rowId) {
+                this._dispatcher?.emit(`table:${action}`, { id: rowId, action, target });
+            }
+        });
+
+        this.delegate('click', '[data-page]', (event, target) => {
+            const page = target.dataset.page;
+            if (page) {
+                this.reload({ page });
+            }
+        });
+
         const url = this._container.dataset.url;
         if (!url) {
             throw new Error(`Aspis [ControllerTable]: Fehlendes 'data-url'-Attribut am Container <${this._container.tagName.toLowerCase()}>.`);
@@ -2113,7 +2179,6 @@ class ControllerTable extends BaseController {
         const stateProxy = this._store?.getSlice(this._sliceKey);
         if (!stateProxy) return;
 
-        // Erzeugt ein Signal, das sowohl bei Controller-Destroy ALS AUCH bei erneutem loadData() feuert
         const signal = this.getSignal('loadData');
 
         try {
@@ -2185,18 +2250,13 @@ class ControllerTable extends BaseController {
     }
 }
 class ModelTable extends BaseModel {
-    static Row = class ModelTableRow {
+    static Row = class ModelTableRow extends BaseModel {
         #data = {};
 
         constructor(data = {}) {
+            super();
             if (data && typeof data === 'object') {
-                for (const [key, value] of Object.entries(data)) {
-                    if (typeof value === 'string') {
-                        this.#data[key] = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(value) : value;
-                    } else {
-                        this.#data[key] = value;
-                    }
-                }
+                this.#data = this._sanitize(data);
             }
         }
 
@@ -2380,24 +2440,18 @@ class ControllerAccordion extends BaseController {
     }
 
     #bindDOMEvents() {
-        if (!this._container) return;
-
-        // Nutzt this.signal: Entfernt Event-Listener automatisch bei Controller.destroy()
-        this._container.addEventListener('click', (e) => {
-            const trigger = e.target.closest('[data-target="trigger"]');
-            if (!trigger) return;
-
-            const itemEl = trigger.closest('[data-accordion-item]');
+        this.delegate('click', '[data-target="trigger"]', (event, target) => {
+            const itemEl = target.closest('[data-accordion-item]');
             const itemId = itemEl?.dataset.id || itemEl?.id;
 
             if (itemId) {
                 this.toggle(itemId);
             }
-        }, { signal: this.signal });
+        });
 
-        this._container.addEventListener('keydown', (e) => {
-            this.#handleKeyDown(e);
-        }, { signal: this.signal });
+        this.delegate('keydown', '[data-target="trigger"]', (event) => {
+            this.#handleKeyDown(event);
+        });
     }
 
     #handleKeyDown(e) {
@@ -2490,7 +2544,7 @@ class ControllerAccordion extends BaseController {
     }
 }
 class ModelAccordion extends BaseModel {
-    static Item = class ModelAccordionItem {
+    static Item = class ModelAccordionItem extends BaseModel {
         #id;
         #title;
         #content;
@@ -2498,14 +2552,13 @@ class ModelAccordion extends BaseModel {
         #disabled;
 
         constructor(data = {}) {
-            const rawId = data.id || `acc-item-${Math.random().toString(36).substring(2, 9)}`;
-            this.#id = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(rawId) : String(rawId);
-            this.#title = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(data.title || '') : (data.title || '');
-            
-            this.#content = typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function' 
-                ? GuardDOM.purify(data.content || '') 
-                : (data.content || '');
-                
+            super();
+            const sanitized = this._sanitize(data);
+
+            const rawId = sanitized.id || `acc-item-${Math.random().toString(36).substring(2, 9)}`;
+            this.#id = String(rawId);
+            this.#title = String(sanitized.title || '');
+            this.#content = String(sanitized.content || '');
             this.#isOpen = Boolean(data.isOpen);
             this.#disabled = Boolean(data.disabled);
         }
@@ -2563,7 +2616,7 @@ class ModelAccordion extends BaseModel {
     buildItems(rawData) {
         this.#items = rawData
             .filter(data => ModelAccordion.Item.canHandle(data))
-            .map(data => new ModelAccordion.Item(data));
+            .map(data => data instanceof ModelAccordion.Item ? data : new ModelAccordion.Item(data));
     }
 
     getItem(itemId) {
@@ -2699,16 +2752,16 @@ class ControllerForm extends BaseController {
     }
 
     #bindFormEvents() {
-        if (!this._container) return;
+        const fieldSelector = 'input, select, textarea, [data-name]';
 
-        this._container.addEventListener('input', (e) => this.#handleInput(e), { signal: this.signal });
-        this._container.addEventListener('change', (e) => this.#handleChange(e), { signal: this.signal });
-        this._container.addEventListener('focusout', (e) => this.#handleBlur(e), { signal: this.signal });
+        this.delegate('input', fieldSelector, (e) => this.#handleInput(e));
+        this.delegate('change', fieldSelector, (e) => this.#handleChange(e));
+        this.delegate('focusout', fieldSelector, (e) => this.#handleBlur(e));
 
-        this._container.addEventListener('submit', (e) => {
+        this.delegate('submit', 'form, :scope', (e) => {
             e.preventDefault();
             this.submit();
-        }, { signal: this.signal });
+        });
 
         if (this._dispatcher) {
             this._dispatcher.on('dropdown:change', (data) => {
@@ -3008,7 +3061,9 @@ class ModelForm extends BaseModel {
     addField(name, initialValue = '', rules = {}) {
         if (!name) return;
 
-        const cleanVal = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(initialValue) : initialValue;
+        const cleanVal = typeof initialValue === 'object' && initialValue !== null 
+            ? this._sanitize(initialValue) 
+            : String(this._sanitize(initialValue ?? ''));
 
         this.#fields.set(name, {
             value: cleanVal,
@@ -3024,7 +3079,9 @@ class ModelForm extends BaseModel {
         const field = this.#fields.get(name);
         if (!field) return;
 
-        const value = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(rawValue) : rawValue;
+        const value = typeof rawValue === 'object' && rawValue !== null 
+            ? this._sanitize(rawValue) 
+            : String(this._sanitize(rawValue ?? ''));
 
         field.value = value;
         field.isDirty = field.value !== field.initialValue;
@@ -3081,7 +3138,6 @@ class ModelForm extends BaseModel {
         this.#submitSuccess = Boolean(success);
         this.#submitError = errorMessage;
     }
-
 
     toPayload() {
         const payload = {};
@@ -3187,23 +3243,20 @@ class ControllerCustomDropdown extends BaseController {
             this._container.setAttribute('role', 'combobox');
         }
 
-        this._container.addEventListener('click', (e) => {
-            const trigger = e.target.closest('[data-target="trigger"]');
-            if (trigger) {
-                this.toggle();
-                return;
-            }
+        this.delegate('click', '[data-target="trigger"]', () => {
+            this.toggle();
+        });
 
-            const optionEl = e.target.closest('[data-option-value]');
-            if (optionEl && !optionEl.hasAttribute('data-disabled')) {
-                const value = optionEl.dataset.optionValue;
+        this.delegate('click', '[data-option-value]', (e, target) => {
+            if (!target.hasAttribute('data-disabled')) {
+                const value = target.dataset.optionValue;
                 this.selectValue(value);
             }
-        }, { signal: this.signal });
+        });
 
-        this._container.addEventListener('keydown', (e) => {
+        this.delegate('keydown', ':scope', (e) => {
             this.#handleKeyDown(e);
-        }, { signal: this.signal });
+        });
     }
 
     #handleKeyDown(e) {
@@ -3429,12 +3482,12 @@ class ModelCustomDropdown extends BaseModel {
         #label;
         #disabled;
 
-        constructor(data = {}) {
+        constructor(data = {}, sanitizeFn = (v) => String(v ?? '')) {
             const rawVal = data.value ?? data.id ?? '';
             const rawLabel = data.label ?? data.title ?? String(rawVal);
             
-            this.#value = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(rawVal) : String(rawVal);
-            this.#label = typeof GuardDOM !== 'undefined' ? GuardDOM.clean(rawLabel) : String(rawLabel);
+            this.#value = sanitizeFn(rawVal);
+            this.#label = sanitizeFn(rawLabel);
             this.#disabled = Boolean(data.disabled);
         }
 
@@ -3463,7 +3516,17 @@ class ModelCustomDropdown extends BaseModel {
         const opts = typeof options === 'string' ? { layout: options } : options;
         super(opts);
 
-        this.#fieldState = FormFieldService.createFieldState(opts.value || '', opts.rules || {});
+        if (typeof FormFieldService !== 'undefined' && typeof FormFieldService.createFieldState === 'function') {
+            this.#fieldState = FormFieldService.createFieldState(opts.value || '', opts.rules || {});
+        } else {
+            this.#fieldState = {
+                value: this._sanitize(opts.value || ''),
+                rules: opts.rules || {},
+                error: null,
+                isTouched: false
+            };
+        }
+
         this.setOptions(rawData);
 
         if (opts.value !== undefined) {
@@ -3480,7 +3543,9 @@ class ModelCustomDropdown extends BaseModel {
 
     setOptions(rawData = []) {
         const list = Array.isArray(rawData) ? rawData : (rawData?.options || rawData?.data || []);
-        this.#items = list.map(item => new ModelCustomDropdown.Item(item));
+        const sanitizeFn = (val) => this._sanitize(val);
+        
+        this.#items = list.map(item => new ModelCustomDropdown.Item(item, sanitizeFn));
         this.#selectedIndex = this.#items.findIndex(item => item.value === this.#fieldState.value);
         this.#focusedIndex = this.#selectedIndex >= 0 ? this.#selectedIndex : 0;
     }
@@ -3493,8 +3558,10 @@ class ModelCustomDropdown extends BaseModel {
     }
 
     selectByValue(val, triggerValidation = true) {
-        const index = this.#items.findIndex(item => item.value === val && !item.disabled);
-        if (index === -1 && val !== '') return false;
+        const sanitizedVal = this._sanitize(val);
+        const index = this.#items.findIndex(item => item.value === sanitizedVal && !item.disabled);
+        
+        if (index === -1 && sanitizedVal !== '') return false;
 
         this.#selectedIndex = index;
         this.#focusedIndex = index >= 0 ? index : 0;
@@ -3536,6 +3603,8 @@ class ModelCustomDropdown extends BaseModel {
                 this.#fieldState.value, 
                 this.#fieldState.rules
             );
+        } else {
+            this.#fieldState.error = null;
         }
         return !this.#fieldState.error;
     }

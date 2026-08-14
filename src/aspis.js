@@ -1772,7 +1772,7 @@ class BaseController {
     _isStarted = false;
 
     #unsubscribeStore = null;
-    #unsubscribeEvents = [];
+    #eventDelegator = null;
 
     #lifecycleController = new AbortController();
     #taskControllers = new Map();
@@ -1786,6 +1786,8 @@ class BaseController {
         if (options.sliceKey) {
             this._sliceKey = options.sliceKey;
         }
+
+        this.#eventDelegator = new EventDelegator(container, dispatcher, this, options);
     }
 
     get signal() {
@@ -1843,29 +1845,11 @@ class BaseController {
     }
 
     delegate(eventName, selector, handler, options = {}) {
-        if (!this._container) {
-            console.warn(`Aspis [${this.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
-            return;
-        }
+        this.#eventDelegator.delegate(eventName, selector, handler, options);
+    }
 
-        if (typeof handler !== 'function') {
-            console.warn(`Aspis [${this.constructor.name}]: Handler für Event '${eventName}' ist keine Funktion.`);
-            return;
-        }
-
-        const signal = this.getSignal();
-
-        this._container.addEventListener(
-            eventName,
-            (event) => {
-                const target = event.target.closest(selector);
-
-                if (target && this._container.contains(target)) {
-                    handler.call(this, event, target);
-                }
-            },
-            { ...options, signal }
-        );
+    setLoadingState(stateProxy, message = 'Lade...') {
+        LoadingStateHelper.apply(this._container, stateProxy, message);
     }
 
     async onInit() {
@@ -1877,14 +1861,14 @@ class BaseController {
     async start() {
         if (this._isStarted || this.signal.aborted) return;
         this._isStarted = true;
-        
-        await this.#initEvents();
+
+        await this.#eventDelegator.initEvents(this.fetcher);
         if (this.signal.aborted) return;
 
         await this.onInit();
         if (this.signal.aborted) return;
 
-        this.#initDomDependencies();
+        DomDependencyScanner.register(this._container, this._store);
 
         if (this._sliceKey && this._store && typeof this._store.effect === 'function') {
             this.#unsubscribeStore = this._store.effect(() => {
@@ -1901,67 +1885,6 @@ class BaseController {
         }
     }
 
-    async #initEvents() {
-        if (!this._dispatcher) return;
-
-        let eventMap = {};
-
-        if (this._options?.eventPath) {
-            const initSignal = this.getSignal('initEvents');
-            try {
-                eventMap = await this.fetcher.get(this._options.eventPath, {}, { signal: initSignal }) || {};
-            } catch (e) {
-                if (e.name !== 'AbortError' && !this.signal.aborted) {
-                    console.error(`Aspis [BaseController]: Fehler beim Laden von '${this._options.eventPath}':`, e);
-                }
-            } finally {
-                this.clearTask('initEvents');
-            }
-        }
-
-        if (this.signal.aborted) return;
-
-        if (this._container?.dataset?.events) {
-            try {
-                const inlineMap = JSON.parse(this._container.dataset.events);
-                eventMap = { ...eventMap, ...inlineMap };
-            } catch (e) {
-                console.error(`Aspis [BaseController]: Fehler beim Parsen von data-events an <${this.constructor.name}>:`, e);
-            }
-        }
-
-        Object.entries(eventMap).forEach(([eventName, methodName]) => {
-            if (typeof this[methodName] === 'function') {
-                const unsub = this._dispatcher.on(eventName, (payload) => this[methodName](payload));
-                this.#unsubscribeEvents.push(unsub);
-            } else {
-                console.warn(`Aspis [BaseController]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.constructor.name}.`);
-            }
-        });
-    }
-
-    #initDomDependencies() {
-        if (!this._container || !this._store || typeof this._store.addDependency !== 'function') return;
-
-        const elements = [];
-        if (this._container.dataset?.dependsOn) {
-            elements.push(this._container);
-        }
-
-        const childElements = this._container.querySelectorAll('[data-depends-on]');
-        elements.push(...childElements);
-
-        elements.forEach(element => {
-            const rawAttr = element.dataset.dependsOn;
-            if (!rawAttr) return;
-
-            const paths = rawAttr.split(/[\s,]+/).map(p => p.trim()).filter(Boolean);
-            paths.forEach(path => {
-                this._store.addDependency(element, path);
-            });
-        });
-    }
-
     destroy() {
         this.#lifecycleController.abort("Controller zerstört.");
         for (const taskCtrl of this.#taskControllers.values()) {
@@ -1973,14 +1896,13 @@ class BaseController {
             this.#unsubscribeStore();
             this.#unsubscribeStore = null;
         }
-        this.#unsubscribeEvents.forEach(unsub => unsub());
-        this.#unsubscribeEvents = [];
 
-        if (this._store && typeof this._store.removeDomDependencies === 'function' && this._container) {
-            this._store.removeDomDependencies(this._container);
-            const childElements = this._container.querySelectorAll('[data-depends-on]');
-            childElements.forEach(child => this._store.removeDomDependencies(child));
+        if (this.#eventDelegator) {
+            this.#eventDelegator.destroy();
+            this.#eventDelegator = null;
         }
+
+        DomDependencyScanner.unregister(this._container, this._store);
 
         try {
             if (typeof this.onDestroy === 'function') {
@@ -2006,7 +1928,7 @@ class BaseController {
                 const element = targetConfig.selector === ':scope' 
                     ? this._container 
                     : this._container.querySelector(targetConfig.selector);
-                    
+
                 if (!element || !targetConfig.bindClasses) continue;
 
                 for (const [stateProp, styleKey] of Object.entries(targetConfig.bindClasses)) {
@@ -2022,15 +1944,48 @@ class BaseController {
             this.onStateChange(slice);
         }
     }
+}
+class DomDependencyScanner {
+    static register(container, store) {
+        if (!container || !store || typeof store.addDependency !== 'function') return;
 
-    setLoadingState(stateProxy, message = 'Lade...') {
+        const elements = [];
+        if (container.dataset?.dependsOn) {
+            elements.push(container);
+        }
+
+        const childElements = container.querySelectorAll('[data-depends-on]');
+        elements.push(...childElements);
+
+        elements.forEach(element => {
+            const rawAttr = element.dataset.dependsOn;
+            if (!rawAttr) return;
+
+            const paths = rawAttr.split(/[\s,]+/).map(p => p.trim()).filter(Boolean);
+            paths.forEach(path => {
+                store.addDependency(element, path);
+            });
+        });
+    }
+
+    static unregister(container, store) {
+        if (!container || !store || typeof store.removeDomDependencies !== 'function') return;
+
+        store.removeDomDependencies(container);
+
+        const childElements = container.querySelectorAll('[data-depends-on]');
+        childElements.forEach(child => store.removeDomDependencies(child));
+    }
+}
+class LoadingStateHelper {
+    static apply(container, stateProxy, message = 'Lade...') {
         if (!stateProxy) return;
 
         stateProxy.error = null;
         stateProxy.isLoading = true;
 
-        const loaderType = this._container?.dataset?.loader || 'spinner';
-        const loaderTemplate = this._container?.dataset?.loaderTemplate || 'defaultSpinner';
+        const loaderType = container?.dataset?.loader || 'spinner';
+        const loaderTemplate = container?.dataset?.loaderTemplate || 'defaultSpinner';
 
         if (loaderType === 'bar' && typeof ModelLoadingBar !== 'undefined') {
             stateProxy.model = new ModelLoadingBar({ layout: loaderTemplate, message, progress: 0 });
@@ -2043,6 +1998,108 @@ class BaseController {
         }
     }
 }
+class EventDelegator {
+    #container;
+    #dispatcher;
+    #target;
+    #options;
+    #unsubscribeEvents = [];
+
+    constructor(container, dispatcher, target, options = {}) {
+        this.#container = container;
+        this.#dispatcher = dispatcher;
+        this.#target = target || this;
+        this.#options = options;
+    }
+
+    delegate(eventName, selector, handler, options = {}) {
+        if (!this.#container) {
+            console.warn(`Aspis [${this.#target.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
+            return;
+        }
+
+        if (typeof handler !== 'function') {
+            console.warn(`Aspis [${this.#target.constructor.name}]: Handler für Event '${eventName}' ist keine Funktion.`);
+            return;
+        }
+
+        const signal = options.signal || (typeof this.#target.getSignal === 'function' ? this.#target.getSignal() : null);
+        const listenerOptions = { ...options };
+
+        if (signal) {
+            listenerOptions.signal = signal;
+        }
+
+        this.#container.addEventListener(
+            eventName,
+            (event) => {
+                const target = event.target.closest(selector);
+
+                if (target && this.#container.contains(target)) {
+                    handler.call(this.#target, event, target);
+                }
+            },
+            listenerOptions
+        );
+    }
+
+    async initEvents(fetcher = null) {
+        if (!this.#dispatcher) return;
+
+        let eventMap = {};
+
+        if (this.#options?.eventPath) {
+            const initSignal = typeof this.#target.getSignal === 'function' ? this.#target.getSignal('initEvents') : null;
+            const activeFetcher = fetcher || this.#options?.fetcher || this.#target?.fetcher;
+
+            try {
+                if (activeFetcher && typeof activeFetcher.get === 'function') {
+                    eventMap = await activeFetcher.get(this.#options.eventPath, {}, { signal: initSignal }) || {};
+                }
+            } catch (e) {
+                const isAborted = this.#target?.signal?.aborted;
+                if (e.name !== 'AbortError' && !isAborted) {
+                    console.error(`Aspis [${this.#target.constructor.name}]: Fehler beim Laden von '${this.#options.eventPath}':`, e);
+                }
+            } finally {
+                if (typeof this.#target.clearTask === 'function') {
+                    this.#target.clearTask('initEvents');
+                }
+            }
+        }
+
+        if (this.#target?.signal?.aborted) return;
+
+        if (this.#container?.dataset?.events) {
+            try {
+                const inlineMap = JSON.parse(this.#container.dataset.events);
+                eventMap = { ...eventMap, ...inlineMap };
+            } catch (e) {
+                console.error(`Aspis [${this.#target.constructor.name}]: Fehler beim Parsen von data-events an <${this.#target.constructor.name}>:`, e);
+            }
+        }
+
+        Object.entries(eventMap).forEach(([eventName, methodName]) => {
+            if (typeof this.#target[methodName] === 'function') {
+                const unsub = this.#dispatcher.on(eventName, (payload) => this.#target[methodName](payload));
+                this.#unsubscribeEvents.push(unsub);
+            } else {
+                console.warn(`Aspis [${this.#target.constructor.name}]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.#target.constructor.name}.`);
+            }
+        });
+    }
+
+    destroy() {
+        this.#unsubscribeEvents.forEach(unsub => unsub());
+        this.#unsubscribeEvents = [];
+
+        this.#container = null;
+        this.#dispatcher = null;
+        this.#target = null;
+        this.#options = null;
+    }
+}
+
 class BaseModel {
     _layout = 'default';
     _options = {};

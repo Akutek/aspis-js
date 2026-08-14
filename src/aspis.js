@@ -2275,7 +2275,9 @@ class ControllerTable extends BaseController {
 
             if (liveData) {
                 const layout = this._container.dataset.layout || this._options?.layout || 'default';
-                stateProxy.model = new ModelTable(liveData, { layout });
+                if (typeof ModelTable !== 'undefined') {
+                    stateProxy.model = new ModelTable(liveData, { layout });
+                }
             }
         } catch (error) {
             if (error.name !== 'AbortError' && !signal.aborted) {
@@ -2576,7 +2578,7 @@ class ControllerAccordion extends BaseController {
     }
 
     #updateItemUI(item) {
-        if (!this._container) return;
+        if (!this._container || !(item instanceof ModelAccordion.Item || item?.id)) return;
 
         const itemEl = this._container.querySelector(`[data-accordion-item][data-id="${CSS.escape(item.id)}"]`) 
                     || this._container.querySelector(`#${CSS.escape(item.id)}`);
@@ -3451,18 +3453,23 @@ class ControllerCustomDropdown extends BaseController {
                 ? FormFieldService.getFieldName(this._container)
                 : (this._container.name || this._container.dataset.name);
 
+            const selectedItem = this.#model.selectedItem;
+            const itemLabel = (typeof ModelCustomDropdown !== 'undefined' && selectedItem instanceof ModelCustomDropdown.Item)
+                ? selectedItem.label
+                : selectedItem?.label;
+
             if (this._dispatcher) {
                 this._dispatcher.emit('dropdown:change', {
                     name: fieldName,
                     value: this.#model.value,
-                    label: this.#model.selectedItem?.label,
+                    label: itemLabel,
                     container: this._container
                 });
             }
 
             const labelEl = this._container.querySelector('[data-target="label"]');
-            if (labelEl && this.#model.selectedItem) {
-                labelEl.textContent = this.#model.selectedItem.label;
+            if (labelEl && selectedItem) {
+                labelEl.textContent = itemLabel;
             }
         }
 
@@ -3562,7 +3569,7 @@ class ControllerCustomDropdown extends BaseController {
     }
 }
 class ModelCustomDropdown extends BaseModel {
-    static Item = class ModelDropdownItem {
+    static Item = class ModelCustomDropdownItem {
         #value;
         #label;
         #disabled;
@@ -3630,7 +3637,7 @@ class ModelCustomDropdown extends BaseModel {
         const list = Array.isArray(rawData) ? rawData : (rawData?.options || rawData?.data || []);
         const sanitizeFn = (val) => this._sanitize(val);
         
-        this.#items = list.map(item => new ModelCustomDropdown.Item(item, sanitizeFn));
+        this.#items = list.map(item => item instanceof ModelCustomDropdown.Item ? item : new ModelCustomDropdown.Item(item, sanitizeFn));
         this.#selectedIndex = this.#items.findIndex(item => item.value === this.#fieldState.value);
         this.#focusedIndex = this.#selectedIndex >= 0 ? this.#selectedIndex : 0;
     }

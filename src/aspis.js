@@ -1,3 +1,5 @@
+import { ControllerRegistry } from './core/ControllerRegistry.js';
+
 class ControllerRegistry {
     #resolvedControllers = new Map();
     #basePath;
@@ -715,9 +717,35 @@ class DatenFetcher {
 
         const timeoutSignal = AbortSignal.timeout(timeout);
 
-        const combinedSignal = signal 
-            ? AbortSignal.any([signal, timeoutSignal])
-            : timeoutSignal;
+        let combinedSignal;
+
+        if (!signal) {
+            combinedSignal = timeoutSignal;
+        } else if (typeof AbortSignal.any === 'function') {
+            combinedSignal = AbortSignal.any([signal, timeoutSignal]);
+        } else {
+            const combinedController = new AbortController();
+
+            const onAbort = (s) => {
+                if (!combinedController.signal.aborted) {
+                    combinedController.abort(s.reason);
+                }
+            };
+
+            if (signal.aborted) {
+                onAbort(signal);
+            } else {
+                signal.addEventListener('abort', () => onAbort(signal), { once: true });
+            }
+
+            if (timeoutSignal.aborted) {
+                onAbort(timeoutSignal);
+            } else {
+                timeoutSignal.addEventListener('abort', () => onAbort(timeoutSignal), { once: true });
+            }
+
+            combinedSignal = combinedController.signal;
+        }
 
         const fetchOptions = {
             method,

@@ -1,47 +1,16 @@
 import { ControllerRegistry } from './core/ControllerRegistry.js';
 
-class ControllerRegistry {
-    #resolvedControllers = new Map();
-    #basePath;
-
-    constructor(basePath = './controllers') {
-        this.#basePath = basePath;
-    }
-
-    async getAsync(type) {
-        if (!type || typeof type !== 'string') return null;
-        if (this.#resolvedControllers.has(type)) {
-            return this.#resolvedControllers.get(type);
-        }
-
-        const className = `Controller${type.charAt(0).toUpperCase() + type.slice(1)}`;
-        const fileUrl = `${this.#basePath}/${className}.js`;
-
-        try {
-            const module = await import(fileUrl);
-            const ControllerClass = module[className] || module.default;
-
-            if (!ControllerClass) {
-                throw new Error(`Klasse '${className}' wurde in der Datei nicht gefunden.`);
-            }
-
-            this.#resolvedControllers.set(type, ControllerClass);
-            return ControllerClass;
-
-        } catch (error) {
-            console.error(`ControllerRegistry: Fehler beim Laden von '${fileUrl}':`, error);
-            return null;
-        }
-    }
-}
-
+/** @internal */
 class ComponentCleaner {
+    /** @internal */
     #registry;
 
+    /** @public */
     constructor(registry) {
         this.#registry = registry;
     }
 
+    /** @public */
     clean(element) {
         if (!element || !this.#registry) return;
 
@@ -68,6 +37,7 @@ class ComponentCleaner {
         }
     }
 
+    /** @public */
     cleanTree(rootElement) {
         if (!rootElement || !(rootElement instanceof Element)) return;
 
@@ -88,7 +58,9 @@ class ComponentCleaner {
     }
 }
 
+/** @public */
 class Main {
+    /** @public */
     static async boot(controllerRegistry) {
         if (!controllerRegistry || typeof controllerRegistry.getAsync !== 'function') {
             throw new Error("Aspis [Main]: Ungültige oder fehlende ControllerRegistry übergeben.");
@@ -122,6 +94,7 @@ class Main {
         }
     }
 
+    /** @public */
     static autoBoot(registryPath = './controllers') {
         const start = () => {
             const loader = new ControllerRegistry(registryPath);
@@ -135,6 +108,7 @@ class Main {
         }
     }
 
+    /** @public */
     static createServices(controllerRegistry, config, manifest, eventManifest) {
         const registry = new Registry();
 
@@ -151,6 +125,7 @@ class Main {
         return registry;
     }
 
+    /** @public */
     static async assignControllers(scanResults, registry) {
         const promises = scanResults.map(detectedNode => {
             return this.startController(detectedNode, registry);
@@ -159,6 +134,7 @@ class Main {
         await Promise.all(promises);
     }
 
+    /** @public */
     static async startController(item, registry) {
         const config = registry.get('config');
         const componentConfig = config.components?.[item.type] || {};
@@ -203,16 +179,24 @@ class Main {
     }
 }
 
+/** @internal */
 class ReactiveEffect {
+    /** @internal */
     #store;
+
+    /** @internal */
     #fn;
+
+    /** @internal */
     #trackedPaths = new Set();
 
+    /** @public */
     constructor(store, fn) {
         this.#store = store;
         this.#fn = fn;
     }
 
+    /** @public */
     run() {
         try {
             this.#store.pushEffect(this);
@@ -222,34 +206,63 @@ class ReactiveEffect {
         }
     }
 
+    /** @public */
     trackPath(path) {
         this.#trackedPaths.add(path);
     }
 
+    /** @public */
     stop() {
         this.#store._cleanupEffect(this, this.#trackedPaths);
         this.#trackedPaths.clear();
     }
 }
 
+/** @public */
 class Store extends EventTarget {
+    /** @internal */
     #listeners = new Map();
+
+    /** @internal */
     #dependencies = new Map();
+
+    /** @internal */
     #domDependencies = new Map();
+
+    /** @internal */
     #data = {};
+
+    /** @internal */
     #stateProxy;
+
+    /** @internal */
     #proxyCache = new WeakMap();
+
+    /** @internal */
     #configs = {};
 
+    /** @internal */
     #effectQueue = new Set();
+
+    /** @internal */
     #pendingDomUpdates = new Map();
+
+    /** @internal */
     #isFlushPending = false;
+
+    /** @internal */
     #flushTimerId = null;
+
+    /** @internal */
     #effectStack = [];
+
+    /** @internal */
     #strictMode;
 
+    /** @public */
     static ALLOWED_NAMESPACES = ['app', 'features', 'shared'];
 
+    /** @public */
     constructor(manifest = {}, initialData = {}) {
         this.manifest = manifest;
         this.#strictMode = manifest.settings?.strictMode ?? true;
@@ -295,18 +308,22 @@ class Store extends EventTarget {
         console.log("Aspis [Store-Bootstrap]: Hierarchischer State-Baum erfolgreich initialisiert.", extractedState);
     }
 
+    /** @internal */
     get _activeEffect() {
         return this.#effectStack[this.#effectStack.length - 1] || null;
     }
 
+    /** @public */
     get state() {
         return this.#stateProxy;
     }
 
+    /** @public */
     get data() {
         return Object.freeze({ ...this.#data });
     }
 
+    /** @public */
     getSlice(path) {
         if (!path || typeof path !== 'string') {
             throw new Error("Aspis [Store-Schutzschild]: getSlice verlangt einen gültigen Pfad-String.");
@@ -326,15 +343,18 @@ class Store extends EventTarget {
         return current;
     }
 
+    /** @public */
     getConfig(path) {
         return this.#configs[path] || {};
     }
 
+    /** @public */
     updateData(newData) {
         this.#data = newData;
         this.#trigger('data', this.#data);
     }
 
+    /** @public */
     effect(fn) {
         if (typeof fn !== 'function') return () => {};
 
@@ -346,14 +366,17 @@ class Store extends EventTarget {
         };
     }
 
+    /** @public */
     pushEffect(effect) {
         this.#effectStack.push(effect);
     }
 
+    /** @public */
     popEffect() {
         this.#effectStack.pop();
     }
 
+    /** @public */
     addDependency(targetOrPath, childPathOrDataPath) {
         if (!targetOrPath || !childPathOrDataPath) {
             console.warn("Aspis [Store]: addDependency() abgebrochen - Parameter dürfen nicht leer sein.");
@@ -393,6 +416,7 @@ class Store extends EventTarget {
         throw new Error("Aspis [Store]: Ungültige Signatur in addDependency(). Erlaubt: (HTMLElement, String) oder (String, String).");
     }
 
+    /** @public */
     removeDomDependencies(targetElement) {
         if (!(targetElement instanceof HTMLElement)) return;
 
@@ -404,6 +428,7 @@ class Store extends EventTarget {
         });
     }
 
+    /** @public */
     flush() {
         if (!this.#isFlushPending) return;
 
@@ -415,6 +440,7 @@ class Store extends EventTarget {
         this.#flushQueue();
     }
 
+    /** @internal */
     #createDeepProxy(target, currentPath) {
         if (target === null || typeof target !== 'object') {
             return target;
@@ -474,6 +500,7 @@ class Store extends EventTarget {
         return proxy;
     }
 
+    /** @internal */
     #track(path) {
         if (this._activeEffect) {
             if (!this.#listeners.has(path)) {
@@ -484,6 +511,7 @@ class Store extends EventTarget {
         }
     }
 
+    /** @internal */
     #trigger(path, value) {
         const pathListeners = this.#listeners.get(path);
         if (pathListeners) {
@@ -517,6 +545,7 @@ class Store extends EventTarget {
         }
     }
 
+    /** @internal */
     #triggerElementUpdate(element, triggeredPaths) {
         const pathArray = Array.from(triggeredPaths);
         const customEvent = new CustomEvent('aspis:data-mutation', { 
@@ -530,6 +559,7 @@ class Store extends EventTarget {
         element.dispatchEvent(customEvent);
     }
 
+    /** @internal */
     #queueFlush() {
         if (this.#isFlushPending) return;
         this.#isFlushPending = true;
@@ -546,6 +576,7 @@ class Store extends EventTarget {
         }
     }
 
+    /** @internal */
     #flushQueue() {
         try {
             if (this.#pendingDomUpdates.size > 0) {
@@ -567,6 +598,7 @@ class Store extends EventTarget {
         }
     }
 
+    /** @internal */
     #handleDependencies(parentPath) {
         const children = this.#dependencies.get(parentPath);
         if (!children) return;
@@ -584,6 +616,7 @@ class Store extends EventTarget {
         });
     }
 
+    /** @internal */
     _cleanupEffect(effect, paths) {
         paths.forEach(path => {
             const pathListeners = this.#listeners.get(path);
@@ -597,11 +630,18 @@ class Store extends EventTarget {
     }
 }
 
+/** @public */
 class Registry {
+    /** @internal */
     #services;
+
+    /** @internal */
     #elements;
+
+    /** @internal */
     #finalizer;
 
+    /** @public */
     constructor() {
         this.#services = new Map();
         this.#elements = new WeakMap();
@@ -618,6 +658,7 @@ class Registry {
         });
     }
 
+    /** @public */
     set(key, value) {
         if (typeof key === 'string') {
             if (this.#services.has(key)) {
@@ -643,6 +684,7 @@ class Registry {
         throw new Error("Aspis [Registry]: Ungültiger Key-Typ in set().");
     }
 
+    /** @public */
     get(key) {
         if (typeof key === 'string') {
             if (!this.#services.has(key)) {
@@ -658,6 +700,7 @@ class Registry {
         return null;
     }
 
+    /** @public */
     has(key) {
         if (typeof key === 'string') {
             return this.#services.has(key);
@@ -668,6 +711,7 @@ class Registry {
         return false;
     }
 
+    /** @public */
     delete(key) {
         if (typeof key === 'string') {
             return this.#services.delete(key);
@@ -691,18 +735,23 @@ class Registry {
         return false;
     }
 
+    /** @public */
     clearServices() {
         this.#services.clear();
     }
 }
 
+/** @public */
 class DatenFetcher {
+    /** @internal */
     #defaultTimeoutMs;
 
+    /** @public */
     constructor(defaultTimeoutMs = 8000) {
         this.#defaultTimeoutMs = defaultTimeoutMs;
     }
 
+    /** @public */
     async request(url, { params = {}, signal = null, timeout = this.#defaultTimeoutMs, headers = {}, method = 'GET', body = null } = {}) {
         if (!url || typeof url !== 'string') {
             throw new Error("DatenFetcher: Keine gültige URL übergeben.");
@@ -797,24 +846,30 @@ class DatenFetcher {
         }
     }
 
+    /** @public */
     async get(url, params = {}, options = {}) {
         return this.request(url, { ...options, method: 'GET', params });
     }
 
+    /** @public */
     async post(url, body = {}, options = {}) {
         return this.request(url, { ...options, method: 'POST', body });
     }
 
+    /** @public */
     async put(url, body = {}, options = {}) {
         return this.request(url, { ...options, method: 'PUT', body });
     }
 
+    /** @public */
     async delete(url, options = {}) {
         return this.request(url, { ...options, method: 'DELETE' });
     }
 }
 
+/** @public */
 class ScannerDOM {
+    /** @public */
     static scan(rootElement = document.body) {
         if (!rootElement || typeof rootElement.querySelectorAll !== 'function') {
             console.warn("Aspis [ScannerDOM]: Ungültiges oder fehlendes Root-Element übergeben. Scan abgebrochen.");
@@ -837,6 +892,7 @@ class ScannerDOM {
         return scanResults;
     }
 
+    /** @internal */
     static #parseNode(container) {
         const type = container.dataset.controller || container.getAttribute('data-controller');
         if (!type || !type.trim()) {
@@ -854,8 +910,9 @@ class ScannerDOM {
     }
 }
 
-
+/** @public */
 class Factory {
+    /** @public */
     static create(MainClass, ChildClasses, layout, jsonData) {
         const mainInstance = new MainClass(layout);
 
@@ -890,7 +947,9 @@ class Factory {
     }
 }
 
+/** @public */
 class RenderService {
+    /** @public */
     static async paste(targetContainer, templateName, data = {}) {
         if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
             throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für paste().");
@@ -910,6 +969,7 @@ class RenderService {
         return cleanElement;
     }
 
+    /** @public */
     static async compile(templateName, data = {}) {
         const registry = window.appRegistry;
         const templateEngine = registry ? registry.get('templates') : null;
@@ -930,6 +990,7 @@ class RenderService {
         return element;
     }
 
+    /** @public */
     static async loop(templateName, list = []) {
         if (!Array.isArray(list)) {
             console.warn("Aspis [RenderService]: loop() erwartet ein Array.");
@@ -952,6 +1013,7 @@ class RenderService {
         return fragment;
     }
 
+    /** @public */
     static combine(targetContainer, elements = []) {
         if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
             throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für combine().");
@@ -961,6 +1023,7 @@ class RenderService {
         targetContainer.replaceChildren(...nodeList);
     }
 
+    /** @internal */
     static #purifyElement(element) {
         if (!element) return null;
         if (typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function') {
@@ -973,11 +1036,18 @@ class RenderService {
     }
 }
 
+/** @public */
 class TemplateService {
+    /** @internal */
     #cache = new Map();
+
+    /** @internal */
     #basePath;
+
+    /** @internal */
     #sanitizer;
 
+    /** @public */
     constructor(config = {}) {
         const options = typeof config === 'string' ? { basePath: config } : config;
         const { 
@@ -994,6 +1064,7 @@ class TemplateService {
         }
     }
 
+    /** @public */
     init() {
         const templateElements = document.querySelectorAll('template');
         
@@ -1013,14 +1084,17 @@ class TemplateService {
         console.info(`Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
     }
 
+    /** @public */
     has(name) {
         return this.#cache.has(name);
     }
 
+    /** @public */
     clearCache() {
         this.#cache.clear();
     }
 
+    /** @public */
     async get(name) {
         if (this.#cache.has(name)) {
             return this.#cache.get(name);
@@ -1034,6 +1108,7 @@ class TemplateService {
         }
     }
 
+    /** @public */
     compile(name, payload = {}) {
         const template = this.#cache.get(name);
         if (!template) {
@@ -1063,10 +1138,12 @@ class TemplateService {
         return element;
     }
 
+    /** @public */
     getTemplateEvents(name) {
         return this.#cache.get(name)?.events ?? {};
     }
 
+    /** @internal */
     #replacePlaceholders(html, sortedEntries, values) {
         let result = html;
         for (const [key, placeholder] of sortedEntries) {
@@ -1077,6 +1154,7 @@ class TemplateService {
         return result;
     }
 
+    /** @internal */
     #processSlots(rootElement, slotsMap, payloadSlots) {
         Object.entries(slotsMap).forEach(([key, placeholder]) => {
             const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT);
@@ -1110,6 +1188,7 @@ class TemplateService {
         });
     }
 
+    /** @internal */
     #appendSlotChild(parent, targetNode, content) {
         if (content instanceof Node) {
             parent.insertBefore(content, targetNode);
@@ -1119,6 +1198,7 @@ class TemplateService {
         }
     }
 
+    /** @internal */
     #defaultSanitizer(val) {
         if (typeof GuardDOM !== 'undefined') {
             if (typeof GuardDOM.clean === 'function') return GuardDOM.clean(val);
@@ -1134,6 +1214,7 @@ class TemplateService {
             .replace(/'/g, '&#039;');
     }
 
+    /** @internal */
     async #loadFromServer(name) {
         const url = `${this.#basePath}${name}/${name}.json`;
         
@@ -1165,6 +1246,7 @@ class TemplateService {
         }
     }
 
+    /** @internal */
     #normalizeTemplate(id, config, htmlString) {
         const placeholders = config.placeholder || { ...config.slots, ...config.attributes } || {};
         const slots = {}, attributes = {}, data = {};
@@ -1214,16 +1296,24 @@ class TemplateService {
     }
 }
 
+/** @public */
 class EventDispatcher {
+    /** @internal */
     #listeners = new Map();
+
+    /** @internal */
     #eventManifest;
+
+    /** @internal */
     #clickTrackerHandler = null;
 
+    /** @public */
     constructor(eventManifest = {}) {
         this.#eventManifest = eventManifest;
         this.#initGlobalClickTracker();
     }
 
+    /** @public */
     on(eventName, callback) {
         if (typeof callback !== 'function') return () => {};
 
@@ -1235,6 +1325,7 @@ class EventDispatcher {
         return () => this.off(eventName, callback);
     }
 
+    /** @public */
     once(eventName, callback) {
         if (typeof callback !== 'function') return () => {};
 
@@ -1246,6 +1337,7 @@ class EventDispatcher {
         return unsubscribe;
     }
 
+    /** @public */
     off(eventName, callback) {
         const eventListeners = this.#listeners.get(eventName);
         if (eventListeners) {
@@ -1256,6 +1348,7 @@ class EventDispatcher {
         }
     }
 
+    /** @public */
     emit(eventName, data = null) {
         const eventListeners = this.#listeners.get(eventName);
         if (!eventListeners) return;
@@ -1270,6 +1363,7 @@ class EventDispatcher {
         });
     }
 
+    /** @public */
     onClickOutside(element, callback) {
         if (!(element instanceof HTMLElement) || typeof callback !== 'function') {
             return () => {};
@@ -1281,10 +1375,12 @@ class EventDispatcher {
         });
     }
 
+    /** @public */
     clear() {
         this.#listeners.clear();
     }
 
+    /** @public */
     destroy() {
         this.clear();
         if (this.#clickTrackerHandler) {
@@ -1293,6 +1389,7 @@ class EventDispatcher {
         }
     }
 
+    /** @internal */
     #initGlobalClickTracker() {
         this.#clickTrackerHandler = (event) => {
             this.emit('document:click', event.target);
@@ -1301,11 +1398,14 @@ class EventDispatcher {
     }
 }
 
+/** @public */
 class ModifierDOM {
+    /** @internal */
     static #isValid(target) {
         return target instanceof Element;
     }
 
+    /** @internal */
     static #normalize(target) {
         if (!target) return [];
         if (target instanceof Element) return [target];
@@ -1315,6 +1415,7 @@ class ModifierDOM {
         return [];
     }
 
+    /** @public */
     static show(target) {
         this.#normalize(target).forEach(el => {
             if (!this.#isValid(el)) return;
@@ -1323,6 +1424,7 @@ class ModifierDOM {
         });
     }
 
+    /** @public */
     static hide(target) {
         this.#normalize(target).forEach(el => {
             if (!this.#isValid(el)) return;
@@ -1331,6 +1433,7 @@ class ModifierDOM {
         });
     }
 
+    /** @public */
     static addClass(target, classNames) {
         if (!classNames || typeof classNames !== 'string') return;
         const classes = classNames.split(/\s+/).filter(Boolean);
@@ -1342,6 +1445,7 @@ class ModifierDOM {
         });
     }
 
+    /** @public */
     static removeClass(target, classNames) {
         if (!classNames || typeof classNames !== 'string') return;
         const classes = classNames.split(/\s+/).filter(Boolean);
@@ -1353,6 +1457,7 @@ class ModifierDOM {
         });
     }
 
+    /** @public */
     static toggleClass(target, className, force) {
         if (!className || typeof className !== 'string') return;
         const classes = className.split(/\s+/).filter(Boolean);
@@ -1370,6 +1475,7 @@ class ModifierDOM {
         });
     }
 
+    /** @public */
     static toggleSliceClass(target, slice, styleKey, isActive) {
         if (!slice) return;
 
@@ -1387,6 +1493,7 @@ class ModifierDOM {
         }
     }
 
+    /** @public */
     static attr(target, attrName, value) {
         if (!attrName || typeof attrName !== 'string') return;
 
@@ -1404,7 +1511,9 @@ class ModifierDOM {
     }
 }
 
+/** @public */
 class TargetResolver {
+    /** @public */
     static resolve(container, targetsConfig) {
         const resolvedTargets = new Map();
         if (!targetsConfig || !(container instanceof HTMLElement)) return resolvedTargets;
@@ -1429,13 +1538,24 @@ class TargetResolver {
     }
 }
 
+/** @public */
 class ManifestBinder {
+    /** @internal */
     #container;
+
+    /** @internal */
     #store;
+
+    /** @internal */
     #sliceKey;
+
+    /** @internal */
     #resolvedTargets;
+
+    /** @internal */
     #unsubscribeEffects = [];
 
+    /** @public */
     constructor(container, store, sliceKey) {
         this.#container = container;
         this.#store = store;
@@ -1443,6 +1563,7 @@ class ManifestBinder {
         this.#resolvedTargets = new Map();
     }
 
+    /** @public */
     bind() {
         const slice = this.#store.getSlice(this.#sliceKey);
         const targetsConfig = slice?.config?.targets;
@@ -1472,6 +1593,7 @@ class ManifestBinder {
         console.log(`[ManifestBinder]: Auto-Bindings für '${this.#sliceKey}' erfolgreich etabliert.`);
     }
 
+    /** @public */
     unbind() {
         this.#unsubscribeEffects.forEach(unsub => unsub());
         this.#unsubscribeEffects = [];
@@ -1480,11 +1602,18 @@ class ManifestBinder {
     }
 }
 
+/** @public */
 class BaseObserver {
+    /** @internal */
     #registry;
+
+    /** @internal */
     #isObserving = false;
+
+    /** @internal */
     #targets = new Set();
 
+    /** @public */
     constructor(registry) {
         if (new.target === BaseObserver) {
             throw new TypeError("Aspis [BaseObserver]: Instanziierung der abstrakten Basisklasse ist nicht erlaubt.");
@@ -1492,18 +1621,22 @@ class BaseObserver {
         this.#registry = registry;
     }
 
+    /** @public */
     get registry() {
         return this.#registry;
     }
 
+    /** @public */
     get isObserving() {
         return this.#isObserving;
     }
 
+    /** @public */
     get targets() {
         return Array.from(this.#targets);
     }
 
+    /** @public */
     start(target) {
         this.#isObserving = true;
         if (target) {
@@ -1511,29 +1644,36 @@ class BaseObserver {
         }
     }
 
+    /** @public */
     stop() {
         this.#isObserving = false;
         this.#targets.clear();
     }
 
+    /** @public */
     observe(target) {
         if (!(target instanceof Node)) return;
         this.#targets.add(target);
     }
 
+    /** @public */
     unobserve(target) {
         this.#targets.delete(target);
     }
 
+    /** @public */
     destroy() {
         this.stop();
         this.#registry = null;
     }
 }
 
+/** @public */
 class MutationObserverDOM extends BaseObserver {
+    /** @internal */
     #nativeObserver = null;
 
+    /** @public */
     start(target = document.body, config = { childList: true, subtree: true }) {
         if (this.isObserving) return;
 
@@ -1544,6 +1684,7 @@ class MutationObserverDOM extends BaseObserver {
         console.info("Aspis [MutationObserverDOM]: Wächter aktiv.");
     }
 
+    /** @public */
     observe(target, config = { childList: true, subtree: true }) {
         if (!(target instanceof Node)) return;
         super.observe(target);
@@ -1552,6 +1693,7 @@ class MutationObserverDOM extends BaseObserver {
         }
     }
 
+    /** @public */
     stop() {
         if (this.#nativeObserver) {
             this.#nativeObserver.disconnect();
@@ -1561,6 +1703,7 @@ class MutationObserverDOM extends BaseObserver {
         console.info("Aspis [MutationObserverDOM]: Wächter gestoppt.");
     }
 
+    /** @internal */
     async #handleMutations(mutations) {
         const addedNodes = [];
         const cleaner = this.registry?.get('cleaner');
@@ -1590,13 +1733,16 @@ class MutationObserverDOM extends BaseObserver {
         }
     }
 
+    /** @public */
     destroy() {
         this.stop();
         super.destroy();
     }
 }
 
+/** @public */
 class GuardDOM {
+    /** @public */
     static clean(unsafeText) {
         if (typeof unsafeText === 'boolean' || typeof unsafeText === 'number') return unsafeText;
         if (unsafeText === null || unsafeText === undefined) return '';
@@ -1610,6 +1756,7 @@ class GuardDOM {
             .replace(/'/g, "&#039;");
     }
 
+    /** @public */
     static purify(rawHTML) {
         if (typeof rawHTML !== 'string') return rawHTML;
 
@@ -1647,12 +1794,15 @@ class GuardDOM {
     }
 }
 
+/** @public */
 class FormFieldService {
+    /** @public */
     static getFieldName(element) {
         if (!(element instanceof Element)) return null;
         return element.name || element.dataset.name || element.id || null;
     }
 
+    /** @public */
     static getValue(element) {
         if (!(element instanceof Element)) return null;
 
@@ -1677,6 +1827,7 @@ class FormFieldService {
         return element.value ?? '';
     }
 
+    /** @public */
     static createFieldState(initialValue = '', rules = {}) {
         return {
             value: initialValue,
@@ -1687,7 +1838,9 @@ class FormFieldService {
         };
     }
 }
+/** @public */
 class ValidationService {
+    /** @internal */
     static #rules = {
         required: (value) => {
             if (value === null || value === undefined) return false;
@@ -1718,12 +1871,14 @@ class ValidationService {
         }
     };
 
+    /** @public */
     static registerRule(name, fn) {
         if (typeof fn === 'function') {
             this.#rules[name] = fn;
         }
     }
 
+    /** @public */
     static validateField(value, rules = {}) {
         for (const [ruleName, config] of Object.entries(rules)) {
             let param = null;
@@ -1746,6 +1901,7 @@ class ValidationService {
         return null;
     }
 
+    /** @public */
     static validateForm(values, schema = {}) {
         const errors = {};
 
@@ -1763,20 +1919,39 @@ class ValidationService {
 
 // ----------------------------------------------------------------------------
 
+/** @public */
 class BaseController {
+    /** @internal */
     _store;
+
+    /** @internal */
     _dispatcher;
+
+    /** @internal */
     _container;
+
+    /** @internal */
     _options;
+
+    /** @internal */
     _sliceKey = null;
+
+    /** @internal */
     _isStarted = false;
 
+    /** @internal */
     #unsubscribeStore = null;
+
+    /** @internal */
     #eventDelegator = null;
 
+    /** @internal */
     #lifecycleController = new AbortController();
+
+    /** @internal */
     #taskControllers = new Map();
 
+    /** @public */
     constructor(container, store, dispatcher, options = {}) {
         this._container = container;
         this._store = store;
@@ -1790,10 +1965,12 @@ class BaseController {
         this.#eventDelegator = new EventDelegator(container, dispatcher, this, options);
     }
 
+    /** @public */
     get signal() {
         return this.#lifecycleController.signal;
     }
 
+    /** @public */
     get fetcher() {
         if (this._options?.fetcher) return this._options.fetcher;
 
@@ -1811,6 +1988,7 @@ class BaseController {
         };
     }
 
+    /** @public */
     getSignal(taskKey = null) {
         if (!taskKey) {
             return this.#lifecycleController.signal;
@@ -1838,26 +2016,31 @@ class BaseController {
         return taskController.signal;
     }
 
+    /** @public */
     clearTask(taskKey) {
         if (this.#taskControllers.has(taskKey)) {
             this.#taskControllers.delete(taskKey);
         }
     }
 
+    /** @public */
     delegate(eventName, selector, handler, options = {}) {
         this.#eventDelegator.delegate(eventName, selector, handler, options);
     }
 
+    /** @public */
     setLoadingState(stateProxy, message = 'Lade...') {
         LoadingStateHelper.apply(this._container, stateProxy, message);
     }
 
+    /** @public */
     async onInit() {
         if (!this._container) {
             throw new Error(`Aspis [${this.constructor.name}]: Kein Container-Element übergeben.`);
         }
     }
 
+    /** @public */
     async start() {
         if (this._isStarted || this.signal.aborted) return;
         this._isStarted = true;
@@ -1885,6 +2068,7 @@ class BaseController {
         }
     }
 
+    /** @public */
     destroy() {
         this.#lifecycleController.abort("Controller zerstört.");
         for (const taskCtrl of this.#taskControllers.values()) {
@@ -1920,6 +2104,7 @@ class BaseController {
         console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich gereinigt und aus dem Speicher entfernt.`);
     }
 
+    /** @internal */
     _onStateChange(slice) {
         if (!this._container) return;
         if (slice?.config?.targets) {
@@ -1945,7 +2130,9 @@ class BaseController {
         }
     }
 }
+/** @public */
 class DomDependencyScanner {
+    /** @public */
     static register(container, store) {
         if (!container || !store || typeof store.addDependency !== 'function') return;
 
@@ -1968,6 +2155,7 @@ class DomDependencyScanner {
         });
     }
 
+    /** @public */
     static unregister(container, store) {
         if (!container || !store || typeof store.removeDomDependencies !== 'function') return;
 
@@ -1977,7 +2165,9 @@ class DomDependencyScanner {
         childElements.forEach(child => store.removeDomDependencies(child));
     }
 }
+/** @public */
 class LoadingStateHelper {
+    /** @public */
     static apply(container, stateProxy, message = 'Lade...') {
         if (!stateProxy) return;
 
@@ -1998,13 +2188,24 @@ class LoadingStateHelper {
         }
     }
 }
+/** @public */
 class EventDelegator {
+    /** @internal */
     #container;
+
+    /** @internal */
     #dispatcher;
+
+    /** @internal */
     #target;
+
+    /** @internal */
     #options;
+
+    /** @internal */
     #unsubscribeEvents = [];
 
+    /** @public */
     constructor(container, dispatcher, target, options = {}) {
         this.#container = container;
         this.#dispatcher = dispatcher;
@@ -2012,6 +2213,7 @@ class EventDelegator {
         this.#options = options;
     }
 
+    /** @public */
     delegate(eventName, selector, handler, options = {}) {
         if (!this.#container) {
             console.warn(`Aspis [${this.#target.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
@@ -2043,6 +2245,7 @@ class EventDelegator {
         );
     }
 
+    /** @public */
     async initEvents(fetcher = null) {
         if (!this.#dispatcher) return;
 
@@ -2089,6 +2292,7 @@ class EventDelegator {
         });
     }
 
+    /** @public */
     destroy() {
         this.#unsubscribeEvents.forEach(unsub => unsub());
         this.#unsubscribeEvents = [];
@@ -2100,10 +2304,15 @@ class EventDelegator {
     }
 }
 
+/** @public */
 class BaseModel {
+    /** @internal */
     _layout = 'default';
+
+    /** @internal */
     _options = {};
 
+    /** @public */
     constructor(options = {}) {
         this._options = typeof options === 'object' && options !== null ? { ...options } : {};
         if (this._options.layout) {
@@ -2111,6 +2320,7 @@ class BaseModel {
         }
     }
 
+    /** @internal */
     _sanitize(data) {
         if (typeof data === 'string') {
             return typeof GuardDOM !== 'undefined' ? GuardDOM.clean(data) : data;
@@ -2128,22 +2338,28 @@ class BaseModel {
         return data;
     }
 
+    /** @public */
     setLayout(layout) {
         this._layout = String(layout);
     }
 
+    /** @public */
     get layout() {
         return this._layout;
     }
 
+    /** @public */
     toRenderData() {
         throw new Error(`Aspis [BaseModel]: '${this.constructor.name}' muss die Methode 'toRenderData()' implementieren.`);
     }
 }
 
+/** @public */
 class ModelLoader extends BaseModel {
+    /** @internal */
     #message;
 
+    /** @public */
     constructor(options = {}) {
         const opts = typeof options === 'string'
             ? { message: options }
@@ -2153,16 +2369,19 @@ class ModelLoader extends BaseModel {
         this.setMessage(opts.message);
     }
 
+    /** @public */
     get message() {
         return this.#message;
     }
 
+    /** @public */
     setMessage(msg) {
         const str = (msg !== null && msg !== undefined) ? String(msg) : '';
         const rawMsg = str || 'Lade...';
         this.#message = this._sanitize(rawMsg);
     }
 
+    /** @public */
     toRenderData() {
         return {
             layout: this._layout,
@@ -2170,7 +2389,9 @@ class ModelLoader extends BaseModel {
         };
     }
 }
+/** @public */
 class ModelSpinner extends ModelLoader {
+    /** @public */
     constructor(options = {}) {
         let message = 'Lade Daten...';
         let layout = 'spinner';
@@ -2188,9 +2409,12 @@ class ModelSpinner extends ModelLoader {
         });
     }
 }
+/** @public */
 class ModelLoadingBar extends ModelLoader {
+    /** @internal */
     #progress = 0;
 
+    /** @public */
     constructor(options = {}) {
         let progressVal = 0;
         let message = 'Lade...';
@@ -2214,10 +2438,12 @@ class ModelLoadingBar extends ModelLoader {
         this.setProgress(progressVal);
     }
 
+    /** @public */
     get progress() {
         return this.#progress;
     }
 
+    /** @public */
     setProgress(percent) {
         const val = Number(percent);
         if (Number.isNaN(val)) {
@@ -2227,6 +2453,7 @@ class ModelLoadingBar extends ModelLoader {
         this.#progress = Math.min(100, Math.max(0, val));
     }
 
+    /** @public */
     toRenderData() {
         return {
             ...super.toRenderData(),
@@ -2235,14 +2462,18 @@ class ModelLoadingBar extends ModelLoader {
     }
 }
 
+/** @public */
 class ControllerTable extends BaseController {
+    /** @internal */
     #model = null;
 
+    /** @public */
     constructor(container, store, dispatcher, options = {}) {
         super(container, store, dispatcher, options);
         this._sliceKey = options.sliceKey || 'features.tableFeature';
     }
 
+    /** @public */
     async onInit() {
         await super.onInit();
         if (this.signal.aborted) return;
@@ -2278,6 +2509,7 @@ class ControllerTable extends BaseController {
         await this.loadData(url);
     }
 
+    /** @public */
     onStateChange(slice) {
         if (slice?.model && this.#model !== slice.model) {
             this.#model = slice.model;
@@ -2285,6 +2517,7 @@ class ControllerTable extends BaseController {
         }
     }
 
+    /** @public */
     async loadData(url) {
         const stateProxy = this._store?.getSlice(this._sliceKey);
         if (!stateProxy) return;
@@ -2317,6 +2550,7 @@ class ControllerTable extends BaseController {
         }
     }
 
+    /** @public */
     reload(filterPayload = {}) {
         const baseUrl = this._container?.dataset?.url;
         if (!baseUrl) return;
@@ -2336,6 +2570,7 @@ class ControllerTable extends BaseController {
         }
     }
 
+    /** @internal */
     async #render() {
         if (!this.#model || this.signal.aborted) return;
 
@@ -2361,10 +2596,14 @@ class ControllerTable extends BaseController {
         }
     }
 }
+/** @public */
 class ModelTable extends BaseModel {
+    /** @public */
     static Row = class ModelTableRow extends BaseModel {
+        /** @internal */
         #data = {};
 
+        /** @public */
         constructor(data = {}) {
             super();
             if (data && typeof data === 'object') {
@@ -2372,23 +2611,29 @@ class ModelTable extends BaseModel {
             }
         }
 
+        /** @public */
         get(key) {
             return this.#data[key];
         }
 
+        /** @public */
         toRenderData() {
             return { ...this.#data };
         }
 
+        /** @public */
         static canHandle(data) {
             return data && typeof data === 'object';
         }
     };
 
+    /** @public */
     static Item = ModelTable.Row;
 
+    /** @internal */
     #rows = [];
 
+    /** @public */
     constructor(rawData = [], options = {}) {
         const opts = typeof options === 'string' ? { layout: options } : options;
         super(opts);
@@ -2400,16 +2645,19 @@ class ModelTable extends BaseModel {
         this.buildRows(list);
     }
 
+    /** @public */
     get rows() {
         return [...this.#rows];
     }
 
+    /** @public */
     buildRows(rawData) {
         this.#rows = rawData
             .filter(data => ModelTable.Row.canHandle(data))
             .map(data => data instanceof ModelTable.Row ? data : new ModelTable.Row(data));
     }
 
+    /** @public */
     appendRow(data) {
         if (data instanceof ModelTable.Row) {
             this.#rows.push(data);
@@ -2418,10 +2666,12 @@ class ModelTable extends BaseModel {
         }
     }
 
+    /** @public */
     clearRows() {
         this.#rows = [];
     }
 
+    /** @public */
     toRenderData() {
         return {
             layout: this._layout,
@@ -2430,14 +2680,18 @@ class ModelTable extends BaseModel {
     }
 }
 
+/** @public */
 class ControllerAccordion extends BaseController {
+    /** @internal */
     #model = null;
 
+    /** @public */
     constructor(container, store, dispatcher, options = {}) {
         super(container, store, dispatcher, options);
         this._sliceKey = options.sliceKey || 'features.accordionFeature';
     }
 
+    /** @public */
     async onInit() {
         await super.onInit();
         if (this.signal.aborted) return;
@@ -2454,6 +2708,7 @@ class ControllerAccordion extends BaseController {
         this.#bindDOMEvents();
     }
 
+    /** @public */
     onStateChange(slice) {
         if (slice?.model && this.#model !== slice.model) {
             this.#model = slice.model;
@@ -2461,6 +2716,7 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @public */
     async loadData(url) {
         const stateProxy = this._store?.getSlice(this._sliceKey);
         const signal = this.getSignal('loadData');
@@ -2501,6 +2757,7 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @public */
     toggle(itemId) {
         if (!this.#model) return;
 
@@ -2523,6 +2780,7 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @internal */
     #scanDOMAndBuildModel() {
         if (!this._container) return;
 
@@ -2551,6 +2809,7 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @internal */
     #bindDOMEvents() {
         this.delegate('click', '[data-target="trigger"]', (event, target) => {
             const itemEl = target.closest('[data-accordion-item]');
@@ -2566,6 +2825,7 @@ class ControllerAccordion extends BaseController {
         });
     }
 
+    /** @internal */
     #handleKeyDown(e) {
         if (!this._container) return;
 
@@ -2602,12 +2862,13 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @internal */
     #updateItemUI(item) {
         if (!this._container || !(item instanceof ModelAccordion.Item || item?.id)) return;
 
         const itemEl = this._container.querySelector(`[data-accordion-item][data-id="${CSS.escape(item.id)}"]`) 
                     || this._container.querySelector(`#${CSS.escape(item.id)}`);
-        
+
         if (!itemEl) return;
 
         const triggerEl = itemEl.querySelector('[data-target="trigger"]');
@@ -2630,6 +2891,7 @@ class ControllerAccordion extends BaseController {
         }
     }
 
+    /** @internal */
     async #renderFull() {
         if (!this.#model || this.signal.aborted) return;
 
@@ -2655,14 +2917,26 @@ class ControllerAccordion extends BaseController {
         }
     }
 }
+/** @public */
 class ModelAccordion extends BaseModel {
+    /** @public */
     static Item = class ModelAccordionItem extends BaseModel {
+        /** @internal */
         #id;
+
+        /** @internal */
         #title;
+
+        /** @internal */
         #content;
+
+        /** @internal */
         #isOpen;
+
+        /** @internal */
         #disabled;
 
+        /** @public */
         constructor(data = {}) {
             super();
             const sanitized = this._sanitize(data);
@@ -2675,22 +2949,34 @@ class ModelAccordion extends BaseModel {
             this.#disabled = Boolean(data.disabled);
         }
 
+        /** @public */
         get id() { return this.#id; }
+
+        /** @public */
         get title() { return this.#title; }
+
+        /** @public */
         get content() { return this.#content; }
+
+        /** @public */
         get isOpen() { return this.#isOpen; }
+
+        /** @public */
         get disabled() { return this.#disabled; }
 
+        /** @public */
         setOpen(open) {
             if (this.#disabled) return;
             this.#isOpen = Boolean(open);
         }
 
+        /** @public */
         toggle() {
             if (this.#disabled) return;
             this.#isOpen = !this.#isOpen;
         }
 
+        /** @public */
         toRenderData() {
             return {
                 id: this.#id,
@@ -2701,14 +2987,19 @@ class ModelAccordion extends BaseModel {
             };
         }
 
+        /** @public */
         static canHandle(data) {
             return data && typeof data === 'object';
         }
     };
 
+    /** @internal */
     #items = [];
+
+    /** @internal */
     #singleOpen = false;
 
+    /** @public */
     constructor(rawData = [], options = {}) {
         const opts = typeof options === 'string' ? { layout: options } : options;
         super(opts);
@@ -2722,19 +3013,25 @@ class ModelAccordion extends BaseModel {
         this.buildItems(list);
     }
 
+    /** @public */
     get singleOpen() { return this.#singleOpen; }
+
+    /** @public */
     get items() { return [...this.#items]; }
 
+    /** @public */
     buildItems(rawData) {
         this.#items = rawData
             .filter(data => ModelAccordion.Item.canHandle(data))
             .map(data => data instanceof ModelAccordion.Item ? data : new ModelAccordion.Item(data));
     }
 
+    /** @public */
     getItem(itemId) {
         return this.#items.find(item => item.id === itemId) || null;
     }
 
+    /** @public */
     toggleItem(itemId) {
         const targetItem = this.getItem(itemId);
         if (!targetItem || targetItem.disabled) return null;
@@ -2751,6 +3048,7 @@ class ModelAccordion extends BaseModel {
         return targetItem;
     }
 
+    /** @public */
     openItem(itemId) {
         const targetItem = this.getItem(itemId);
         if (!targetItem || targetItem.disabled) return;
@@ -2761,6 +3059,7 @@ class ModelAccordion extends BaseModel {
         targetItem.setOpen(true);
     }
 
+    /** @public */
     closeItem(itemId) {
         const targetItem = this.getItem(itemId);
         if (targetItem) {
@@ -2768,15 +3067,18 @@ class ModelAccordion extends BaseModel {
         }
     }
 
+    /** @public */
     openAll() {
         if (this.#singleOpen) return;
         this.#items.forEach(item => item.setOpen(true));
     }
 
+    /** @public */
     closeAll() {
         this.#items.forEach(item => item.setOpen(false));
     }
 
+    /** @public */
     toRenderData() {
         return {
             layout: this._layout,
@@ -2786,11 +3088,18 @@ class ModelAccordion extends BaseModel {
     }
 }
 
+/** @public */
 class ControllerForm extends BaseController {
+    /** @internal */
     #model = null;
+
+    /** @internal */
     #validateOnBlur = true;
+
+    /** @internal */
     #validateOnChange = false;
 
+    /** @public */
     constructor(container, store, dispatcher, options = {}) {
         super(container, store, dispatcher, options);
         this._sliceKey = options.sliceKey || 'forms.mainForm';
@@ -2798,6 +3107,7 @@ class ControllerForm extends BaseController {
         this.#validateOnChange = options.validateOnChange ?? false;
     }
 
+    /** @public */
     async onInit() {
         await super.onInit();
         if (this.signal.aborted) return;
@@ -2806,6 +3116,7 @@ class ControllerForm extends BaseController {
         this.#bindFormEvents();
     }
 
+    /** @internal */
     #initializeFormModel() {
         if (!this._container) return;
 
@@ -2836,6 +3147,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #extractRulesFromElement(el) {
         let rules = {};
 
@@ -2863,6 +3175,7 @@ class ControllerForm extends BaseController {
         return rules;
     }
 
+    /** @internal */
     #bindFormEvents() {
         const fieldSelector = 'input, select, textarea, [data-name]';
 
@@ -2884,6 +3197,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #handleInput(e) {
         const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
             ? FormFieldService.getFieldName(e.target)
@@ -2902,6 +3216,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #handleChange(e) {
         const name = typeof FormFieldService !== 'undefined' && typeof FormFieldService.getFieldName === 'function'
             ? FormFieldService.getFieldName(e.target)
@@ -2916,6 +3231,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #handleBlur(e) {
         if (!this.#validateOnBlur || !this.#model) return;
 
@@ -2932,6 +3248,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #updateField(name, value, triggerValidation = true) {
         if (!this.#model) return;
 
@@ -2942,6 +3259,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @public */
     updateFieldUI(name) {
         if (!this.#model || !this._container) return;
 
@@ -2976,6 +3294,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @public */
     async submit() {
         if (!this.#model || this.#model.isSubmitting || !this._container) return;
 
@@ -3049,6 +3368,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @public */
     reset() {
         if (!this.#model || !this._container) return;
 
@@ -3076,6 +3396,7 @@ class ControllerForm extends BaseController {
         this.#hideFormMessage();
     }
 
+    /** @internal */
     #focusFirstInvalidField() {
         if (!this.#model || !this._container) return;
         const errors = this.#model.getErrors();
@@ -3089,6 +3410,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #toggleSubmittingUI(isSubmitting) {
         if (!this._container) return;
 
@@ -3109,6 +3431,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #showFormMessage(msg, type = 'error') {
         if (!this._container) return;
 
@@ -3125,6 +3448,7 @@ class ControllerForm extends BaseController {
         }
     }
 
+    /** @internal */
     #hideFormMessage() {
         if (!this._container) return;
 
@@ -3138,12 +3462,21 @@ class ControllerForm extends BaseController {
         }
     }
 }
+/** @public */
 class ModelForm extends BaseModel {
+    /** @internal */
     #fields = new Map();
+
+    /** @internal */
     #isSubmitting = false;
+
+    /** @internal */
     #submitError = null;
+
+    /** @internal */
     #submitSuccess = false;
 
+    /** @public */
     constructor(initialFields = {}, options = {}) {
         super(options);
 
@@ -3152,10 +3485,16 @@ class ModelForm extends BaseModel {
         });
     }
 
+    /** @public */
     get isSubmitting() { return this.#isSubmitting; }
+
+    /** @public */
     get submitError() { return this.#submitError; }
+
+    /** @public */
     get submitSuccess() { return this.#submitSuccess; }
 
+    /** @public */
     get isValid() {
         for (const [_, field] of this.#fields) {
             if (field.error) return false;
@@ -3163,6 +3502,7 @@ class ModelForm extends BaseModel {
         return true;
     }
 
+    /** @public */
     get isDirty() {
         for (const [_, field] of this.#fields) {
             if (field.isDirty) return true;
@@ -3170,6 +3510,7 @@ class ModelForm extends BaseModel {
         return false;
     }
 
+    /** @public */
     addField(name, initialValue = '', rules = {}) {
         if (!name) return;
 
@@ -3187,6 +3528,7 @@ class ModelForm extends BaseModel {
         });
     }
 
+    /** @public */
     setFieldValue(name, rawValue, markTouched = true) {
         const field = this.#fields.get(name);
         if (!field) return;
@@ -3202,10 +3544,12 @@ class ModelForm extends BaseModel {
         this.validateField(name);
     }
 
+    /** @public */
     getField(name) {
         return this.#fields.get(name) || null;
     }
 
+    /** @public */
     getErrors() {
         const errors = {};
         this.#fields.forEach((field, name) => {
@@ -3214,6 +3558,7 @@ class ModelForm extends BaseModel {
         return errors;
     }
 
+    /** @public */
     validateField(name) {
         const field = this.#fields.get(name);
         if (!field) return true;
@@ -3227,6 +3572,7 @@ class ModelForm extends BaseModel {
         return !field.error;
     }
 
+    /** @public */
     validateAll() {
         let allValid = true;
         this.#fields.forEach((field, name) => {
@@ -3237,6 +3583,7 @@ class ModelForm extends BaseModel {
         return allValid;
     }
 
+    /** @public */
     setSubmitting(state) {
         this.#isSubmitting = Boolean(state);
         if (state) {
@@ -3245,12 +3592,14 @@ class ModelForm extends BaseModel {
         }
     }
 
+    /** @public */
     setSubmitResult(success, errorMessage = null) {
         this.#isSubmitting = false;
         this.#submitSuccess = Boolean(success);
         this.#submitError = errorMessage;
     }
 
+    /** @public */
     toPayload() {
         const payload = {};
         this.#fields.forEach((field, name) => {
@@ -3259,6 +3608,7 @@ class ModelForm extends BaseModel {
         return payload;
     }
 
+    /** @public */
     reset() {
         this.#fields.forEach((field) => {
             field.value = field.initialValue;
@@ -3271,15 +3621,21 @@ class ModelForm extends BaseModel {
     }
 }
 
+/** @public */
 class ControllerCustomDropdown extends BaseController {
+    /** @internal */
     #model = null;
+
+    /** @internal */
     #clickOutsideUnsub = null;
 
+    /** @public */
     constructor(container, store, dispatcher, options = {}) {
         super(container, store, dispatcher, options);
         this._sliceKey = options.sliceKey || 'features.dropdownFeature';
     }
 
+    /** @public */
     async onInit() {
         await super.onInit();
         if (this.signal.aborted) return;
@@ -3312,6 +3668,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @public */
     onStateChange(slice) {
         if (slice && slice.model && this.#model !== slice.model) {
             this.#model = slice.model;
@@ -3319,6 +3676,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @public */
     async loadOptions(url) {
         const stateProxy = this._store?.getSlice(this._sliceKey);
         
@@ -3344,6 +3702,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @internal */
     #bindDOMEvents() {
         if (!this._container) return;
 
@@ -3371,6 +3730,7 @@ class ControllerCustomDropdown extends BaseController {
         });
     }
 
+    /** @internal */
     #handleKeyDown(e) {
         if (!this.#model) return;
 
@@ -3416,11 +3776,13 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @public */
     toggle() {
         if (!this.#model) return;
         this.#model.isOpen ? this.close() : this.open();
     }
 
+    /** @public */
     open() {
         if (!this.#model || this.#model.isOpen) return;
 
@@ -3444,6 +3806,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @public */
     close() {
         if (!this.#model || !this.#model.isOpen) return;
 
@@ -3467,6 +3830,7 @@ class ControllerCustomDropdown extends BaseController {
         this.validateUI();
     }
 
+    /** @public */
     selectValue(value) {
         if (!this.#model) return;
 
@@ -3502,6 +3866,7 @@ class ControllerCustomDropdown extends BaseController {
         this.validateUI();
     }
 
+    /** @public */
     validateUI() {
         if (!this.#model) return;
 
@@ -3526,6 +3891,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @internal */
     #updateFocusUI() {
         if (!this.#model) return;
 
@@ -3544,6 +3910,7 @@ class ControllerCustomDropdown extends BaseController {
         });
     }
 
+    /** @internal */
     #syncWithNativeInput() {
         if (!this.#model) return;
 
@@ -3565,6 +3932,7 @@ class ControllerCustomDropdown extends BaseController {
         hiddenInput.value = this.#model.value;
     }
 
+    /** @internal */
     async #renderFull() {
         if (!this.#model) return;
 
@@ -3585,6 +3953,7 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 
+    /** @public */
     onDestroy() {
         super.onDestroy();
         if (this.#clickOutsideUnsub) {
@@ -3593,12 +3962,20 @@ class ControllerCustomDropdown extends BaseController {
         }
     }
 }
+/** @public */
 class ModelCustomDropdown extends BaseModel {
+    /** @public */
     static Item = class ModelCustomDropdownItem {
+        /** @internal */
         #value;
+
+        /** @internal */
         #label;
+
+        /** @internal */
         #disabled;
 
+        /** @public */
         constructor(data = {}, sanitizeFn = (v) => String(v ?? '')) {
             const rawVal = data.value ?? data.id ?? '';
             const rawLabel = data.label ?? data.title ?? String(rawVal);
@@ -3608,10 +3985,16 @@ class ModelCustomDropdown extends BaseModel {
             this.#disabled = Boolean(data.disabled);
         }
 
+        /** @public */
         get value() { return this.#value; }
+
+        /** @public */
         get label() { return this.#label; }
+
+        /** @public */
         get disabled() { return this.#disabled; }
 
+        /** @public */
         toRenderData(isSelected = false, isFocused = false) {
             return {
                 value: this.#value,
@@ -3623,12 +4006,22 @@ class ModelCustomDropdown extends BaseModel {
         }
     };
 
+    /** @internal */
     #items = [];
+
+    /** @internal */
     #selectedIndex = -1;
+
+    /** @internal */
     #focusedIndex = -1;
+
+    /** @internal */
     #isOpen = false;
+
+    /** @internal */
     #fieldState;
 
+    /** @public */
     constructor(rawData = [], options = {}) {
         const opts = typeof options === 'string' ? { layout: options } : options;
         super(opts);
@@ -3651,13 +4044,25 @@ class ModelCustomDropdown extends BaseModel {
         }
     }
 
+    /** @public */
     get isOpen() { return this.#isOpen; }
+
+    /** @public */
     get focusedIndex() { return this.#focusedIndex; }
+
+    /** @public */
     get selectedIndex() { return this.#selectedIndex; }
+
+    /** @public */
     get selectedItem() { return this.#items[this.#selectedIndex] || null; }
+
+    /** @public */
     get value() { return this.#fieldState.value; }
+
+    /** @public */
     get error() { return this.#fieldState.error; }
 
+    /** @public */
     setOptions(rawData = []) {
         const list = Array.isArray(rawData) ? rawData : (rawData?.options || rawData?.data || []);
         const sanitizeFn = (val) => this._sanitize(val);
@@ -3667,6 +4072,7 @@ class ModelCustomDropdown extends BaseModel {
         this.#focusedIndex = this.#selectedIndex >= 0 ? this.#selectedIndex : 0;
     }
 
+    /** @public */
     setOpen(open) {
         this.#isOpen = Boolean(open);
         if (this.#isOpen) {
@@ -3674,6 +4080,7 @@ class ModelCustomDropdown extends BaseModel {
         }
     }
 
+    /** @public */
     selectByValue(val, triggerValidation = true) {
         const sanitizedVal = this._sanitize(val);
         const index = this.#items.findIndex(item => item.value === sanitizedVal && !item.disabled);
@@ -3691,6 +4098,7 @@ class ModelCustomDropdown extends BaseModel {
         return true;
     }
 
+    /** @public */
     moveFocus(direction) {
         if (this.#items.length === 0) return;
         let next = this.#focusedIndex + direction;
@@ -3704,6 +4112,7 @@ class ModelCustomDropdown extends BaseModel {
         }
     }
 
+    /** @public */
     selectFocused() {
         if (this.#focusedIndex >= 0 && this.#focusedIndex < this.#items.length) {
             const item = this.#items[this.#focusedIndex];
@@ -3714,6 +4123,7 @@ class ModelCustomDropdown extends BaseModel {
         return false;
     }
 
+    /** @public */
     validate() {
         if (typeof ValidationService !== 'undefined') {
             this.#fieldState.error = ValidationService.validateField(
@@ -3726,6 +4136,7 @@ class ModelCustomDropdown extends BaseModel {
         return !this.#fieldState.error;
     }
 
+    /** @public */
     toRenderData() {
         return {
             layout: this._layout,

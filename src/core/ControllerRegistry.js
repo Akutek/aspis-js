@@ -1,39 +1,73 @@
+/** @internal */
 export class ControllerRegistry {
-    static #cache = new Map();
+    /** @internal */
+    static #sharedCache = new Map();
 
+    /** @internal */
+    #resolvedControllers = new Map();
+
+    /** @internal */
+    #basePath;
+
+    /** @public */
+    constructor(basePath = './controllers') {
+        this.#basePath = basePath;
+    }
+
+    /** @public */
     static async getAsync(controllerName) {
-        if (typeof controllerName !== 'string') {
-            console.error(`Aspis [ControllerRegistry]: Ungültiger Typ '${typeof controllerName}'.`);
+        const instance = new ControllerRegistry('./controllers');
+        return instance.getAsync(controllerName);
+    }
+
+    /** @public */
+    async getAsync(typeOrName) {
+        if (!typeOrName || typeof typeOrName !== 'string') {
+            console.error(`Aspis [ControllerRegistry]: Ungültiger Typ '${typeof typeOrName}'.`);
             return null;
         }
 
-        const trimmedName = controllerName.trim();
-
+        const trimmed = typeOrName.trim();
         const safeNameRegex = /^[A-Za-z0-9_-]+$/;
 
-        if (!safeNameRegex.test(trimmedName)) {
-            console.error(`Aspis [ControllerRegistry]: Sicherheitsfehler - Ungültiger Name '${trimmedName}'.`);
+        if (!safeNameRegex.test(trimmed)) {
+            console.error(`Aspis [ControllerRegistry]: Sicherheitsfehler - Ungültiger Name '${trimmed}'.`);
             return null;
         }
 
-        if (this.#cache.has(trimmedName)) {
-            return this.#cache.get(trimmedName);
+        if (this.#resolvedControllers.has(trimmed)) {
+            return this.#resolvedControllers.get(trimmed);
         }
 
+        if (ControllerRegistry.#sharedCache.has(trimmed)) {
+            const cachedClass = ControllerRegistry.#sharedCache.get(trimmed);
+            this.#resolvedControllers.set(trimmed, cachedClass);
+            return cachedClass;
+        }
+
+        const isFullClassName = trimmed.toLowerCase().startsWith('controller');
+        const className = isFullClassName 
+            ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+            : `Controller${trimmed.charAt(0).toUpperCase() + trimmed.slice(1)}`;
+
+        const fileUrl = `${this.#basePath}/${className}.js`;
+
         try {
-            const module = await import(`../controllers/${trimmedName}.js`);
-            const ControllerClass = module.default || module[trimmedName];
+            const module = await import(fileUrl);
+            const ControllerClass = module[className] || module.default || module[trimmed];
 
             if (!ControllerClass) {
-                console.error(`Aspis [ControllerRegistry]: Klasse '${trimmedName}' konnte im Modul nicht gefunden werden.`);
+                console.error(`Aspis [ControllerRegistry]: Klasse '${className}' konnte in '${fileUrl}' nicht gefunden werden.`);
                 return null;
             }
 
-            this.#cache.set(trimmedName, ControllerClass);
+            this.#resolvedControllers.set(trimmed, ControllerClass);
+            ControllerRegistry.#sharedCache.set(trimmed, ControllerClass);
+
             return ControllerClass;
 
         } catch (error) {
-            console.error(`Aspis [ControllerRegistry]: Fehler beim dynamischen Laden von '${trimmedName}':`, error);
+            console.error(`Aspis [ControllerRegistry]: Fehler beim dynamischen Laden von '${fileUrl}':`, error);
             return null;
         }
     }

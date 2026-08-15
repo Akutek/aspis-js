@@ -1,26 +1,71 @@
-/** @internal */
+/**
+ * Konstruktor-Typ bzw. Klasse eines dynamisch geladenen Aspis-Controllers.
+ * @typedef {new (...args: any[]) => any} ControllerConstructor
+ */
+/**
+ * Cache-Struktur für registrierte und aufgelöste Controller-Klassen.
+ * @typedef {Map<string, ControllerConstructor>} ControllerRegistryCache
+ */
+
+/**
+ * Registry-Klasse des Aspis-Frameworks zum dynamischen Laden, Validieren und Cachen von Controller-Klassen.
+ * 
+ * @internal
+ */
 export class ControllerRegistry {
-    /** @internal */
+    /**
+     * Statischer Cache für bereits geladene Controller-Klassen über alle Instanzen hinweg.
+     * @internal
+     * @type {ControllerRegistryCache}
+     */
     static #sharedCache = new Map();
 
-    /** @internal */
+    /**
+     * Instanzspezifischer Cache für lokal aufgelöste Controller-Klassen.
+     * @internal
+     * @type {ControllerRegistryCache}
+     */
     #resolvedControllers = new Map();
 
-    /** @internal */
+    /**
+     * Der Basispfad zum Verzeichnis der Controller-Dateien.
+     * @internal
+     * @type {string}
+     */
     #basePath;
 
-    /** @public */
+    /**
+     * Erstellt eine neue Instanz der ControllerRegistry für das dynamische Laden von Controllern.
+     * 
+     * @public
+     * @param {string} [basePath='./controllers'] - Relativer oder absoluter Pfad zum Controller-Verzeichnis.
+     */
     constructor(basePath = './controllers') {
         this.#basePath = basePath;
     }
 
-    /** @public */
+    /**
+     * Lädt eine Controller-Klasse statisch und asynchron über eine Standard-Instanz.
+     * 
+     * @public
+     * @static
+     * @async
+     * @param {string} controllerName - Der Name oder Typ des zu ladenden Controllers.
+     * @returns {Promise<ControllerConstructor|null>} Die geladene Controller-Klasse oder `null`, falls das Laden fehlschlägt.
+     */
     static async getAsync(controllerName) {
         const instance = new ControllerRegistry('./controllers');
         return instance.getAsync(controllerName);
     }
 
-    /** @public */
+    /**
+     * Lädt eine Controller-Klasse asynchron anhand ihres Namens oder Typs aus dem konfigurierten Basispfad.
+     * 
+     * @public
+     * @async
+     * @param {string} typeOrName - Der Name oder Typ des Controllers (z. B. `'User'` oder `'ControllerUser'`).
+     * @returns {Promise<ControllerConstructor|null>} Die aufgelöste Controller-Klasse oder `null` bei Validierungs-, Sicherheits- oder Ladefehlern.
+     */
     async getAsync(typeOrName) {
         if (!typeOrName || typeof typeOrName !== 'string') {
             console.error(`Aspis [ControllerRegistry]: Ungültiger Typ '${typeof typeOrName}'.`);

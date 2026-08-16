@@ -238,7 +238,7 @@ export class ControllerForm extends BaseController {
             try {
                 rules = JSON.parse(el.dataset.rules);
             } catch (e) {
-                console.warn(`[ControllerForm]: Ungültiges JSON in data-rules für ${el.name}`, e);
+                LoggerService.warn(`[ControllerForm.#extractRulesFromElement()] Ungültiges JSON in data-rules für ${el.name}`, e);
             }
         }
 
@@ -637,11 +637,11 @@ export class ControllerForm extends BaseController {
                 await renderService.paste(this._container, templateName, renderData);
 
                 if (this.signal.aborted) return;
-                console.log(`[ControllerForm]: HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
+                LoggerService.debug(`[ControllerForm.#renderFull()] HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
             }
         } catch (error) {
             if (!this.signal.aborted) {
-                console.error("[ControllerForm]: Render-Fehler", error);
+                LoggerService.error("[ControllerForm.#renderFull()] Render-Fehler", error);
             }
         }
     }

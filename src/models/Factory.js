@@ -90,10 +90,10 @@ export class Factory {
                 if (typeof mainInstance.appendRow === 'function') {
                     mainInstance.appendRow(matchedRowInstance);
                 } else {
-                    console.warn("Factory: Das Hauptmodell besitzt keine 'appendRow'-Schnittstelle.");
+                    LoggerService.warn("[Factory.create()] Factory: Das Hauptmodell besitzt keine 'appendRow'-Schnittstelle.");
                 }
             } else {
-                console.warn("Factory: Kein passender Klassen-Blueprint für diesen Datensatz gefunden:", itemData);
+                LoggerService.warn("[Factory.create()] Factory: Kein passender Klassen-Blueprint für diesen Datensatz gefunden:", itemData);
             }
         });
 

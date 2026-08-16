@@ -23,7 +23,7 @@ export class ScannerDOM {
      */
     static scan(rootElement = document.body) {
         if (!rootElement || typeof rootElement.querySelectorAll !== 'function') {
-            console.warn("Aspis [ScannerDOM]: Ungültiges oder fehlendes Root-Element übergeben. Scan abgebrochen.");
+            LoggerService.warn("[ScannerDOM.scan()] Aspis [ScannerDOM]: Ungültiges oder fehlendes Root-Element übergeben. Scan abgebrochen.");
             return [];
         }
 
@@ -54,7 +54,7 @@ export class ScannerDOM {
     static #parseNode(container) {
         const type = container.dataset.controller || container.getAttribute('data-controller');
         if (!type || !type.trim()) {
-            console.warn("Aspis [ScannerDOM]: Element mit leerem 'data-controller'-Attribut übersprungen:", container);
+            LoggerService.warn("[ScannerDOM.#parseNode()] Aspis [ScannerDOM]: Element mit leerem 'data-controller'-Attribut übersprungen:", container);
             return null;
         }
 

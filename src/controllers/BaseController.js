@@ -365,7 +365,7 @@ class BaseController {
                 this.onDestroy();
             }
         } catch (e) {
-            console.error(`Aspis [BaseController]: Fehler in onDestroy() von ${this.constructor.name}:`, e);
+            LoggerService.error(`[BaseController.destroy()] Aspis [BaseController]: Fehler in onDestroy() von ${this.constructor.name}:`, e);
         } finally {
             this._container = null;
             this._store = null;
@@ -373,7 +373,7 @@ class BaseController {
             this._options = null;
         }
 
-        console.log(`Aspis [Lifecycle]: ${this.constructor.name} erfolgreich gereinigt und aus dem Speicher entfernt.`);
+        LoggerService.debug(`[BaseController.destroy()] Aspis [Lifecycle]: ${this.constructor.name} erfolgreich gereinigt und aus dem Speicher entfernt.`);
     }
 
     /**

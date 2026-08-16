@@ -73,7 +73,7 @@ export class ComponentCleaner {
                 controller.destroy();
             }
         } catch (error) {
-            console.error(`Aspis [ComponentCleaner]: Fehler beim Zerstören von ${controller.constructor?.name || 'Controller'}:`, error);
+            LoggerService.error(`[ComponentCleaner.clean()] Aspis [ComponentCleaner]: Fehler beim Zerstören von ${controller.constructor?.name || 'Controller'}:`, error);
         } finally {
             this.#registry.delete(element);
         }

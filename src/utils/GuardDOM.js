@@ -63,7 +63,7 @@ export class GuardDOM {
         allElements.forEach(element => {
             if (forbiddenTags.has(element.tagName)) {
                 element.remove();
-                console.warn(`Aspis [GuardDOM]: Gefährlicher Tag <${element.tagName.toLowerCase()}> wurde entfernt.`);
+                LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Gefährlicher Tag <${element.tagName.toLowerCase()}> wurde entfernt.`);
                 return;
             }
 
@@ -73,13 +73,13 @@ export class GuardDOM {
 
                 if (attrName.startsWith('on')) {
                     element.removeAttribute(attr.name);
-                    console.warn(`Aspis [GuardDOM]: Event-Handler '${attr.name}' entfernt.`);
+                    LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Event-Handler '${attr.name}' entfernt.`);
                 }
 
                 if (['href', 'src', 'action', 'data'].includes(attrName)) {
                     if (attrValue.startsWith('javascript:') || attrValue.startsWith('vbscript:') || attrValue.startsWith('data:text/html')) {
                         element.setAttribute(attr.name, '#');
-                        console.warn(`Aspis [GuardDOM]: Unsichere URL in '${attr.name}' auf '#' zurückgesetzt.`);
+                        LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Unsichere URL in '${attr.name}' auf '#' zurückgesetzt.`);
                     }
                 }
             });

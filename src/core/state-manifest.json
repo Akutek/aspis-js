@@ -1,6 +1,7 @@
 {
     "settings": {
-        "strictMode": true
+        "strictMode": true,
+        "debug": true
     },
     "globalStyles": {
         "HIDDEN": "is-hidden",

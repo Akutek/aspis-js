@@ -1,5 +1,5 @@
 import { Store } from "../reactivity/";
-import { ComponentCleaner, TemplateService, RenderService, DatenFetcher, EventDispatcher } from "../services/";
+import { ComponentCleaner, LoggerService, TemplateService, RenderService, DatenFetcher, EventDispatcher } from "../services/";
 import { ScannerDOM, ModifierDOM } from "../utils/";
 import { ControllerRegistry, Registry } from "./";
 
@@ -95,10 +95,10 @@ export class Main {
             const scanResults = ScannerDOM.scan(document.body);
             await this.assignControllers(scanResults, services);
 
-            console.info("Aspis [Main]: Anwendung erfolgreich gebootet.");
+            LoggerService.info("[Main.boot()] Anwendung erfolgreich gebootet.");
             return services;
         } catch (error) {
-            console.error("Aspis [Main]: Kritischer Fehler beim Bootstrapping der Anwendung:", error);
+            LoggerService.error("[Main.boot()] Kritischer Fehler beim Bootstrapping der Anwendung:", error);
         }
     }
 
@@ -139,7 +139,9 @@ export class Main {
         const cleaner = new ComponentCleaner(registry);
         const templates = new TemplateService();
         const renderService = new RenderService(templates, cleaner);
+        LoggerService.init(manifest.settings?.debug ?? config.debug);
 
+        registry.set('logger', LoggerService);
         registry.set('controllerRegistry', controllerRegistry);
         registry.set('config', config);
         registry.set('store', new Store(manifest));
@@ -190,7 +192,7 @@ export class Main {
         const ControllerClass = await controllerRegistry.getAsync(controllerClassName);
 
         if (!ControllerClass) {
-            console.warn(`Aspis [Main]: Dynamischer Lookup fehlgeschlagen. Controller '${controllerClassName}' ist nicht in der Registry registriert.`);
+            LoggerService.warn(`[Main.startController()] Dynamischer Lookup fehlgeschlagen. Controller '${controllerClassName}' ist nicht in der Registry registriert.`);
             return;
         }
 
@@ -217,14 +219,14 @@ export class Main {
                 const paths = dependsOnAttr.split(',').map(path => path.trim()).filter(Boolean);
                 paths.forEach(path => {
                     store.addDependency(item.element, path);
-                    console.info(`Aspis [Main]: Reaktive PHP-Abhängigkeit registriert: <${item.type}> lauscht auf Pfad '${path}'`);
+                    LoggerService.info(`[Main.startController()] Reaktive PHP-Abhängigkeit registriert: <${item.type}> lauscht auf Pfad '${path}'`);
                 });
             }
 
             await controllerInstance.start();
 
         } catch (error) {
-            console.error(`Aspis [Main]: Fehler im Lebenszyklus beim Starten des Controllers '${item.type}':`, error);
+            LoggerService.error(`[Main.startController()] Fehler im Lebenszyklus beim Starten des Controllers '${item.type}':`, error);
         }
     }
 }

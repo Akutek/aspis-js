@@ -215,7 +215,7 @@ export class ControllerTable extends BaseController {
         } catch (error) {
             if (error.name !== 'AbortError' && !signal.aborted) {
                 stateProxy.error = error.message;
-                console.error("[ControllerTable]: Fehler im loadData-Ablauf", error);
+                LoggerService.error("[ControllerTable.loadData()] Fehler im loadData-Ablauf", error);
             }
         } finally {
             if (stateProxy && !signal.aborted) {
@@ -247,7 +247,7 @@ export class ControllerTable extends BaseController {
 
             this.loadData(urlObj.toString());
         } catch (e) {
-            console.error("[ControllerTable]: Fehler beim Generieren der Reload-URL", e);
+            LoggerService.error("[ControllerTable.reload()] Fehler beim Generieren der Reload-URL", e);
         }
     }
 
@@ -273,13 +273,13 @@ export class ControllerTable extends BaseController {
                 await renderService.paste(this._container, templateName, this.#model.toRenderData());
 
                 if (this.signal.aborted) return;
-                console.log(`[ControllerTable]: HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
+                LoggerService.debug(`[ControllerTable.#render()] HTML für '${this._sliceKey}' erfolgreich ins DOM injiziert.`);
             } else {
-                console.warn("[ControllerTable]: RenderService ist nicht verfügbar.");
+                LoggerService.warn("[ControllerTable.#render()] RenderService ist nicht verfügbar.");
             }
         } catch (error) {
             if (!this.signal.aborted) {
-                console.error("[ControllerTable]: Render-Fehler", error);
+                LoggerService.error("[ControllerTable.#render()] Render-Fehler", error);
             }
         }
     }

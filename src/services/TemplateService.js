@@ -145,11 +145,11 @@ export class TemplateService {
                 const templateData = this.#normalizeTemplate(el.id, config, el.innerHTML);
                 this.#cache.set(config.name || el.id, templateData);
             } catch (error) {
-                console.error(`Aspis [TemplateService]: JSON-Parse-Fehler bei Template #${el.id}`, error);
+                LoggerService.error(`[TemplateService.init()] Aspis [TemplateService]: JSON-Parse-Fehler bei Template #${el.id}`, error);
             }
         });
 
-        console.info(`Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
+        LoggerService.info(`[TemplateService.init()] Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
     }
 
     /**
@@ -186,7 +186,7 @@ export class TemplateService {
             return this.#cache.get(name);
         }
 
-        console.warn(`Aspis [TemplateService]: '${name}' nicht im Cache. Starte dynamischen Fetch...`);
+        LoggerService.warn(`[TemplateService.get()] Aspis [TemplateService]: '${name}' nicht im Cache. Starte dynamischen Fetch...`);
         try {
             return await this.#loadFromServer(name);
         } catch (error) {
@@ -206,7 +206,7 @@ export class TemplateService {
     compile(name, payload = {}) {
         const template = this.#cache.get(name);
         if (!template) {
-            console.error(`Aspis [TemplateService]: Template '${name}' nicht im Cache gefunden. Kompilierung abgebrochen.`);
+            LoggerService.error(`[TemplateService.compile()] Aspis [TemplateService]: Template '${name}' nicht im Cache gefunden. Kompilierung abgebrochen.`);
             return null;
         }
 
@@ -223,7 +223,7 @@ export class TemplateService {
         const element = fragment.firstElementChild;
 
         if (!element) {
-            console.error(`Aspis [TemplateService]: Transformation von '${name}' in den DOM fehlgeschlagen.`);
+            LoggerService.error(`[TemplateService.compile()] Aspis [TemplateService]: Transformation von '${name}' in den DOM fehlgeschlagen.`);
             return null;
         }
 
@@ -380,7 +380,7 @@ export class TemplateService {
             this.#cache.set(name, templateData);
             return templateData;
         } catch (error) {
-            console.error(`Aspis [TemplateService]: Dynamischer Fetch für '${name}' fehlgeschlagen!`, error);
+            LoggerService.error(`[TemplateService.#loadFromServer()] Aspis [TemplateService]: Dynamischer Fetch für '${name}' fehlgeschlagen!`, error);
             throw error;
         }
     }

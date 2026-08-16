@@ -108,12 +108,12 @@ export class EventDelegator {
      */
     delegate(eventName, selector, handler, options = {}) {
         if (!this.#container) {
-            console.warn(`Aspis [${this.#target.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
+            LoggerService.warn(`[EventDelegator.delegate()] Aspis [${this.#target.constructor.name}]: delegate() abgebrochen — kein Container vorhanden.`);
             return;
         }
 
         if (typeof handler !== 'function') {
-            console.warn(`Aspis [${this.#target.constructor.name}]: Handler für Event '${eventName}' ist keine Funktion.`);
+            LoggerService.warn(`[EventDelegator.delegate()] Aspis [${this.#target.constructor.name}]: Handler für Event '${eventName}' ist keine Funktion.`);
             return;
         }
 
@@ -162,7 +162,7 @@ export class EventDelegator {
             } catch (e) {
                 const isAborted = this.#target?.signal?.aborted;
                 if (e.name !== 'AbortError' && !isAborted) {
-                    console.error(`Aspis [${this.#target.constructor.name}]: Fehler beim Laden von '${this.#options.eventPath}':`, e);
+                    LoggerService.error(`[EventDelegator.initEvents()] Aspis [${this.#target.constructor.name}]: Fehler beim Laden von '${this.#options.eventPath}':`, e);
                 }
             } finally {
                 if (typeof this.#target.clearTask === 'function') {
@@ -178,7 +178,7 @@ export class EventDelegator {
                 const inlineMap = JSON.parse(this.#container.dataset.events);
                 eventMap = { ...eventMap, ...inlineMap };
             } catch (e) {
-                console.error(`Aspis [${this.#target.constructor.name}]: Fehler beim Parsen von data-events an <${this.#target.constructor.name}>:`, e);
+                LoggerService.error(`[EventDelegator.initEvents()] Aspis [${this.#target.constructor.name}]: Fehler beim Parsen von data-events an <${this.#target.constructor.name}>:`, e);
             }
         }
 
@@ -187,7 +187,7 @@ export class EventDelegator {
                 const unsub = this.#dispatcher.on(eventName, (payload) => this.#target[methodName](payload));
                 this.#unsubscribeEvents.push(unsub);
             } else {
-                console.warn(`Aspis [${this.#target.constructor.name}]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.#target.constructor.name}.`);
+                LoggerService.warn(`[EventDelegator.initEvents()] Aspis [${this.#target.constructor.name}]: Event '${eventName}' verweist auf nicht existierende Methode '${methodName}' in ${this.#target.constructor.name}.`);
             }
         });
     }

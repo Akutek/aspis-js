@@ -51,7 +51,7 @@ export class MutationObserverDOM extends BaseObserver {
         this.#nativeObserver.observe(target, config);
 
         super.start(target);
-        console.info("Aspis [MutationObserverDOM]: Wächter aktiv.");
+        LoggerService.info("[MutationObserverDOM.start()] Aspis [MutationObserverDOM]: Wächter aktiv.");
     }
 
     /**
@@ -83,7 +83,7 @@ export class MutationObserverDOM extends BaseObserver {
             this.#nativeObserver = null;
         }
         super.stop();
-        console.info("Aspis [MutationObserverDOM]: Wächter gestoppt.");
+        LoggerService.info("[MutationObserverDOM.stop()] Aspis [MutationObserverDOM]: Wächter gestoppt.");
     }
 
     /**
@@ -117,7 +117,7 @@ export class MutationObserverDOM extends BaseObserver {
                 const scanResults = ScannerDOM.scan(rootNode);
                 if (scanResults.length > 0) {
                     await Main.assignControllers(scanResults, this.registry);
-                    console.info(`Aspis [MutationObserverDOM]: ${scanResults.length} neue Controller im nachgeladenen DOM entdeckt und initialisiert.`);
+                    LoggerService.info(`[MutationObserverDOM.#handleMutations()] Aspis [MutationObserverDOM]: ${scanResults.length} neue Controller im nachgeladenen DOM entdeckt und initialisiert.`);
                 }
             }
         }

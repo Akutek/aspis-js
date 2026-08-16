@@ -191,7 +191,7 @@ export class ControllerCustomDropdown extends BaseController {
             try {
                 rules = JSON.parse(this._container.dataset.rules);
             } catch (e) {
-                console.warn('[ControllerCustomDropdown]: Ungültiges JSON in data-rules', e);
+                LoggerService.warn('[ControllerCustomDropdown.onInit()] Ungültiges JSON in data-rules', e);
             }
         }
         
@@ -252,7 +252,7 @@ export class ControllerCustomDropdown extends BaseController {
             }
         } catch (error) {
             if (error.name !== 'AbortError' && !this.signal.aborted) {
-                console.error('[ControllerCustomDropdown]: Fehler beim Laden der Optionen', error);
+                LoggerService.error('[ControllerCustomDropdown.loadOptions()] Fehler beim Laden der Optionen', error);
             }
         } finally {
             if (stateProxy && !this.signal.aborted) stateProxy.isLoading = false;
@@ -558,11 +558,11 @@ export class ControllerCustomDropdown extends BaseController {
             if (renderService && typeof renderService.paste === 'function') {
                 await renderService.paste(this._container, templateName, this.#model.toRenderData());
             } else {
-                console.warn("[ControllerCustomDropdown]: RenderService ist nicht verfügbar.");
+                LoggerService.warn("[ControllerCustomDropdown.#renderFull()] RenderService ist nicht verfügbar.");
             }
         } catch (error) {
             if (!this.signal.aborted) {
-                console.error("[ControllerCustomDropdown]: Render-Fehler", error);
+                LoggerService.error("[ControllerCustomDropdown.#renderFull()] Render-Fehler", error);
             }
         }
     }

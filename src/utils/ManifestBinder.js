@@ -120,7 +120,7 @@ export class ManifestBinder {
             });
         });
         
-        console.log(`[ManifestBinder]: Auto-Bindings für '${this.#sliceKey}' erfolgreich etabliert.`);
+        LoggerService.info(`[ManifestBinder.bind()] Auto-Bindings für '${this.#sliceKey}' erfolgreich etabliert.`);
     }
 
     /**
@@ -133,6 +133,6 @@ export class ManifestBinder {
         this.#unsubscribeEffects.forEach(unsub => unsub());
         this.#unsubscribeEffects = [];
         this.#resolvedTargets.clear();
-        console.log(`[ManifestBinder]: Auto-Bindings für '${this.#sliceKey}' sauber gelöst.`);
+        LoggerService.info(`[ManifestBinder.unbind()] Auto-Bindings für '${this.#sliceKey}' sauber gelöst.`);
     }
 }

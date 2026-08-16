@@ -154,17 +154,17 @@ export class DatenFetcher {
 
         } catch (error) {
             if (error.name === 'TimeoutError') {
-                console.warn(`Aspis [DatenFetcher]: Request auf '${url}' überschritt das Timeout von ${timeout}ms.`);
+                LoggerService.warn(`[DatenFetcher.request()] Aspis [DatenFetcher]: Request auf '${url}' überschritt das Timeout von ${timeout}ms.`);
                 return null;
             }
 
             if (error.name === 'AbortError') {
                 const reason = combinedSignal.reason || signal?.reason || 'Abgebrochen';
-                console.info(`Aspis [DatenFetcher]: Request auf '${url}' storniert -> Grund: ${reason}`);
+                LoggerService.info(`[DatenFetcher.request()] Aspis [DatenFetcher]: Request auf '${url}' storniert -> Grund: ${reason}`);
                 return null; 
             }
 
-            console.error(`Aspis [DatenFetcher]: Fehler bei ${method} ${url}:`, error);
+            LoggerService.error(`[DatenFetcher.request()] Aspis [DatenFetcher]: Fehler bei ${method} ${url}:`, error);
             throw error;
         }
     }

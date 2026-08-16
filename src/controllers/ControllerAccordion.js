@@ -230,7 +230,7 @@ export class ControllerAccordion extends BaseController {
         } catch (error) {
             if (error.name !== 'AbortError' && !signal.aborted) {
                 if (stateProxy) stateProxy.error = error.message;
-                console.error("[ControllerAccordion]: Fehler im loadData-Ablauf", error);
+                LoggerService.error("[ControllerAccordion.loadData()] Fehler im loadData-Ablauf", error);
             }
         } finally {
             if (stateProxy && !signal.aborted) {
@@ -424,13 +424,13 @@ export class ControllerAccordion extends BaseController {
                 await renderService.paste(this._container, templateName, this.#model.toRenderData());
 
                 if (this.signal.aborted) return;
-                console.log(`[ControllerAccordion]: HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
+                LoggerService.debug(`[ControllerAccordion.#renderFull()] HTML für '${this._sliceKey}' erfolgreich im DOM aktualisiert.`);
             } else {
-                console.warn("[ControllerAccordion]: RenderService ist nicht verfügbar.");
+                LoggerService.warn("[ControllerAccordion.#renderFull()] RenderService ist nicht verfügbar.");
             }
         } catch (error) {
             if (!this.signal.aborted) {
-                console.error("[ControllerAccordion]: Render-Fehler", error);
+                LoggerService.error("[ControllerAccordion.#renderFull()] Render-Fehler", error);
             }
         }
     }

@@ -110,4 +110,3 @@ export class BaseModel {
         throw new Error(`Aspis [BaseModel]: '${this.constructor.name}' muss die Methode 'toRenderData()' implementieren.`);
     }
 }
-

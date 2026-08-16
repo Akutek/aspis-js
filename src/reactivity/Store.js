@@ -195,8 +195,8 @@ export class Store extends EventTarget {
                     extractedState[namespace][sliceKey] = sliceObj;
                     this.#configs[slicePath] = sliceContent.config || {};
                 } else {
-                    console.warn(
-                        `Aspis [Store-Bootstrap]: Ignoriere ungültigen Manifest-Pfad '${slicePath}'. ` +
+                    LoggerService.warn(
+                        `[Store.constructor()] Aspis [Store-Bootstrap]: Ignoriere ungültigen Manifest-Pfad '${slicePath}'. ` +
                         `Erlaubte Namespaces: ${Store.ALLOWED_NAMESPACES.join(', ')} (Format: 'namespace.key').`
                     );
                 }
@@ -204,7 +204,7 @@ export class Store extends EventTarget {
         }
         
         this.#stateProxy = this.#createDeepProxy(extractedState, "");
-        console.log("Aspis [Store-Bootstrap]: Hierarchischer State-Baum erfolgreich initialisiert.", extractedState);
+        LoggerService.info("[Store.constructor()] Aspis [Store-Bootstrap]: Hierarchischer State-Baum erfolgreich initialisiert.", extractedState);
     }
 
     /**
@@ -337,13 +337,13 @@ export class Store extends EventTarget {
      */
     addDependency(targetOrPath, childPathOrDataPath) {
         if (!targetOrPath || !childPathOrDataPath) {
-            console.warn("Aspis [Store]: addDependency() abgebrochen - Parameter dürfen nicht leer sein.");
+            LoggerService.warn("[Store.addDependency()] Aspis [Store]: addDependency() abgebrochen - Parameter dürfen nicht leer sein.");
             return;
         }
 
         if (targetOrPath instanceof HTMLElement) {
             if (typeof childPathOrDataPath !== 'string' || !childPathOrDataPath.trim()) {
-                console.warn("Aspis [Store]: DOM-Abhängigkeit benötigt einen gültigen Pfad-String.");
+                LoggerService.warn("[Store.addDependency()] Aspis [Store]: DOM-Abhängigkeit benötigt einen gültigen Pfad-String.");
                 return;
             }
             const path = childPathOrDataPath.trim();
@@ -359,7 +359,7 @@ export class Store extends EventTarget {
             const childPath = childPathOrDataPath.trim();
 
             if (!parentPath || !childPath) {
-                console.warn("Aspis [Store]: Pfad-Abhängigkeit enthält leere Pfad-Strings.");
+                LoggerService.warn("[Store.addDependency()] Aspis [Store]: Pfad-Abhängigkeit enthält leere Pfad-Strings.");
                 return;
             }
 
@@ -367,7 +367,7 @@ export class Store extends EventTarget {
                 this.#dependencies.set(parentPath, new Set());
             }
             this.#dependencies.get(parentPath).add(childPath);
-            console.log(`Aspis [Store]: Logische Kaskade registriert [${parentPath} ──> ${childPath}]`);
+            LoggerService.info(`[Store.addDependency()] Aspis [Store]: Logische Kaskade registriert [${parentPath} ──> ${childPath}]`);
             return;
         }
 
@@ -496,7 +496,7 @@ export class Store extends EventTarget {
                     if (storeContext.#strictMode) {
                         throw new Error(errorMsg);
                     } else {
-                        console.error(errorMsg);
+                        LoggerService.error(`[Store.#createDeepProxy()] ${errorMsg}`);
                         return true;
                     }
                 }
@@ -633,7 +633,7 @@ export class Store extends EventTarget {
                 this.#effectQueue.forEach(effect => effect.run());
             }
         } catch (error) {
-            console.error("Aspis [Store]: Fehler während des Queue-Flushes:", error);
+            LoggerService.error("[Store.#flushQueue()] Aspis [Store]: Fehler während des Queue-Flushes:", error);
         } finally {
             this.#pendingDomUpdates.clear();
             this.#effectQueue.clear();
@@ -672,19 +672,19 @@ export class Store extends EventTarget {
     }
 
     /**
- * Führt kaskadierende Mutationen aus, wenn ein Parent-Pfad mutiert wurde.
- * Setzt abhängige Child-Pfade typgerecht zurück ([], {}, initialer Wert oder null).
- * 
- * @internal
- * @param {string} parentPath - Der veränderte Elter-Pfad.
- * @returns {void}
- */
+     * Führt kaskadierende Mutationen aus, wenn ein Parent-Pfad mutiert wurde.
+     * Setzt abhängige Child-Pfade typgerecht zurück ([], {}, initialer Wert oder null).
+     * 
+     * @internal
+     * @param {string} parentPath - Der veränderte Elter-Pfad.
+     * @returns {void}
+     */
     #handleDependencies(parentPath) {
         const children = this.#dependencies.get(parentPath);
         if (!children) return;
 
         children.forEach(childPath => {
-            console.log(`Aspis [Store-Kaskade]: Parent '${parentPath}' zwingt Child '${childPath}' zum Reset.`);
+            LoggerService.info(`[Store.#handleDependencies()] Aspis [Store-Kaskade]: Parent '${parentPath}' zwingt Child '${childPath}' zum Reset.`);
             
             const parts = childPath.split('.');
             let current = this.#stateProxy;

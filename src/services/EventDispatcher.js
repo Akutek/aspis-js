@@ -146,7 +146,7 @@ export class EventDispatcher {
             Promise.resolve()
                 .then(() => callback(data))
                 .catch(error => {
-                    console.error(`Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
+                    LoggerService.error(`[EventDispatcher.emit()] Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
                 });
         });
     }

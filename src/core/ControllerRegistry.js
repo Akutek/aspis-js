@@ -68,7 +68,7 @@ export class ControllerRegistry {
      */
     async getAsync(typeOrName) {
         if (!typeOrName || typeof typeOrName !== 'string') {
-            console.error(`Aspis [ControllerRegistry]: Ungültiger Typ '${typeof typeOrName}'.`);
+            LoggerService.error(`[ControllerRegistry.getAsync()] Aspis [ControllerRegistry]: Ungültiger Typ '${typeof typeOrName}'.`);
             return null;
         }
 
@@ -76,7 +76,7 @@ export class ControllerRegistry {
         const safeNameRegex = /^[A-Za-z0-9_-]+$/;
 
         if (!safeNameRegex.test(trimmed)) {
-            console.error(`Aspis [ControllerRegistry]: Sicherheitsfehler - Ungültiger Name '${trimmed}'.`);
+            LoggerService.error(`[ControllerRegistry.getAsync()] Aspis [ControllerRegistry]: Sicherheitsfehler - Ungültiger Name '${trimmed}'.`);
             return null;
         }
 
@@ -102,7 +102,7 @@ export class ControllerRegistry {
             const ControllerClass = module[className] || module.default || module[trimmed];
 
             if (!ControllerClass) {
-                console.error(`Aspis [ControllerRegistry]: Klasse '${className}' konnte in '${fileUrl}' nicht gefunden werden.`);
+                LoggerService.error(`[ControllerRegistry.getAsync()] Aspis [ControllerRegistry]: Klasse '${className}' konnte in '${fileUrl}' nicht gefunden werden.`);
                 return null;
             }
 
@@ -112,7 +112,7 @@ export class ControllerRegistry {
             return ControllerClass;
 
         } catch (error) {
-            console.error(`Aspis [ControllerRegistry]: Fehler beim dynamischen Laden von '${fileUrl}':`, error);
+            LoggerService.error(`[ControllerRegistry.getAsync()] Aspis [ControllerRegistry]: Fehler beim dynamischen Laden von '${fileUrl}':`, error);
             return null;
         }
     }

@@ -1,209 +1,204 @@
 /**
- * Unsubscribe-Funktion zum Wiederabmelden/Entfernen eines Event-Listeners.
- * @typedef {function(): void} UnsubscribeFunction
+ * Generisches Key-Value-Objekt für Render-Daten.
+ * @typedef {Record<string, any>} RenderData
  */
 /**
- * Callback-Funktion, die bei der Auslösung eines Events aufgerufen wird.
- * @template [T=any]
- * @typedef {function(T): void} EventListenerCallback
+ * Konfigurations- oder Datenobjekt für den Compile-Prozess von Templates.
+ * @typedef {Object} TemplateCompileOptions
+ * @property {RenderData} data - Die Daten, die in das Template gerendert werden sollen.
  */
 /**
- * Callback-Funktion ohne Parameter, die bei Klicks außerhalb eines Ziel-Elements aufgerufen wird.
- * @typedef {function(): void} ClickOutsideCallback
+ * Interface für den Template-Service des Aspis-Frameworks.
+ * Handles Compilation, Caching und das Laden von HTML-Templates.
+ * @typedef {Object} TemplateService
+ * @property {function(string, TemplateCompileOptions=): HTMLElement|Element|null} compile - Kompiliert ein Template direkt aus dem Cache oder Speicher.
+ * @property {function(string): Promise<any>} get - Lädt die Template-Ressource asynchron nach, falls sie nicht vorhanden ist.
  */
 /**
- * Manifest- / Konfigurationsobjekt zur Definition von unterstützten Events oder Metadaten.
- * @typedef {Record<string, any>} EventManifest
+ * Interface für einen optionalen DOM-Tree-Cleaner (z. B. Event-Listener-Remover / Abort-Cleanup).
+ * @typedef {Object} TreeCleaner
+ * @property {function(HTMLElement): void} cleanTree - Säubert den DOM-Baum des Ziel-Elements von alten Listeners oder Subscriptions.
  */
 /**
- * Menge (Set) von registrierten Callback-Funktionen für ein spezifisches Event.
- * @template [T=any]
- * @typedef {Set<EventListenerCallback<T>>} EventListenerSet
+ * Schnittstelle für Objekte, die ein Aufbereiten ihrer Render-Daten über `toRenderData()` unterstützen.
+ * @typedef {Object} RenderableItem
+ * @property {function(): RenderData} toRenderData - Liefert die aufbereiteten Daten für das Rendering.
  */
 /**
- * Map zur Zuordnung von Event-Namen zu den jeweiligen Listener-Sets.
- * @typedef {Map<string, EventListenerSet>} ListenersMap
+ * Beliebiges Element aus einer Datenliste für die Loop-Verarbeitung (Objekt mit `toRenderData` oder primitives JSON-Objekt).
+ * @typedef {RenderableItem | RenderData} LoopItem
  */
 /**
- * Event-Handler-Funktion für das globale Dokument-Klick-Event.
- * @typedef {function(MouseEvent): void} GlobalClickHandler
+ * Möglicher Eingabetyp für Elemente, die in einen Ziel-Container zusammengefügt werden.
+ * @typedef {Node | Array<Node>} AppendableElements
+ */
+/**
+ * Interface für das globale GuardDOM-Utility zur HTML-Sanitisierung.
+ * @typedef {Object} GuardDOMGlobal
+ * @property {function(string): string} purify - Säubert einen HTML-String von potenziellen XSS-Vektoren.
+ */
+/**
+ * Der Rückgabetyp der internen `#purifyElement`-Methode.
+ * @typedef {Element | HTMLElement | null} PurifiedElement
  */
 
 /**
- * Zentrale Event-Dispatcher-Klasse des Aspis-Frameworks.
- * Bietet Publisher-Subscriber-Funktionalitäten (Pub/Sub), asynchrone Event-Verteilung via Microtasks,
- * Klick-Außerhalb-Erkennung (Click-Outside) sowie die Verwaltung globaler Dokument-Events.
+ * Zentrale Rendering-Service-Klasse des Aspis-Frameworks.
+ * Verwalter für das Asynchrone Kompilieren von Templates, Injizieren in das DOM,
+ * Iterieren über Datenlisten und automatisches Anwenden von Sanitisierungs- und Cleanup-Routinen.
  * 
  * @public
  */
-export class EventDispatcher {
+export class RenderService {
     /**
-     * Interne Map von Event-Namen auf deren registrierte Callback-Sets.
+     * Instanz des Template-Services zum Laden und Kompilieren.
      * @internal
-     * @type {ListenersMap}
+     * @type {TemplateService}
      */
-    #listeners = new Map();
+    #templates;
 
     /**
-     * Das konfigurierte Event-Manifest der Instanz.
+     * Optionaler TreeCleaner zum Säubern von DOM-Subtrees vor dem Auswechseln von Inhalten.
      * @internal
-     * @type {EventManifest}
+     * @type {TreeCleaner | null}
      */
-    #eventManifest;
+    #cleaner;
 
     /**
-     * Referenz auf den gebundenen Handler für das globale Klick-Event.
-     * @internal
-     * @type {GlobalClickHandler | null}
-     */
-    #clickTrackerHandler = null;
-
-    /**
-     * Erzeugt eine neue Instanz des EventDispatchers.
+     * Erzeugt eine neue Instanz des RenderService.
      * 
      * @public
-     * @param {EventManifest} [eventManifest={}] - Optionales Event-Manifest zur Initialisierung.
+     * @param {TemplateService} templateService - Der zu nutzende TemplateService.
+     * @param {TreeCleaner|null} [cleaner=null] - Optionaler TreeCleaner für DOM-Bereinigungen.
+     * @throws {Error} Wenn kein `templateService` übergeben wurde.
      */
-    constructor(eventManifest = {}) {
-        this.#eventManifest = eventManifest;
-        this.#initGlobalClickTracker();
+    constructor(templateService, cleaner = null) {
+        if (!templateService) {
+            throw new Error("Aspis [RenderService]: TemplateService ist erforderlich.");
+        }
+        this.#templates = templateService;
+        this.#cleaner = cleaner;
     }
 
     /**
-     * Registriert einen Event-Listener für ein bestimmtes Event.
+     * Kompiliert ein Template mit den übergebenen Daten und fügt das gesäuberte Ergebnis
+     * in den `targetContainer` ein (ersetzt dessen bisherigen Inhalt).
      * 
      * @public
-     * @template [T=any]
-     * @param {string} eventName - Der Name des zu abonnierenden Events.
-     * @param {EventListenerCallback<T>} callback - Die beim Event-Auslösen auszuführende Callback-Funktion.
-     * @returns {UnsubscribeFunction} Eine Funktion zum Entfernen des registrierten Listeners.
+     * @async
+     * @param {HTMLElement} targetContainer - Das Ziel-Element im DOM, das den Inhalt aufnehmen soll.
+     * @param {string} templateName - Der Name/Bezeichner des zu rendernden Templates.
+     * @param {RenderData} [data={}] - Die Render-Daten für das Template.
+     * @returns {Promise<Element>} Das erfolgreich erzeugte und injizierte DOM-Element.
+     * @throws {Error} Wenn `targetContainer` kein gültiges `HTMLElement` ist oder das Rendering fehlschlägt.
      */
-    on(eventName, callback) {
-        if (typeof callback !== 'function') return () => {};
-
-        if (!this.#listeners.has(eventName)) {
-            this.#listeners.set(eventName, new Set());
+    async paste(targetContainer, templateName, data = {}) {
+        if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
+            throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für paste().");
         }
 
-        this.#listeners.get(eventName).add(callback);
-        return () => this.off(eventName, callback);
+        const element = await this.compile(templateName, data);
+        if (!element) {
+            throw new Error(`Aspis [RenderService]: Rendering für '${templateName}' fehlgeschlagen.`);
+        }
+
+        if (this.#cleaner && typeof this.#cleaner.cleanTree === 'function') {
+            this.#cleaner.cleanTree(targetContainer);
+        }
+
+        const cleanElement = this.#purifyElement(element);
+        targetContainer.replaceChildren(cleanElement);
+        return cleanElement;
     }
 
     /**
-     * Registriert einen Event-Listener, der nach der ersten Ausführung automatisch entfernt wird.
+     * Kompiliert ein Template mit Daten. Baut bei Bedarf eine Asynchron-Sperre auf,
+     * um nicht geladene Templates aus der Quelle nachzuladen.
      * 
      * @public
-     * @template [T=any]
-     * @param {string} eventName - Der Name des zu abonnierenden Events.
-     * @param {EventListenerCallback<T>} callback - Die einmalig auszuführende Callback-Funktion.
-     * @returns {UnsubscribeFunction} Eine Funktion zum vorzeitigen Entfernen des Listeners.
+     * @async
+     * @param {string} templateName - Name des Templates.
+     * @param {RenderData} [data={}] - Die Render-Daten.
+     * @returns {Promise<HTMLElement | Element | null>} Das erzeugte DOM-Element oder `null`, wenn die Kompilierung fehlschlägt.
      */
-    once(eventName, callback) {
-        if (typeof callback !== 'function') return () => {};
+    async compile(templateName, data = {}) {
+        let element = this.#templates.compile(templateName, { data });
 
-        const unsubscribe = this.on(eventName, (data) => {
-            unsubscribe();
-            callback(data);
-        });
-
-        return unsubscribe;
-    }
-
-    /**
-     * Entfernt einen spezifischen Event-Listener für ein angegebenes Event.
-     * 
-     * @public
-     * @template [T=any]
-     * @param {string} eventName - Der Name des Events.
-     * @param {EventListenerCallback<T>} callback - Die zu entfernende Callback-Funktion.
-     * @returns {void}
-     */
-    off(eventName, callback) {
-        const eventListeners = this.#listeners.get(eventName);
-        if (eventListeners) {
-            eventListeners.delete(callback);
-            if (eventListeners.size === 0) {
-                this.#listeners.delete(eventName);
+        if (!element) {
+            const templateData = await this.#templates.get(templateName);
+            if (templateData) {
+                element = this.#templates.compile(templateName, { data });
             }
         }
+
+        return element;
     }
 
     /**
-     * Löst ein Event asynchron über Microtasks aus und übergibt Daten an alle registrierten Listener.
+     * Iteriert über ein Array von Daten-Objekten oder `RenderableItem`-Instanzen,
+     * rendert für jedes Item das angegebene Template und liefert ein gesammeltes `DocumentFragment` zurück.
      * 
      * @public
-     * @template [T=any]
-     * @param {string} eventName - Der Name des auszulösenden Events.
-     * @param {T|null} [data=null] - Die mitzusendenden Daten (Payload).
-     * @returns {void}
+     * @async
+     * @param {string} templateName - Name des zu wiederholenden Templates.
+     * @param {Array<LoopItem>} [list=[]] - Liste der Datenobjekte/Modelle.
+     * @returns {Promise<DocumentFragment>} Ein `DocumentFragment` mit allen gerenderten und gesäuberten Elementen.
      */
-    emit(eventName, data = null) {
-        const eventListeners = this.#listeners.get(eventName);
-        if (!eventListeners) return;
-
-        const targets = Array.from(eventListeners);
-        targets.forEach(callback => {
-            Promise.resolve()
-                .then(() => callback(data))
-                .catch(error => {
-                    console.error(`Aspis [EventDispatcher]: Fehler bei '${eventName}':`, error);
-                });
-        });
-    }
-
-    /**
-     * Registriert einen Callback, der ausgeführt wird, sobald ein Klick außerhalb des angegebenen HTML-Elements erfolgt.
-     * 
-     * @public
-     * @param {HTMLElement} element - Das überwachte DOM-Element.
-     * @param {ClickOutsideCallback} callback - Bei einem Klick außerhalb aufzurufende Funktion.
-     * @returns {UnsubscribeFunction} Funktion zum Stoppen der Überwachung.
-     */
-    onClickOutside(element, callback) {
-        if (!(element instanceof HTMLElement) || typeof callback !== 'function') {
-            return () => {};
+    async loop(templateName, list = []) {
+        if (!Array.isArray(list)) {
+            LoggerService.warn("[RenderService.loop()] Aspis [RenderService]: loop() erwartet ein Array.");
+            return document.createDocumentFragment();
         }
-        return this.on('document:click', (clickedElement) => {
-            if (!element.contains(clickedElement)) {
-                callback();
+
+        const fragment = document.createDocumentFragment();
+
+        for (const item of list) {
+            const renderData = item && typeof item.toRenderData === 'function' 
+                ? item.toRenderData() 
+                : item;
+
+            const element = await this.compile(templateName, renderData);
+            if (element) {
+                fragment.appendChild(this.#purifyElement(element));
             }
-        });
-    }
-
-    /**
-     * Entfernt sämtliche registrierten Event-Listener.
-     * 
-     * @public
-     * @returns {void}
-     */
-    clear() {
-        this.#listeners.clear();
-    }
-
-    /**
-     * Zerstört die Instanz, leert den Listener-Speicher und entfernt den globalen Document-Click-Tracker.
-     * 
-     * @public
-     * @returns {void}
-     */
-    destroy() {
-        this.clear();
-        if (this.#clickTrackerHandler) {
-            document.removeEventListener('click', this.#clickTrackerHandler);
-            this.#clickTrackerHandler = null;
         }
+
+        return fragment;
     }
 
     /**
-     * Initialisiert den globalen Document-Click-Tracker zur Verteilung von Klick-Events auf dem Dokument.
+     * Ersetzt die Kinder des Ziel-Containers durch ein einzelnes Element oder ein Array von Elementen.
+     * 
+     * @public
+     * @param {HTMLElement} targetContainer - Das Ziel-DOM-Element.
+     * @param {AppendableElements} [elements=[]] - Das einzufügende Node-Element oder ein Array davon.
+     * @returns {void}
+     * @throws {Error} Wenn `targetContainer` kein gültiges `HTMLElement` ist.
+     */
+    combine(targetContainer, elements = []) {
+        if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
+            throw new Error("Aspis [RenderService]: Ungültiges Ziel-Element für combine().");
+        }
+
+        const nodeList = Array.isArray(elements) ? elements : [elements];
+        targetContainer.replaceChildren(...nodeList);
+    }
+
+    /**
+     * Säubert das übergebene DOM-Element über das globale `GuardDOM`-Utility (falls vorhanden).
      * 
      * @internal
-     * @returns {void}
+     * @param {HTMLElement | Element | null} element - Das zu desinfizierende DOM-Element.
+     * @returns {PurifiedElement} Das desinfizierte Element oder das Ausgangselement.
      */
-    #initGlobalClickTracker() {
-        this.#clickTrackerHandler = (event) => {
-            this.emit('document:click', event.target);
-        };
-        document.addEventListener('click', this.#clickTrackerHandler);
+    #purifyElement(element) {
+        if (!element) return null;
+        if (typeof GuardDOM !== 'undefined' && typeof GuardDOM.purify === 'function') {
+            const cleanHtml = GuardDOM.purify(element.outerHTML);
+            const template = document.createElement('template');
+            template.innerHTML = cleanHtml;
+            return template.content.firstElementChild || element;
+        }
+        return element;
     }
 }

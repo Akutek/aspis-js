@@ -43,7 +43,7 @@ export class TargetResolver {
             if (element) {
                 resolvedTargets.set(targetName, element);
             } else {
-                console.warn(`[TargetResolver]: Element für Selektor '${config.selector}' nicht im DOM gefunden.`);
+                LoggerService.warn(`[TargetResolver.resolve()] Element für Selektor '${config.selector}' nicht im DOM gefunden.`);
             }
         });
 

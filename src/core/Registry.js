@@ -79,7 +79,7 @@ export class Registry {
                     controller.destroy();
                 }
             } catch (error) {
-                console.error("Aspis [Registry]: Fehler beim GC-Cleanup:", error);
+                LoggerService.error("[Registry.constructor()] Aspis [Registry]: Fehler beim GC-Cleanup:", error);
             }
         });
     }
@@ -180,7 +180,7 @@ export class Registry {
                 try {
                     controller.destroy();
                 } catch (error) {
-                    console.error("Aspis [Registry]: Fehler beim destroy() Aufruf:", error);
+                    LoggerService.error("[Registry.delete()] Aspis [Registry]: Fehler beim destroy() Aufruf:", error);
                 }
             }
 

@@ -6,10 +6,13 @@
  * Der Rückgabewert der Textbereinigung (bereinigter String, Number oder Boolean).
  * @typedef {string | number | boolean} CleanResult
  */
-
 /**
  * Mögliche Eingabetypen für die HTML-Bereinigung.
  * @typedef {string | any} HTMLInput
+ */
+/**
+ * Optionale Konfigurationsoptionen für die HTML-Bereinigung bzw. DOMPurify.
+ * @typedef {Record<string, any>} PurifyOptions
  */
 
 /**
@@ -43,43 +46,74 @@ export class GuardDOM {
     }
 
     /**
-     * Bereinigt einen HTML-String, indem verbotene Tags (z. B. `<script>`), Event-Handler (`on*`)
-     * und unsichere URIs (`javascript:`, `vbscript:`, `data:text/html`) entfernt bzw. entschärft werden.
+     * Bereinigt einen HTML-String auf XSS-Resilienz.
+     * Nutzt primär DOMPurify, falls global (`window.DOMPurify`) verfügbar,
+     * und fällt andernfalls auf eine gehärtete Inhouse-Sanitization (Zero-Dependency) zurück.
      * 
      * @public
      * @static
      * @template {HTMLInput} T
      * @param {T} rawHTML - Der zu bereinigende HTML-String oder ein unmanipulierter Wert.
+     * @param {PurifyOptions} [options={}] - Optionale Konfigurationseinstellungen für die Bereinigung / DOMPurify.
      * @returns {T extends string ? string : T} Der bereinigte HTML-String oder der unveränderte Eingabewert.
      */
-    static purify(rawHTML) {
+    static purify(rawHTML, options = {}) {
         if (typeof rawHTML !== 'string') return rawHTML;
+
+
+        const globalPurify = typeof window !== 'undefined' ? window.DOMPurify : null;
+        if (globalPurify && typeof globalPurify.sanitize === 'function') {
+            return globalPurify.sanitize(rawHTML, options);
+        }
 
         const parser = new DOMParser();
         const doc = parser.parseFromString(rawHTML, 'text/html');
-        const forbiddenTags = new Set(['SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'FRAME', 'FRAMESET']);
+        const forbiddenTags = new Set([
+            'SCRIPT', 'IFRAME', 'OBJECT', 'EMBED', 'FRAME', 'FRAMESET',
+            'STYLE', 'META', 'LINK', 'BASE', 'TEMPLATE', 'NOSCRIPT',
+            'APPLET', 'FORM', 'MATH'
+        ]);
+
+        const uriAttributes = new Set([
+            'href', 'src', 'action', 'data', 'poster', 'formaction',
+            'xlink:href', 'xml:base'
+        ]);
+
         const allElements = doc.body.querySelectorAll('*');
         
         allElements.forEach(element => {
-            if (forbiddenTags.has(element.tagName)) {
+            const tagName = element.tagName.toUpperCase();
+
+            if (forbiddenTags.has(tagName)) {
                 element.remove();
-                LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Gefährlicher Tag <${element.tagName.toLowerCase()}> wurde entfernt.`);
+                LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Gefährlicher Tag <${tagName.toLowerCase()}> wurde entfernt.`);
                 return;
             }
 
-            Array.from(element.attributes).forEach(attr => {
-                const attrName = attr.name.toLowerCase();
-                const attrValue = attr.value.trim().toLowerCase();
+            const attributeNames = element.getAttributeNames ? element.getAttributeNames() : Array.from(element.attributes).map(a => a.name);
 
-                if (attrName.startsWith('on')) {
-                    element.removeAttribute(attr.name);
-                    LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Event-Handler '${attr.name}' entfernt.`);
+            attributeNames.forEach(attrName => {
+                const lowerAttrName = attrName.toLowerCase();
+                const rawAttrValue = element.getAttribute(attrName) || '';
+                const normalizedValue = rawAttrValue.replace(/[\x00-\x20\x7F-\x9F]/g, '').toLowerCase();
+
+                if (lowerAttrName.startsWith('on')) {
+                    element.removeAttribute(attrName);
+                    LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Event-Handler '${attrName}' entfernt.`);
+                    return;
                 }
 
-                if (['href', 'src', 'action', 'data'].includes(attrName)) {
-                    if (attrValue.startsWith('javascript:') || attrValue.startsWith('vbscript:') || attrValue.startsWith('data:text/html')) {
-                        element.setAttribute(attr.name, '#');
-                        LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Unsichere URL in '${attr.name}' auf '#' zurückgesetzt.`);
+                if (uriAttributes.has(lowerAttrName) || lowerAttrName.endsWith(':href')) {
+                    const isDangerousProtocol = 
+                        normalizedValue.startsWith('javascript:') ||
+                        normalizedValue.startsWith('vbscript:') ||
+                        normalizedValue.startsWith('data:text/html') ||
+                        normalizedValue.startsWith('data:image/svg+xml') ||
+                        normalizedValue.startsWith('data:application/');
+
+                    if (isDangerousProtocol) {
+                        element.setAttribute(attrName, '#');
+                        LoggerService.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Unsichere URL in '${attrName}' auf '#' zurückgesetzt.`);
                     }
                 }
             });

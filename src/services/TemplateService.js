@@ -1,79 +1,5 @@
-import { GuardDOM } from "../utils/";
-
-/**
- * Sanitizer-Funktion zur Bereinigung von Werten vor der HTML-Injektion.
- * @callback SanitizerFunction
- * @param {any} value - Der zu bereinigende Wert.
- * @returns {string} Der bereinigte/sanitisierte String.
- */
-/**
- * Optionen zur Konfiguration der `TemplateService`-Instanz.
- * @typedef {Object} TemplateServiceOptions
- * @property {string} [basePath="./js/aspis/templates/"] - Basispfad für das Nachladen von externen Templates.
- * @property {SanitizerFunction|null} [sanitizer=null] - Benutzerdefinierte Sanitizer-Funktion. Fallback ist der interne Default-Sanitizer.
- * @property {boolean} [autoInit=true] - Steuert, ob beim Erzeugen direkt `init()` aufgerufen wird.
- */
-/**
- * Konfigurationsobjekt, das als String (basePath) oder Optionsobjekt übergeben wird.
- * @typedef {string | TemplateServiceOptions} TemplateServiceConfig
- */
-/**
- * Manifest- / Konfigurationsobjekt eines spezifischen Templates.
- * @typedef {Object} TemplateConfig
- * @property {string} [name] - Eindeutiger Name des Templates.
- * @property {Record<string, string>} [placeholder] - Platzhalter-Mapping.
- * @property {Record<string, string>} [slots] - Slot-Platzhalter.
- * @property {Record<string, string>} [attributes] - Attribut-Platzhalter.
- * @property {Record<string, string>} [files] - Mapping von Teil-Dateien beim Server-Fetch.
- * @property {string} [html] - Inline-HTML-String (optional).
- * @property {boolean} [partial] - Gibt an, ob es sich um ein Partial handelt.
- * @property {Record<string, any>} [events] - Registrierte Event-Handler oder Metadaten.
- * @property {Record<string, any>} [styles] - Stylesheet-Metadaten.
- * @property {Record<string, any>} [targets] - Target-Deklarationen.
- * @property {Record<string, any>} [bindings] - Data-Binding-Deklarationen.
- */
-/**
- * Nach der Normalisierung im Cache gespeicherte Template-Struktur.
- * @typedef {Object} NormalizedTemplate
- * @property {string} id - Eindeutige Template-ID.
- * @property {string} role - Rolle des Templates (z.B. 'partial' oder 'container').
- * @property {boolean} isRoot - Gibt an, ob das Template ein Root-Element ist.
- * @property {string|null} childSlot - Standard-Child-Slot-Bezeichner.
- * @property {Array<string>} allowedChildren - Erlaubte Kind-Templates.
- * @property {Record<string, any>} events - Event-Konfigurationen.
- * @property {Record<string, any>} styles - Style-Konfigurationen.
- * @property {Record<string, any>} targets - DOM-Target-Zuordnungen.
- * @property {Record<string, any>} bindings - Data-Binding-Regeln.
- * @property {string} html - Aufbereiter HTML-Quelltext.
- * @property {Record<string, string>} slots - Map von Slot-Schlüsseln auf deren Platzhalter.
- * @property {Record<string, string>} attributes - Map von Attribut-Schlüsseln auf deren Platzhalter.
- * @property {Record<string, string>} data - Map von Daten-Schlüsseln auf deren Platzhalter.
- * @property {Array<[string, string]>} sortedData - Nach Länge absteigend sortierte Daten-Platzhalter-Paare.
- * @property {Array<[string, string]>} sortedAttributes - Nach Länge absteigend sortierte Attribut-Platzhalter-Paare.
- * @property {Record<string, string>} placeholder - Ursprüngliche Platzhalter-Map.
- * @property {TemplateConfig} config - Ursprüngliches Konfigurationsobjekt.
- */
-/**
- * Möglicher Slot-Inhalt (einzelner Node, Array von Nodes, HTML/Text-String oder ein Array von Strings).
- * @typedef {Node | string | Array<Node | string>} SlotContent
- */
-/**
- * Map von Slot-Namen zu den einzufügenden Inhalte-Nodes oder -Strings.
- * @typedef {Record<string, SlotContent>} SlotPayloadMap
- */
-/**
- * Payload-Konfiguration für das Kompilieren eines Templates.
- * @typedef {Object} CompilePayload
- * @property {Record<string, any>} [data] - Daten-Ersatzwerte für Textplatzhalter.
- * @property {Record<string, any>} [attributes] - Werte für Attribut-Platzhalter.
- * @property {SlotPayloadMap} [slots] - Elemente oder Strings zur Befüllung von Slots.
- */
-/**
- * Globales GuardDOM-Sicherheits-Utility (falls verfügbar).
- * @typedef {Object} GuardDOMGlobal
- * @property {function(any): string} [clean] - Bereinigt Eingabewerte.
- * @property {function(any): string} [purify] - Sanitisierte HTML-Strings.
- */
+import { LoggerService } from "./LoggerService.js";
+import { GuardDOM } from "../utils/GuardDOM.js";
 
 /**
  * Zentrale Template-Verwaltungs-Klasse des Aspis-Frameworks.
@@ -442,3 +368,78 @@ export class TemplateService {
         };
     }
 }
+
+/**
+ * Sanitizer-Funktion zur Bereinigung von Werten vor der HTML-Injektion.
+ * @callback SanitizerFunction
+ * @param {any} value - Der zu bereinigende Wert.
+ * @returns {string} Der bereinigte/sanitisierte String.
+ */
+/**
+ * Optionen zur Konfiguration der `TemplateService`-Instanz.
+ * @typedef {Object} TemplateServiceOptions
+ * @property {string} [basePath="./js/aspis/templates/"] - Basispfad für das Nachladen von externen Templates.
+ * @property {SanitizerFunction|null} [sanitizer=null] - Benutzerdefinierte Sanitizer-Funktion. Fallback ist der interne Default-Sanitizer.
+ * @property {boolean} [autoInit=true] - Steuert, ob beim Erzeugen direkt `init()` aufgerufen wird.
+ */
+/**
+ * Konfigurationsobjekt, das als String (basePath) oder Optionsobjekt übergeben wird.
+ * @typedef {string | TemplateServiceOptions} TemplateServiceConfig
+ */
+/**
+ * Manifest- / Konfigurationsobjekt eines spezifischen Templates.
+ * @typedef {Object} TemplateConfig
+ * @property {string} [name] - Eindeutiger Name des Templates.
+ * @property {Record<string, string>} [placeholder] - Platzhalter-Mapping.
+ * @property {Record<string, string>} [slots] - Slot-Platzhalter.
+ * @property {Record<string, string>} [attributes] - Attribut-Platzhalter.
+ * @property {Record<string, string>} [files] - Mapping von Teil-Dateien beim Server-Fetch.
+ * @property {string} [html] - Inline-HTML-String (optional).
+ * @property {boolean} [partial] - Gibt an, ob es sich um ein Partial handelt.
+ * @property {Record<string, any>} [events] - Registrierte Event-Handler oder Metadaten.
+ * @property {Record<string, any>} [styles] - Stylesheet-Metadaten.
+ * @property {Record<string, any>} [targets] - Target-Deklarationen.
+ * @property {Record<string, any>} [bindings] - Data-Binding-Deklarationen.
+ */
+/**
+ * Nach der Normalisierung im Cache gespeicherte Template-Struktur.
+ * @typedef {Object} NormalizedTemplate
+ * @property {string} id - Eindeutige Template-ID.
+ * @property {string} role - Rolle des Templates (z.B. 'partial' oder 'container').
+ * @property {boolean} isRoot - Gibt an, ob das Template ein Root-Element ist.
+ * @property {string|null} childSlot - Standard-Child-Slot-Bezeichner.
+ * @property {Array<string>} allowedChildren - Erlaubte Kind-Templates.
+ * @property {Record<string, any>} events - Event-Konfigurationen.
+ * @property {Record<string, any>} styles - Style-Konfigurationen.
+ * @property {Record<string, any>} targets - DOM-Target-Zuordnungen.
+ * @property {Record<string, any>} bindings - Data-Binding-Regeln.
+ * @property {string} html - Aufbereiter HTML-Quelltext.
+ * @property {Record<string, string>} slots - Map von Slot-Schlüsseln auf deren Platzhalter.
+ * @property {Record<string, string>} attributes - Map von Attribut-Schlüsseln auf deren Platzhalter.
+ * @property {Record<string, string>} data - Map von Daten-Schlüsseln auf deren Platzhalter.
+ * @property {Array<[string, string]>} sortedData - Nach Länge absteigend sortierte Daten-Platzhalter-Paare.
+ * @property {Array<[string, string]>} sortedAttributes - Nach Länge absteigend sortierte Attribut-Platzhalter-Paare.
+ * @property {Record<string, string>} placeholder - Ursprüngliche Platzhalter-Map.
+ * @property {TemplateConfig} config - Ursprüngliches Konfigurationsobjekt.
+ */
+/**
+ * Möglicher Slot-Inhalt (einzelner Node, Array von Nodes, HTML/Text-String oder ein Array von Strings).
+ * @typedef {Node | string | Array<Node | string>} SlotContent
+ */
+/**
+ * Map von Slot-Namen zu den einzufügenden Inhalte-Nodes oder -Strings.
+ * @typedef {Record<string, SlotContent>} SlotPayloadMap
+ */
+/**
+ * Payload-Konfiguration für das Kompilieren eines Templates.
+ * @typedef {Object} CompilePayload
+ * @property {Record<string, any>} [data] - Daten-Ersatzwerte für Textplatzhalter.
+ * @property {Record<string, any>} [attributes] - Werte für Attribut-Platzhalter.
+ * @property {SlotPayloadMap} [slots] - Elemente oder Strings zur Befüllung von Slots.
+ */
+/**
+ * Globales GuardDOM-Sicherheits-Utility (falls verfügbar).
+ * @typedef {Object} GuardDOMGlobal
+ * @property {function(any): string} [clean] - Bereinigt Eingabewerte.
+ * @property {function(any): string} [purify] - Sanitisierte HTML-Strings.
+ */

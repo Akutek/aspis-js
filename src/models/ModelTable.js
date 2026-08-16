@@ -1,40 +1,4 @@
-import { BaseModel } from "./";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelTable.
- * @typedef {Object} ModelTableOptionsObject
- * @property {string} [layout='default'] - Das zu verwendende Template-Layout der Tabelle.
- */
-/**
- * Erlaubte Parameter-Typen für die Optionen des `ModelTable` (Optionsobjekt oder direkter Layout-String).
- * @typedef {ModelTableOptionsObject | string} ModelTableOptions
- */
-/**
- * Struktur der Rohdaten, die an `ModelTable` übergeben werden können.
- * Can either be a array of row items directly, or an object containing a `rows` or `data` array.
- * @typedef {Array<Record<string, any> | InstanceType<typeof ModelTable.Row>> | { rows?: Array<Record<string, any> | InstanceType<typeof ModelTable.Row>>, data?: Array<Record<string, any> | InstanceType<typeof ModelTable.Row>> }} ModelTableRawData
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur einer Tabellenzeile.
- * @typedef {Record<string, any>} ModelTableRowRenderData
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Tabellen-Modells.
- * @typedef {Object} ModelTableRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {ModelTableRowRenderData[]} rows - Die aufbereiteten Daten aller Tabellenzeilen.
- */
+import { BaseModel } from "./BaseModel.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Repräsentation und Manipulation von Tabellendaten.
@@ -201,3 +165,39 @@ export class ModelTable extends BaseModel {
         };
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelTable.
+ * @typedef {Object} ModelTableOptionsObject
+ * @property {string} [layout='default'] - Das zu verwendende Template-Layout der Tabelle.
+ */
+/**
+ * Erlaubte Parameter-Typen für die Optionen des `ModelTable` (Optionsobjekt oder direkter Layout-String).
+ * @typedef {ModelTableOptionsObject | string} ModelTableOptions
+ */
+/**
+ * Struktur der Rohdaten, die an `ModelTable` übergeben werden können.
+ * Can either be a array of row items directly, or an object containing a `rows` or `data` array.
+ * @typedef {Array<Record<string, any> | InstanceType<typeof ModelTable.Row>> | { rows?: Array<Record<string, any> | InstanceType<typeof ModelTable.Row>>, data?: Array<Record<string, any> | InstanceType<typeof ModelTable.Row>> }} ModelTableRawData
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur einer Tabellenzeile.
+ * @typedef {Record<string, any>} ModelTableRowRenderData
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Tabellen-Modells.
+ * @typedef {Object} ModelTableRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {ModelTableRowRenderData[]} rows - Die aufbereiteten Daten aller Tabellenzeilen.
+ */

@@ -1,32 +1,4 @@
-import { BaseModel } from "./";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {(input: string) => string} _sanitize - Sanitizes-Methode zur Bereinigung von Strings zur Vermeidung von XSS.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelLoader.
- * @typedef {Object} ModelLoaderOptionsObject
- * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
- * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
- */
-/**
- * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoader` (Optionsobjekt oder direkter Nachrichten-String).
- * @typedef {ModelLoaderOptionsObject | string} ModelLoaderOptions
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Lade-Modells.
- * @typedef {Object} ModelLoaderRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {string} message - Die bereinigte Lade-Nachricht.
- */
+import { BaseModel } from "./BaseModel.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Repräsentation von Ladezuständen (Loader/Spinner) und Lade-Nachrichten.
@@ -93,3 +65,31 @@ export class ModelLoader extends BaseModel {
         };
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {(input: string) => string} _sanitize - Sanitizes-Methode zur Bereinigung von Strings zur Vermeidung von XSS.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelLoader.
+ * @typedef {Object} ModelLoaderOptionsObject
+ * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
+ * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
+ */
+/**
+ * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoader` (Optionsobjekt oder direkter Nachrichten-String).
+ * @typedef {ModelLoaderOptionsObject | string} ModelLoaderOptions
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Lade-Modells.
+ * @typedef {Object} ModelLoaderRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {string} message - Die bereinigte Lade-Nachricht.
+ */

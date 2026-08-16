@@ -1,43 +1,4 @@
-/**
- * Unterstützte HTTP-Methoden für Anfragen im Aspis-Framework.
- * @typedef {'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD'} HttpMethod
- */
-/**
- * Key-Value-Map für URL-Query-Parameter.
- * @typedef {Record<string, string | number | boolean | null | undefined>} HttpParams
- */
-/**
- * Key-Value-Map für HTTP-Header.
- * @typedef {Record<string, string>} HttpHeaders
- */
-/**
- * Mitzusendender Payload-Datentyp für HTTP-Requests.
- * @typedef {Record<string, any> | FormData | string | Blob | ArrayBuffer | null} HttpBody
- */
-/**
- * Möglicher Rückgabetyp einer DatenFetcher-Anfrage.
- * @template T
- * @typedef {T | boolean | string | null} FetchResult
- */
-/**
- * Konfigurationsoptionen für die generische `request()`-Methode.
- * @typedef {Object} RequestOptions
- * @property {HttpParams} [params={}] - Query-Parameter für die URL.
- * @property {AbortSignal|null} [signal=null] - Optionales AbortSignal zum manuellen Stornieren.
- * @property {number} [timeout] - Timeout in Millisekunden.
- * @property {HttpHeaders} [headers={}] - Zusätzliche HTTP-Header.
- * @property {HttpMethod} [method='GET'] - Die zu verwendende HTTP-Methode.
- * @property {HttpBody} [body=null] - Der mitzusendende Request-Body.
- */
-/**
- * Optionseinstellungen für spezifische HTTP-Methoden (`get`, `post`, `put`, `delete`).
- * @typedef {Object} HttpOptions
- * @property {HttpParams} [params] - Query-Parameter für die URL.
- * @property {AbortSignal|null} [signal] - Optionales AbortSignal zum Stornieren.
- * @property {number} [timeout] - Timeout in Millisekunden.
- * @property {HttpHeaders} [headers] - Zusätzliche HTTP-Header.
- * @property {HttpBody} [body] - Request-Body.
- */
+import { LoggerService } from "./LoggerService.js";
 
 /**
  * Service-Klasse des Aspis-Frameworks für asynchrone HTTP-Requests.
@@ -232,3 +193,44 @@ export class DatenFetcher {
         return this.request(url, { ...options, method: 'DELETE' });
     }
 }
+
+/**
+ * Unterstützte HTTP-Methoden für Anfragen im Aspis-Framework.
+ * @typedef {'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD'} HttpMethod
+ */
+/**
+ * Key-Value-Map für URL-Query-Parameter.
+ * @typedef {Record<string, string | number | boolean | null | undefined>} HttpParams
+ */
+/**
+ * Key-Value-Map für HTTP-Header.
+ * @typedef {Record<string, string>} HttpHeaders
+ */
+/**
+ * Mitzusendender Payload-Datentyp für HTTP-Requests.
+ * @typedef {Record<string, any> | FormData | string | Blob | ArrayBuffer | null} HttpBody
+ */
+/**
+ * Möglicher Rückgabetyp einer DatenFetcher-Anfrage.
+ * @template T
+ * @typedef {T | boolean | string | null} FetchResult
+ */
+/**
+ * Konfigurationsoptionen für die generische `request()`-Methode.
+ * @typedef {Object} RequestOptions
+ * @property {HttpParams} [params={}] - Query-Parameter für die URL.
+ * @property {AbortSignal|null} [signal=null] - Optionales AbortSignal zum manuellen Stornieren.
+ * @property {number} [timeout] - Timeout in Millisekunden.
+ * @property {HttpHeaders} [headers={}] - Zusätzliche HTTP-Header.
+ * @property {HttpMethod} [method='GET'] - Die zu verwendende HTTP-Methode.
+ * @property {HttpBody} [body=null] - Der mitzusendende Request-Body.
+ */
+/**
+ * Optionseinstellungen für spezifische HTTP-Methoden (`get`, `post`, `put`, `delete`).
+ * @typedef {Object} HttpOptions
+ * @property {HttpParams} [params] - Query-Parameter für die URL.
+ * @property {AbortSignal|null} [signal] - Optionales AbortSignal zum Stornieren.
+ * @property {number} [timeout] - Timeout in Millisekunden.
+ * @property {HttpHeaders} [headers] - Zusätzliche HTTP-Header.
+ * @property {HttpBody} [body] - Request-Body.
+ */

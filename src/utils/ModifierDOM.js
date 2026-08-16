@@ -1,24 +1,4 @@
 /**
- * Zulässiger Eingabetyp für DOM-Ziel-Elemente (Einzelnes Element, Iterable/Array von Elementen oder Falsy-Wert).
- * @typedef {Element | Iterable<Element> | Array<Element> | null | undefined} DOMTarget
- */
-/**
- * Style-Konfiguration innerhalb eines Slices.
- * @typedef {Object} SliceConfig
- * @property {Record<string, string>} [styles] - Mapping von Style-Schlüsseln zu CSS-Klassennamen.
- */
-/**
- * Repräsentiert ein State-Slice-Objekt im Store.
- * @typedef {Object} StateSlice
- * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
- * @property {Record<string, string>} [styles] - Direktes Style-Mapping auf Slice-Ebene.
- */
-/**
- * Erlaubte Datentypen für Attribut-Werte.
- * @typedef {string | number | boolean | null | undefined} AttributeValue
- */
-
-/**
  * Utility-Klasse des Aspis-Frameworks zur sicheren DOM-Manipulation
  * (Sichtbarkeit, Klassen-Management und Attribut-Steuerung).
  * 
@@ -207,3 +187,23 @@ export class ModifierDOM {
         });
     }
 }
+
+/**
+ * Zulässiger Eingabetyp für DOM-Ziel-Elemente (Einzelnes Element, Iterable/Array von Elementen oder Falsy-Wert).
+ * @typedef {Element | Iterable<Element> | Array<Element> | null | undefined} DOMTarget
+ */
+/**
+ * Style-Konfiguration innerhalb eines Slices.
+ * @typedef {Object} SliceConfig
+ * @property {Record<string, string>} [styles] - Mapping von Style-Schlüsseln zu CSS-Klassennamen.
+ */
+/**
+ * Repräsentiert ein State-Slice-Objekt im Store.
+ * @typedef {Object} StateSlice
+ * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
+ * @property {Record<string, string>} [styles] - Direktes Style-Mapping auf Slice-Ebene.
+ */
+/**
+ * Erlaubte Datentypen für Attribut-Werte.
+ * @typedef {string | number | boolean | null | undefined} AttributeValue
+ */

@@ -1,10 +1,4 @@
-/**
- * Ergebnis eines DOM-Scan-Vorgangs für ein Controller-Element.
- * @typedef {Object} ControllerScanResult
- * @property {HTMLElement} element - Das gescannte DOM-Element mit `data-controller`-Attribut.
- * @property {string} type - Der Typ/Name des Controllers (Inhalt von `data-controller`).
- * @property {string} layout - Das zugewiesene Layout (Inhalt von `data-layout` oder `"default"`).
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Utility-Klasse des Aspis-Frameworks zum Scannen des DOMs nach Controller-Deklarationen.
@@ -67,3 +61,11 @@ export class ScannerDOM {
         };
     }
 }
+
+/**
+ * Ergebnis eines DOM-Scan-Vorgangs für ein Controller-Element.
+ * @typedef {Object} ControllerScanResult
+ * @property {HTMLElement} element - Das gescannte DOM-Element mit `data-controller`-Attribut.
+ * @property {string} type - Der Typ/Name des Controllers (Inhalt von `data-controller`).
+ * @property {string} layout - Das zugewiesene Layout (Inhalt von `data-layout` oder `"default"`).
+ */

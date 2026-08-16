@@ -1,33 +1,4 @@
-/**
- * Unsubscribe-Funktion zum Wiederabmelden/Entfernen eines Event-Listeners.
- * @typedef {function(): void} UnsubscribeFunction
- */
-/**
- * Callback-Funktion, die bei der Auslösung eines Events aufgerufen wird.
- * @template [T=any]
- * @typedef {function(T): void} EventListenerCallback
- */
-/**
- * Callback-Funktion ohne Parameter, die bei Klicks außerhalb eines Ziel-Elements aufgerufen wird.
- * @typedef {function(): void} ClickOutsideCallback
- */
-/**
- * Manifest- / Konfigurationsobjekt zur Definition von unterstützten Events oder Metadaten.
- * @typedef {Record<string, any>} EventManifest
- */
-/**
- * Menge (Set) von registrierten Callback-Funktionen für ein spezifisches Event.
- * @template [T=any]
- * @typedef {Set<EventListenerCallback<T>>} EventListenerSet
- */
-/**
- * Map zur Zuordnung von Event-Namen zu den jeweiligen Listener-Sets.
- * @typedef {Map<string, EventListenerSet>} ListenersMap
- */
-/**
- * Event-Handler-Funktion für das globale Dokument-Klick-Event.
- * @typedef {function(MouseEvent): void} GlobalClickHandler
- */
+import { LoggerService } from "./LoggerService.js";
 
 /**
  * Zentrale Event-Dispatcher-Klasse des Aspis-Frameworks.
@@ -207,3 +178,34 @@ export class EventDispatcher {
         document.addEventListener('click', this.#clickTrackerHandler);
     }
 }
+
+/**
+ * Unsubscribe-Funktion zum Wiederabmelden/Entfernen eines Event-Listeners.
+ * @typedef {function(): void} UnsubscribeFunction
+ */
+/**
+ * Callback-Funktion, die bei der Auslösung eines Events aufgerufen wird.
+ * @template [T=any]
+ * @typedef {function(T): void} EventListenerCallback
+ */
+/**
+ * Callback-Funktion ohne Parameter, die bei Klicks außerhalb eines Ziel-Elements aufgerufen wird.
+ * @typedef {function(): void} ClickOutsideCallback
+ */
+/**
+ * Manifest- / Konfigurationsobjekt zur Definition von unterstützten Events oder Metadaten.
+ * @typedef {Record<string, any>} EventManifest
+ */
+/**
+ * Menge (Set) von registrierten Callback-Funktionen für ein spezifisches Event.
+ * @template [T=any]
+ * @typedef {Set<EventListenerCallback<T>>} EventListenerSet
+ */
+/**
+ * Map zur Zuordnung von Event-Namen zu den jeweiligen Listener-Sets.
+ * @typedef {Map<string, EventListenerSet>} ListenersMap
+ */
+/**
+ * Event-Handler-Funktion für das globale Dokument-Klick-Event.
+ * @typedef {function(MouseEvent): void} GlobalClickHandler
+ */

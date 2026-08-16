@@ -1,57 +1,4 @@
-import { ModelLoader } from "./";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {(input: string) => string} _sanitize - Sanitizes-Methode zur Bereinigung von Strings zur Vermeidung von XSS.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelLoader.
- * @typedef {Object} ModelLoaderOptionsObject
- * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
- * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
- */
-/**
- * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoader`.
- * @typedef {ModelLoaderOptionsObject | string} ModelLoaderOptions
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Lade-Modells.
- * @typedef {Object} ModelLoaderRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {string} message - Die bereinigte Lade-Nachricht.
- */
-/**
- * Modell-Klasse des Aspis-Frameworks zur Repräsentation von Ladezuständen.
- * @typedef {Object} ModelLoader
- * @property {string} message - Liefert die aktuell gesetzte Lade-Nachricht zurück.
- * @property {(msg?: any) => void} setMessage - Setzt die Lade-Nachricht.
- * @property {() => ModelLoaderRenderData} toRenderData - Bereitet die Daten für das Rendering vor.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelLoadingBar.
- * @typedef {Object} ModelLoadingBarOptionsObject
- * @property {number} [progress=0] - Der anfängliche Fortschrittswert in Prozent (0–100).
- * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
- * @property {string} [layout='bar'] - Das zu verwendende Ladebalken-Template-Layout.
- */
-/**
- * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoadingBar` (Optionsobjekt, direkter Nachrichten-String oder direkter Fortschrittswert als Zahl).
- * @typedef {ModelLoadingBarOptionsObject | string | number} ModelLoadingBarOptions
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Ladebalken-Modells.
- * @typedef {Object} ModelLoadingBarRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {string} message - Die bereinigte Lade-Nachricht.
- * @property {number} progress - Der aktuelle Fortschrittswert in Prozent (0–100).
- */
+import { ModelLoader } from "./ModelLoader.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Repräsentation einer Fortschrittsanzeige (Loading Bar) mit prozentualem Status.
@@ -135,3 +82,56 @@ export class ModelLoadingBar extends ModelLoader {
         };
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {(input: string) => string} _sanitize - Sanitizes-Methode zur Bereinigung von Strings zur Vermeidung von XSS.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelLoader.
+ * @typedef {Object} ModelLoaderOptionsObject
+ * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
+ * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
+ */
+/**
+ * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoader`.
+ * @typedef {ModelLoaderOptionsObject | string} ModelLoaderOptions
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Lade-Modells.
+ * @typedef {Object} ModelLoaderRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {string} message - Die bereinigte Lade-Nachricht.
+ */
+/**
+ * Modell-Klasse des Aspis-Frameworks zur Repräsentation von Ladezuständen.
+ * @typedef {Object} ModelLoader
+ * @property {string} message - Liefert die aktuell gesetzte Lade-Nachricht zurück.
+ * @property {(msg?: any) => void} setMessage - Setzt die Lade-Nachricht.
+ * @property {() => ModelLoaderRenderData} toRenderData - Bereitet die Daten für das Rendering vor.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelLoadingBar.
+ * @typedef {Object} ModelLoadingBarOptionsObject
+ * @property {number} [progress=0] - Der anfängliche Fortschrittswert in Prozent (0–100).
+ * @property {string} [message='Lade...'] - Die anzuzeigende Lade-Nachricht.
+ * @property {string} [layout='bar'] - Das zu verwendende Ladebalken-Template-Layout.
+ */
+/**
+ * Erlaubte Parameter-Typen für den Konstruktor des `ModelLoadingBar` (Optionsobjekt, direkter Nachrichten-String oder direkter Fortschrittswert als Zahl).
+ * @typedef {ModelLoadingBarOptionsObject | string | number} ModelLoadingBarOptions
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Ladebalken-Modells.
+ * @typedef {Object} ModelLoadingBarRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {string} message - Die bereinigte Lade-Nachricht.
+ * @property {number} progress - Der aktuelle Fortschrittswert in Prozent (0–100).
+ */

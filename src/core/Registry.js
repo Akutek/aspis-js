@@ -1,35 +1,4 @@
-/**
- * Interface für eine Controller-Instanz mit optionaler Lifecycle-Cleanup-Methode.
- * @typedef {Object} ControllerInstance
- * @property {function(): void} [destroy] - Wird beim Löschen oder durch die FinalizationRegistry zur Bereinigung aufgerufen.
- */
-/**
- * Known Services Mapping für präzise Autovervollständigung.
- * @typedef {Object} KnownServices
- * @property {import('./ControllerRegistry').ControllerRegistry} controllerRegistry - Dynamischer Import-Service.
- * @property {AppConfig} config - Globale Anwendungskonfiguration.
- * @property {Object} store - Redux-ähnlicher State-Store.
- * @property {EventManifest} eventManifest - Zuordnung von Feature-Events zu JSON-Dateien.
- * @property {Object} fetcher - HTTP-Abstraktion für API-Aufrufe.
- * @property {Object} dispatcher - Globaler Event-Bus / PubSub.
- * @property {Object} modifierDOM - Utility für direkte DOM-Manipulationen.
- * @property {Object} cleaner - Teardown- & Lifecycle-Service.
- * @property {Object} templates - Caching- & Render-Engine für Templates.
- * @property {Object} renderService - DOM-Injektions-Service.
- */
-/**
- * Konfiguration der `app-config.json`.
- * @typedef {Object} AppConfig
- * @property {Object} publicPaths - Basispfade.
- * @property {string} publicPaths.controllers - Pfad zu Controllern.
- * @property {string} publicPaths.templates - Pfad zu Templates.
- * @property {string} publicPaths.events - Pfad zu Events.
- * @property {Record<string, Object>} components - Komponenten-Mapping.
- */
-/**
- * Event-Manifest Struktur aus `event-manifest.json`.
- * @typedef {Record<string, { events: string }>} EventManifest
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Inversion-of-Control (IoC) Container für das Aspis-Framework.
@@ -202,3 +171,36 @@ export class Registry {
         this.#services.clear();
     }
 }
+
+/**
+ * Interface für eine Controller-Instanz mit optionaler Lifecycle-Cleanup-Methode.
+ * @typedef {Object} ControllerInstance
+ * @property {function(): void} [destroy] - Wird beim Löschen oder durch die FinalizationRegistry zur Bereinigung aufgerufen.
+ */
+/**
+ * Known Services Mapping für präzise Autovervollständigung.
+ * @typedef {Object} KnownServices
+ * @property {import('./ControllerRegistry').ControllerRegistry} controllerRegistry - Dynamischer Import-Service.
+ * @property {AppConfig} config - Globale Anwendungskonfiguration.
+ * @property {Object} store - Redux-ähnlicher State-Store.
+ * @property {EventManifest} eventManifest - Zuordnung von Feature-Events zu JSON-Dateien.
+ * @property {Object} fetcher - HTTP-Abstraktion für API-Aufrufe.
+ * @property {Object} dispatcher - Globaler Event-Bus / PubSub.
+ * @property {Object} modifierDOM - Utility für direkte DOM-Manipulationen.
+ * @property {Object} cleaner - Teardown- & Lifecycle-Service.
+ * @property {Object} templates - Caching- & Render-Engine für Templates.
+ * @property {Object} renderService - DOM-Injektions-Service.
+ */
+/**
+ * Konfiguration der `app-config.json`.
+ * @typedef {Object} AppConfig
+ * @property {Object} publicPaths - Basispfade.
+ * @property {string} publicPaths.controllers - Pfad zu Controllern.
+ * @property {string} publicPaths.templates - Pfad zu Templates.
+ * @property {string} publicPaths.events - Pfad zu Events.
+ * @property {Record<string, Object>} components - Komponenten-Mapping.
+ */
+/**
+ * Event-Manifest Struktur aus `event-manifest.json`.
+ * @typedef {Record<string, { events: string }>} EventManifest
+ */

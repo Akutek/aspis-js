@@ -1,38 +1,5 @@
-import { ModelLoadingBar, ModelSpinner } from "../models/";
-
-/**
- * Datenstruktur, die von der `toRenderData`-Methode eines Lade-Modells zurückgegeben wird.
- * @typedef {Object} LoadingRenderData
- * @property {string} layout - Das zu verwendende Template/Layout für die Ladeanzeige.
- * @property {string} message - Die anzuzeigende Lade-Nachricht.
- * @property {number} [progress] - Optionaler Fortschrittswert der Ladeanzeige.
- */
-/**
- * Fallback-Objekt für Lade-Modelle, falls weder `ModelLoadingBar` noch `ModelSpinner` verfügbar sind.
- * @typedef {Object} LoadingModelFallback
- * @property {function(): LoadingRenderData} toRenderData - Gibt die für das Rendering benötigten Daten zurück.
- */
-/**
- * Schnittstelle für Instanzen von `ModelLoadingBar`.
- * @typedef {Object} ModelLoadingBarInstance
- * @property {function(): LoadingRenderData} [toRenderData] - Gibt die Rendering-Daten zurück.
- */
-/**
- * Schnittstelle für Instanzen von `ModelSpinner`.
- * @typedef {Object} ModelSpinnerInstance
- * @property {function(): LoadingRenderData} [toRenderData] - Gibt die Rendering-Daten zurück.
- */
-/**
- * Typ für alle unterstützten Lade-Modelle.
- * @typedef {ModelLoadingBarInstance | ModelSpinnerInstance | LoadingModelFallback} LoadingModel
- */
-/**
- * Reaktiver State-Proxy, der vom `LoadingStateHelper` beim Starten eines Ladevorgangs aktualisiert wird.
- * @typedef {Object} LoadingStateProxy
- * @property {any} error - Fehlerzustand (wird beim Anwenden des Ladezustands auf `null` zurückgesetzt).
- * @property {boolean} isLoading - Kennzeichnung, ob ein Ladevorgang aktiv ist.
- * @property {LoadingModel | null} [model] - Das erzeugte Lade-Modell zur visuellen Repräsentation.
- */
+import { ModelLoadingBar } from "../models/ModelLoadingBar.js";
+import { ModelSpinner } from "../models/ModelSpinner.js";
 
 /**
  * Utility-Klasse des Aspis-Frameworks zur Steuerung und Initialisierung von visuellen Ladezuständen.
@@ -72,3 +39,37 @@ export class LoadingStateHelper {
         }
     }
 }
+
+/**
+ * Datenstruktur, die von der `toRenderData`-Methode eines Lade-Modells zurückgegeben wird.
+ * @typedef {Object} LoadingRenderData
+ * @property {string} layout - Das zu verwendende Template/Layout für die Ladeanzeige.
+ * @property {string} message - Die anzuzeigende Lade-Nachricht.
+ * @property {number} [progress] - Optionaler Fortschrittswert der Ladeanzeige.
+ */
+/**
+ * Fallback-Objekt für Lade-Modelle, falls weder `ModelLoadingBar` noch `ModelSpinner` verfügbar sind.
+ * @typedef {Object} LoadingModelFallback
+ * @property {function(): LoadingRenderData} toRenderData - Gibt die für das Rendering benötigten Daten zurück.
+ */
+/**
+ * Schnittstelle für Instanzen von `ModelLoadingBar`.
+ * @typedef {Object} ModelLoadingBarInstance
+ * @property {function(): LoadingRenderData} [toRenderData] - Gibt die Rendering-Daten zurück.
+ */
+/**
+ * Schnittstelle für Instanzen von `ModelSpinner`.
+ * @typedef {Object} ModelSpinnerInstance
+ * @property {function(): LoadingRenderData} [toRenderData] - Gibt die Rendering-Daten zurück.
+ */
+/**
+ * Typ für alle unterstützten Lade-Modelle.
+ * @typedef {ModelLoadingBarInstance | ModelSpinnerInstance | LoadingModelFallback} LoadingModel
+ */
+/**
+ * Reaktiver State-Proxy, der vom `LoadingStateHelper` beim Starten eines Ladevorgangs aktualisiert wird.
+ * @typedef {Object} LoadingStateProxy
+ * @property {any} error - Fehlerzustand (wird beim Anwenden des Ladezustands auf `null` zurückgesetzt).
+ * @property {boolean} isLoading - Kennzeichnung, ob ein Ladevorgang aktiv ist.
+ * @property {LoadingModel | null} [model] - Das erzeugte Lade-Modell zur visuellen Repräsentation.
+ */

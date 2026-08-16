@@ -1,19 +1,4 @@
-import { GuardDOM } from "../utils/";
-/**
- * Konfigurationsoptionen für die Initialisierung von BaseModel-Instanzen.
- * @typedef {Object} ModelOptions
- * @property {string} [layout='default'] - Der Name oder Bezeichner des zu verwendenden Templates/Layouts.
- * @property {Record<string, any>} [key: string] - Beliebige weitere optionale Daten oder Konfigurationseigenschaften.
- */
-/**
- * Interface für globale HTML-Bereinigungs-Utilities (GuardDOM).
- * @typedef {Object} GuardDOMInterface
- * @property {function(string): string} clean - Bereinigt einen Eingabestring von potenziell gefährlichem HTML/XSS-Code.
- */
-/**
- * Generische Datenstruktur, wie sie von Unterklassen für Render-Prozesse aufbereitet wird.
- * @typedef {Record<string, any>} ModelRenderData
- */
+import { GuardDOM } from "../utils/GuardDOM.js";
 
 /**
  * Abstrakte Basisklasse für Datenmodelle im Aspis-Framework.
@@ -110,3 +95,19 @@ export class BaseModel {
         throw new Error(`Aspis [BaseModel]: '${this.constructor.name}' muss die Methode 'toRenderData()' implementieren.`);
     }
 }
+
+/**
+ * Konfigurationsoptionen für die Initialisierung von BaseModel-Instanzen.
+ * @typedef {Object} ModelOptions
+ * @property {string} [layout='default'] - Der Name oder Bezeichner des zu verwendenden Templates/Layouts.
+ * @property {Record<string, any>} [key: string] - Beliebige weitere optionale Daten oder Konfigurationseigenschaften.
+ */
+/**
+ * Interface für globale HTML-Bereinigungs-Utilities (GuardDOM).
+ * @typedef {Object} GuardDOMInterface
+ * @property {function(string): string} clean - Bereinigt einen Eingabestring von potenziell gefährlichem HTML/XSS-Code.
+ */
+/**
+ * Generische Datenstruktur, wie sie von Unterklassen für Render-Prozesse aufbereitet wird.
+ * @typedef {Record<string, any>} ModelRenderData
+ */

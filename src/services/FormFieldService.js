@@ -1,22 +1,4 @@
 /**
- * Mögliche Typen für Werte von Formularelementen (String, Boolean, Array von Strings oder Null).
- * @typedef {string | boolean | string[] | null} FormFieldValue
- */
-/**
- * Validierungsregeln für ein Formularfeld.
- * @typedef {Record<string, any>} FieldRules
- */
-/**
- * Repräsentiert den vollständigen State-Zustand eines Formularfeldes.
- * @typedef {Object} FieldState
- * @property {FormFieldValue} value - Der aktuelle Wert des Feldes.
- * @property {FieldRules} rules - Die zugewiesenen Validierungsregeln.
- * @property {string | null} error - Die aktuelle Fehlermeldung oder `null`, wenn gültig.
- * @property {boolean} isTouched - Indikator, ob das Feld bereits fokussiert/verlassen wurde.
- * @property {boolean} isDirty - Indikator, ob der Wert vom Initialwert abweicht.
- */
-
-/**
  * Service-Klasse des Aspis-Frameworks zum Auslesen von Feldnamen und Werten aus DOM-Elementen
  * sowie zur Erzeugung standardisierter Formularfeld-States.
  * 
@@ -88,3 +70,21 @@ export class FormFieldService {
         };
     }
 }
+
+/**
+ * Mögliche Typen für Werte von Formularelementen (String, Boolean, Array von Strings oder Null).
+ * @typedef {string | boolean | string[] | null} FormFieldValue
+ */
+/**
+ * Validierungsregeln für ein Formularfeld.
+ * @typedef {Record<string, any>} FieldRules
+ */
+/**
+ * Repräsentiert den vollständigen State-Zustand eines Formularfeldes.
+ * @typedef {Object} FieldState
+ * @property {FormFieldValue} value - Der aktuelle Wert des Feldes.
+ * @property {FieldRules} rules - Die zugewiesenen Validierungsregeln.
+ * @property {string | null} error - Die aktuelle Fehlermeldung oder `null`, wenn gültig.
+ * @property {boolean} isTouched - Indikator, ob das Feld bereits fokussiert/verlassen wurde.
+ * @property {boolean} isDirty - Indikator, ob der Wert vom Initialwert abweicht.
+ */

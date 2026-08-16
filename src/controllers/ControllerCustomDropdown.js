@@ -1,132 +1,9 @@
-import { BaseController } from "./";
-import { ModelCustomDropdown, ModelLoader } from "../models";
-import { FormFieldService } from "../services";
-import { ModifierDOM } from "../utils";
-
-/**
- * Registry-Interface zum Abrufen von Services im Aspis-Framework.
- * @typedef {Object} ObserverRegistry
- * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
- */
-/**
- * Service zum Rendern von HTML-Templates im DOM.
- * @typedef {Object} RenderService
- * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
- */
-/**
- * Event-Dispatcher des Frameworks für entkoppelte Kommunikation und globale Events.
- * @typedef {Object} EventDispatcher
- * @property {(event: string, callback: (data?: any) => void) => void} [on] - Registriert einen Event-Listener.
- * @property {(event: string, data?: any) => void} [emit] - Löst ein Event aus.
- * @property {(element: HTMLElement, callback: () => void) => UnsubscribeCallback} [onClickOutside] - Registriert einen Click-Outside-Listener für ein DOM-Element.
- */
-/**
- * Funktion zum Entfernen eines Event-Listeners (Unsubscribe).
- * @typedef {() => void} UnsubscribeCallback
- */
-/**
- * Zentraler State-Store der Anwendung.
- * @typedef {Object} Store
- * @property {(sliceKey: string) => StateProxy | undefined} [getSlice] - Holt einen State-Slice-Proxy.
- * @property {(sliceKey: string) => any} [getState] - Holt den aktuellen Zustand eines State-Slices.
- */
-/**
- * Proxy-Objekt für Reaktivität und Zustandsverwaltung eines Slices im Store.
- * @typedef {Object} StateProxy
- * @property {ModelCustomDropdown | null} [model] - Die zugewiesene Model-Instanz.
- * @property {boolean} [isLoading] - Ladezustands-Flag.
- */
-/**
- * HTTP-Fetcher Service für AJAX/API-Anfragen.
- * @typedef {Object} Fetcher
- * @property {(url: string, params?: Record<string, any>, options?: { signal?: AbortSignal }) => Promise<any>} get - Führt eine HTTP GET-Anfrage aus.
- */
-/**
- * Statische Utility-Klasse zur sicheren DOM-Manipulation.
- * @typedef {Object} ModifierDOM
- * @property {(element: Element | null, className: string, force?: boolean) => void} toggleClass - Schaltet CSS-Klassen um.
- * @property {(element: Element | null, className: string) => void} addClass - Fügt eine CSS-Klasse hinzu.
- * @property {(element: Element | null, className: string) => void} removeClass - Entfernt eine CSS-Klasse.
- * @property {(element: Element | null, attrName: string, value: any) => void} attr - Setzt ein Attribut am Element.
- * @property {(element: HTMLElement | null) => void} show - Blendet ein Element ein.
- * @property {(element: HTMLElement | null) => void} hide - Blendet ein Element aus.
- */
-/**
- * Service zur Ermittlung von Formularfeld-Eigenschaften aus DOM-Elementen.
- * @typedef {Object} FormFieldService
- * @property {(container: HTMLElement) => string | undefined} getFieldName - Ermittelt den logischen Namen eines Formularfeldes.
- */
-/**
- * Validierungsregeln für das Dropdown-Feld.
- * @typedef {Record<string, any>} FieldRules
- */
-/**
- * Repräsentiert einen einzelnen Eintrag in der Dropdown-Auswahlliste.
- * @typedef {Object} DropdownItem
- * @property {any} value - Der Wert des Eintrags.
- * @property {string} label - Die Anzeigebeschriftung des Eintrags.
- * @property {boolean} [disabled] - Flag, ob der Eintrag deaktiviert ist.
- */
-/**
- * Konstruktor-Optionen für die Modellierung des `ModelCustomDropdown`.
- * @typedef {Object} ModelCustomDropdownOptions
- * @property {string} [layout='default'] - Das visuelle Layout-Template des Dropdowns.
- * @property {any} [value=''] - Der initial ausgewählte Wert.
- * @property {FieldRules} [rules={}] - Die anzuwendenden Validierungsregeln.
- */
-/**
- * Instanz des Custom-Dropdown-Models im Aspis-Framework.
- * @typedef {Object} ModelCustomDropdown
- * @property {boolean} isOpen - Gibt an, ob das Dropdown aktuell geöffnet ist.
- * @property {any} value - Der aktuell gewählte Wert.
- * @property {number} focusedIndex - Index des aktuell per Tastatur fokussierten Eintrags.
- * @property {string | null} error - Die aktuelle Fehlermeldung oder null.
- * @property {DropdownItem | null} selectedItem - Das aktuell gewählte Item-Objekt.
- * @property {(open: boolean) => void} setOpen - Setzt den Öffnungszustand.
- * @property {(options: Array<DropdownItem | any>) => void} setOptions - Aktualisiert die Auswahlliste.
- * @property {(step: number) => void} moveFocus - Verschiebt den Tastaturfokus relativ um `step`.
- * @property {() => boolean} selectFocused - Wählt das aktuell fokussierte Item aus.
- * @property {(value: any) => boolean} selectByValue - Wählt ein Item anhand seines Werts aus und gibt zurück, ob sich der Wert geändert hat.
- * @property {() => boolean} validate - Führt die Validierung durch und gibt das Ergebnis zurück.
- * @property {() => Record<string, any>} toRenderData - Bereitet die Datenstruktur für das Template-Rendering vor.
- */
-/**
- * Konfigurationsoptionen für den ControllerCustomDropdown.
- * @typedef {Object} ControllerOptions
- * @property {string} [sliceKey='features.dropdownFeature'] - Key für den zugewiesenen State-Slice im Store.
- * @property {string} [layout] - Override für das Dropdown-Layout.
- * @property {RenderService} [renderService] - Explizit übergebener RenderService.
- * @property {ObserverRegistry} [registry] - Registry-Instanz zur Dependency-Resolution.
- */
-/**
- * State-Slice für das Custom-Dropdown aus dem Store.
- * @typedef {Object} DropdownSlice
- * @property {ModelCustomDropdown} [model] - Die aktuell zugewiesene Model-Instanz.
- * @property {boolean} [isLoading] - Ladezustand der Daten.
- */
-/**
- * Event-Payload für das 'dropdown:change' Dispatcher-Event.
- * @typedef {Object} DropdownChangeEventData
- * @property {string | undefined} name - Name des Dropdown-Feldes.
- * @property {any} value - Ausgewählter Wert.
- * @property {string | undefined} label - Anzeigetext des ausgewählten Eintrags.
- * @property {HTMLElement} container - Das Container-Element des Dropdowns.
- */
-/**
- * BaseController-Klasse, von der ControllerCustomDropdown erbt.
- * @typedef {Object} BaseController
- * @property {HTMLElement} _container - DOM-Hauptcontainer der Komponente.
- * @property {Store} [_store] - Store-Instanz.
- * @property {EventDispatcher} [_dispatcher] - Dispatcher-Instanz.
- * @property {ControllerOptions} [_options] - Optionen-Objekt.
- * @property {string} _sliceKey - Key des State-Slices.
- * @property {Fetcher} fetcher - HTTP-Fetcher Service Instanz.
- * @property {AbortSignal} signal - Aktueller AbortSignal für Async-Operationen.
- * @property {(taskName: string) => AbortSignal} getSignal - Erstellt ein AbortSignal für eine spezifische Task.
- * @property {(taskName: string) => void} clearTask - Löscht eine registrierte Async-Task.
- * @property {(stateProxy: StateProxy, message: string) => void} setLoadingState - Setzt den Ladezustand im State.
- * @property {(eventName: string, selector: string, callback: (e: Event, target: HTMLElement) => void) => void} delegate - Delegiert Event-Listener.
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { BaseController } from "./BaseController.js";
+import { ModelCustomDropdown } from "../models/ModelCustomDropdown.js";
+import { ModelLoader } from "../models/ModelLoader.js";
+import { FormFieldService } from "../services/FormFieldService.js";
+import { ModifierDOM } from "../utils/ModifierDOM.js";
 
 /**
  * Controller-Klasse des Aspis-Frameworks zur Steuerung von benutzerdefinierten Dropdown-Komponenten,
@@ -581,3 +458,128 @@ export class ControllerCustomDropdown extends BaseController {
         }
     }
 }
+
+/**
+ * Registry-Interface zum Abrufen von Services im Aspis-Framework.
+ * @typedef {Object} ObserverRegistry
+ * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
+ */
+/**
+ * Service zum Rendern von HTML-Templates im DOM.
+ * @typedef {Object} RenderService
+ * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
+ */
+/**
+ * Event-Dispatcher des Frameworks für entkoppelte Kommunikation und globale Events.
+ * @typedef {Object} EventDispatcher
+ * @property {(event: string, callback: (data?: any) => void) => void} [on] - Registriert einen Event-Listener.
+ * @property {(event: string, data?: any) => void} [emit] - Löst ein Event aus.
+ * @property {(element: HTMLElement, callback: () => void) => UnsubscribeCallback} [onClickOutside] - Registriert einen Click-Outside-Listener für ein DOM-Element.
+ */
+/**
+ * Funktion zum Entfernen eines Event-Listeners (Unsubscribe).
+ * @typedef {() => void} UnsubscribeCallback
+ */
+/**
+ * Zentraler State-Store der Anwendung.
+ * @typedef {Object} Store
+ * @property {(sliceKey: string) => StateProxy | undefined} [getSlice] - Holt einen State-Slice-Proxy.
+ * @property {(sliceKey: string) => any} [getState] - Holt den aktuellen Zustand eines State-Slices.
+ */
+/**
+ * Proxy-Objekt für Reaktivität und Zustandsverwaltung eines Slices im Store.
+ * @typedef {Object} StateProxy
+ * @property {ModelCustomDropdown | null} [model] - Die zugewiesene Model-Instanz.
+ * @property {boolean} [isLoading] - Ladezustands-Flag.
+ */
+/**
+ * HTTP-Fetcher Service für AJAX/API-Anfragen.
+ * @typedef {Object} Fetcher
+ * @property {(url: string, params?: Record<string, any>, options?: { signal?: AbortSignal }) => Promise<any>} get - Führt eine HTTP GET-Anfrage aus.
+ */
+/**
+ * Statische Utility-Klasse zur sicheren DOM-Manipulation.
+ * @typedef {Object} ModifierDOM
+ * @property {(element: Element | null, className: string, force?: boolean) => void} toggleClass - Schaltet CSS-Klassen um.
+ * @property {(element: Element | null, className: string) => void} addClass - Fügt eine CSS-Klasse hinzu.
+ * @property {(element: Element | null, className: string) => void} removeClass - Entfernt eine CSS-Klasse.
+ * @property {(element: Element | null, attrName: string, value: any) => void} attr - Setzt ein Attribut am Element.
+ * @property {(element: HTMLElement | null) => void} show - Blendet ein Element ein.
+ * @property {(element: HTMLElement | null) => void} hide - Blendet ein Element aus.
+ */
+/**
+ * Service zur Ermittlung von Formularfeld-Eigenschaften aus DOM-Elementen.
+ * @typedef {Object} FormFieldService
+ * @property {(container: HTMLElement) => string | undefined} getFieldName - Ermittelt den logischen Namen eines Formularfeldes.
+ */
+/**
+ * Validierungsregeln für das Dropdown-Feld.
+ * @typedef {Record<string, any>} FieldRules
+ */
+/**
+ * Repräsentiert einen einzelnen Eintrag in der Dropdown-Auswahlliste.
+ * @typedef {Object} DropdownItem
+ * @property {any} value - Der Wert des Eintrags.
+ * @property {string} label - Die Anzeigebeschriftung des Eintrags.
+ * @property {boolean} [disabled] - Flag, ob der Eintrag deaktiviert ist.
+ */
+/**
+ * Konstruktor-Optionen für die Modellierung des `ModelCustomDropdown`.
+ * @typedef {Object} ModelCustomDropdownOptions
+ * @property {string} [layout='default'] - Das visuelle Layout-Template des Dropdowns.
+ * @property {any} [value=''] - Der initial ausgewählte Wert.
+ * @property {FieldRules} [rules={}] - Die anzuwendenden Validierungsregeln.
+ */
+/**
+ * Instanz des Custom-Dropdown-Models im Aspis-Framework.
+ * @typedef {Object} ModelCustomDropdown
+ * @property {boolean} isOpen - Gibt an, ob das Dropdown aktuell geöffnet ist.
+ * @property {any} value - Der aktuell gewählte Wert.
+ * @property {number} focusedIndex - Index des aktuell per Tastatur fokussierten Eintrags.
+ * @property {string | null} error - Die aktuelle Fehlermeldung oder null.
+ * @property {DropdownItem | null} selectedItem - Das aktuell gewählte Item-Objekt.
+ * @property {(open: boolean) => void} setOpen - Setzt den Öffnungszustand.
+ * @property {(options: Array<DropdownItem | any>) => void} setOptions - Aktualisiert die Auswahlliste.
+ * @property {(step: number) => void} moveFocus - Verschiebt den Tastaturfokus relativ um `step`.
+ * @property {() => boolean} selectFocused - Wählt das aktuell fokussierte Item aus.
+ * @property {(value: any) => boolean} selectByValue - Wählt ein Item anhand seines Werts aus und gibt zurück, ob sich der Wert geändert hat.
+ * @property {() => boolean} validate - Führt die Validierung durch und gibt das Ergebnis zurück.
+ * @property {() => Record<string, any>} toRenderData - Bereitet die Datenstruktur für das Template-Rendering vor.
+ */
+/**
+ * Konfigurationsoptionen für den ControllerCustomDropdown.
+ * @typedef {Object} ControllerOptions
+ * @property {string} [sliceKey='features.dropdownFeature'] - Key für den zugewiesenen State-Slice im Store.
+ * @property {string} [layout] - Override für das Dropdown-Layout.
+ * @property {RenderService} [renderService] - Explizit übergebener RenderService.
+ * @property {ObserverRegistry} [registry] - Registry-Instanz zur Dependency-Resolution.
+ */
+/**
+ * State-Slice für das Custom-Dropdown aus dem Store.
+ * @typedef {Object} DropdownSlice
+ * @property {ModelCustomDropdown} [model] - Die aktuell zugewiesene Model-Instanz.
+ * @property {boolean} [isLoading] - Ladezustand der Daten.
+ */
+/**
+ * Event-Payload für das 'dropdown:change' Dispatcher-Event.
+ * @typedef {Object} DropdownChangeEventData
+ * @property {string | undefined} name - Name des Dropdown-Feldes.
+ * @property {any} value - Ausgewählter Wert.
+ * @property {string | undefined} label - Anzeigetext des ausgewählten Eintrags.
+ * @property {HTMLElement} container - Das Container-Element des Dropdowns.
+ */
+/**
+ * BaseController-Klasse, von der ControllerCustomDropdown erbt.
+ * @typedef {Object} BaseController
+ * @property {HTMLElement} _container - DOM-Hauptcontainer der Komponente.
+ * @property {Store} [_store] - Store-Instanz.
+ * @property {EventDispatcher} [_dispatcher] - Dispatcher-Instanz.
+ * @property {ControllerOptions} [_options] - Optionen-Objekt.
+ * @property {string} _sliceKey - Key des State-Slices.
+ * @property {Fetcher} fetcher - HTTP-Fetcher Service Instanz.
+ * @property {AbortSignal} signal - Aktueller AbortSignal für Async-Operationen.
+ * @property {(taskName: string) => AbortSignal} getSignal - Erstellt ein AbortSignal für eine spezifische Task.
+ * @property {(taskName: string) => void} clearTask - Löscht eine registrierte Async-Task.
+ * @property {(stateProxy: StateProxy, message: string) => void} setLoadingState - Setzt den Ladezustand im State.
+ * @property {(eventName: string, selector: string, callback: (e: Event, target: HTMLElement) => void) => void} delegate - Delegiert Event-Listener.
+ */

@@ -1,93 +1,7 @@
-import { BaseController } from "./";
-import { ModelTable, ModelLoader } from "../models/";
-
-/**
- * Registry-Interface zum Abrufen von Services im Aspis-Framework.
- * @typedef {Object} ObserverRegistry
- * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
- */
-/**
- * Service zum Rendern von HTML-Templates im DOM.
- * @typedef {Object} RenderService
- * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
- */
-/**
- * Event-Dispatcher des Frameworks für entkoppelte Kommunikation.
- * @typedef {Object} EventDispatcher
- * @property {(event: string, callback: (data?: any) => void) => void} [on] - Registriert einen Event-Listener.
- * @property {(event: string, data?: any) => void} [emit] - Löst ein Event aus.
- */
-/**
- * Zentraler State-Store der Anwendung.
- * @typedef {Object} Store
- * @property {(sliceKey: string) => StateProxy | undefined} [getSlice] - Holt einen State-Slice-Proxy.
- * @property {(sliceKey: string) => any} [getState] - Holt den aktuellen Zustand eines State-Slices.
- */
-/**
- * Proxy-Objekt für Reaktivität und Zustandsverwaltung eines Slices im Store.
- * @typedef {Object} StateProxy
- * @property {ModelTable | null} [model] - Die zugewiesene Model-Instanz.
- * @property {boolean} [isLoading] - Ladezustands-Flag.
- * @property {string} [error] - Fehlermeldung bei Datenladefehlern.
- */
-/**
- * HTTP-Fetcher Service für AJAX/API-Anfragen.
- * @typedef {Object} Fetcher
- * @property {(url: string, params?: Record<string, any>, options?: { signal?: AbortSignal }) => Promise<any>} get - Führt eine HTTP GET-Anfrage aus.
- */
-/**
- * Konfigurationsoptionen für die Instanziierung des `ModelTable`.
- * @typedef {Object} ModelTableOptions
- * @property {string} [layout='default'] - Das visuelle Layout-Template der Tabelle.
- */
-/**
- * Instanz eines Tabellen-Models im Aspis-Framework.
- * @typedef {Object} ModelTable
- * @property {() => Record<string, any>} toRenderData - Bereitet die Tabellendaten für das Rendering vor.
- */
-/**
- * Marker-Klasse oder Interface für Loader-Modelle.
- * @typedef {Object} ModelLoader
- */
-/**
- * Key-Value-Map für Filter-, Sortier- und Paginierungsparameter beim Neuladen der Tabellendaten.
- * @typedef {Record<string, string | number | boolean | null | undefined>} TableFilterPayload
- */
-/**
- * Event-Payload für dynamische Tabellenaktionen ('table:[action]').
- * @typedef {Object} TableActionEventData
- * @property {string} id - Eindeutige ID der Tabellenzeile (`data-row-id`).
- * @property {string} action - Ausgeführter Aktionsname (`data-action`).
- * @property {HTMLElement} target - Das auslösende DOM-Element.
- */
-/**
- * Konfigurationsoptionen für den ControllerTable.
- * @typedef {Object} ControllerTableOptions
- * @property {string} [sliceKey='features.tableFeature'] - Key für den zugewiesenen State-Slice im Store.
- * @property {string} [layout] - Override für das Tabellen-Layout.
- * @property {RenderService} [renderService] - Explizit übergebener RenderService.
- * @property {ObserverRegistry} [registry] - Registry-Instanz zur Dependency-Resolution.
- */
-/**
- * State-Slice für die Tabelle aus dem Store.
- * @typedef {Object} TableSlice
- * @property {ModelTable} [model] - Die aktuell zugewiesene Model-Instanz.
- */
-/**
- * BaseController-Klasse, von der ControllerTable erbt.
- * @typedef {Object} BaseController
- * @property {HTMLElement} _container - DOM-Hauptcontainer der Komponente.
- * @property {Store} [_store] - Store-Instanz.
- * @property {EventDispatcher} [_dispatcher] - Dispatcher-Instanz.
- * @property {ControllerTableOptions} [_options] - Optionen-Objekt.
- * @property {string} _sliceKey - Key des State-Slices.
- * @property {Fetcher} fetcher - HTTP-Fetcher Service Instanz.
- * @property {AbortSignal} signal - Aktueller AbortSignal für Async-Operationen.
- * @property {(taskName: string) => AbortSignal} getSignal - Erstellt ein AbortSignal für eine spezifische Task.
- * @property {(taskName: string) => void} clearTask - Löscht eine registrierte Async-Task.
- * @property {(stateProxy: StateProxy, message: string) => void} setLoadingState - Setzt den Ladezustand im State.
- * @property {(eventName: string, selector: string, callback: (e: Event, target: HTMLElement) => void) => void} delegate - Delegiert Event-Listener.
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { BaseController } from "./BaseController.js";
+import { ModelTable } from "../models/ModelTable.js";
+import { ModelLoader } from "../models/ModelLoader.js";
 
 /**
  * Controller-Klasse des Aspis-Frameworks zur Steuerung von datengetriebenen Tabellen,
@@ -284,3 +198,91 @@ export class ControllerTable extends BaseController {
         }
     }
 }
+
+/**
+ * Registry-Interface zum Abrufen von Services im Aspis-Framework.
+ * @typedef {Object} ObserverRegistry
+ * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
+ */
+/**
+ * Service zum Rendern von HTML-Templates im DOM.
+ * @typedef {Object} RenderService
+ * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
+ */
+/**
+ * Event-Dispatcher des Frameworks für entkoppelte Kommunikation.
+ * @typedef {Object} EventDispatcher
+ * @property {(event: string, callback: (data?: any) => void) => void} [on] - Registriert einen Event-Listener.
+ * @property {(event: string, data?: any) => void} [emit] - Löst ein Event aus.
+ */
+/**
+ * Zentraler State-Store der Anwendung.
+ * @typedef {Object} Store
+ * @property {(sliceKey: string) => StateProxy | undefined} [getSlice] - Holt einen State-Slice-Proxy.
+ * @property {(sliceKey: string) => any} [getState] - Holt den aktuellen Zustand eines State-Slices.
+ */
+/**
+ * Proxy-Objekt für Reaktivität und Zustandsverwaltung eines Slices im Store.
+ * @typedef {Object} StateProxy
+ * @property {ModelTable | null} [model] - Die zugewiesene Model-Instanz.
+ * @property {boolean} [isLoading] - Ladezustands-Flag.
+ * @property {string} [error] - Fehlermeldung bei Datenladefehlern.
+ */
+/**
+ * HTTP-Fetcher Service für AJAX/API-Anfragen.
+ * @typedef {Object} Fetcher
+ * @property {(url: string, params?: Record<string, any>, options?: { signal?: AbortSignal }) => Promise<any>} get - Führt eine HTTP GET-Anfrage aus.
+ */
+/**
+ * Konfigurationsoptionen für die Instanziierung des `ModelTable`.
+ * @typedef {Object} ModelTableOptions
+ * @property {string} [layout='default'] - Das visuelle Layout-Template der Tabelle.
+ */
+/**
+ * Instanz eines Tabellen-Models im Aspis-Framework.
+ * @typedef {Object} ModelTable
+ * @property {() => Record<string, any>} toRenderData - Bereitet die Tabellendaten für das Rendering vor.
+ */
+/**
+ * Marker-Klasse oder Interface für Loader-Modelle.
+ * @typedef {Object} ModelLoader
+ */
+/**
+ * Key-Value-Map für Filter-, Sortier- und Paginierungsparameter beim Neuladen der Tabellendaten.
+ * @typedef {Record<string, string | number | boolean | null | undefined>} TableFilterPayload
+ */
+/**
+ * Event-Payload für dynamische Tabellenaktionen ('table:[action]').
+ * @typedef {Object} TableActionEventData
+ * @property {string} id - Eindeutige ID der Tabellenzeile (`data-row-id`).
+ * @property {string} action - Ausgeführter Aktionsname (`data-action`).
+ * @property {HTMLElement} target - Das auslösende DOM-Element.
+ */
+/**
+ * Konfigurationsoptionen für den ControllerTable.
+ * @typedef {Object} ControllerTableOptions
+ * @property {string} [sliceKey='features.tableFeature'] - Key für den zugewiesenen State-Slice im Store.
+ * @property {string} [layout] - Override für das Tabellen-Layout.
+ * @property {RenderService} [renderService] - Explizit übergebener RenderService.
+ * @property {ObserverRegistry} [registry] - Registry-Instanz zur Dependency-Resolution.
+ */
+/**
+ * State-Slice für die Tabelle aus dem Store.
+ * @typedef {Object} TableSlice
+ * @property {ModelTable} [model] - Die aktuell zugewiesene Model-Instanz.
+ */
+/**
+ * BaseController-Klasse, von der ControllerTable erbt.
+ * @typedef {Object} BaseController
+ * @property {HTMLElement} _container - DOM-Hauptcontainer der Komponente.
+ * @property {Store} [_store] - Store-Instanz.
+ * @property {EventDispatcher} [_dispatcher] - Dispatcher-Instanz.
+ * @property {ControllerTableOptions} [_options] - Optionen-Objekt.
+ * @property {string} _sliceKey - Key des State-Slices.
+ * @property {Fetcher} fetcher - HTTP-Fetcher Service Instanz.
+ * @property {AbortSignal} signal - Aktueller AbortSignal für Async-Operationen.
+ * @property {(taskName: string) => AbortSignal} getSignal - Erstellt ein AbortSignal für eine spezifische Task.
+ * @property {(taskName: string) => void} clearTask - Löscht eine registrierte Async-Task.
+ * @property {(stateProxy: StateProxy, message: string) => void} setLoadingState - Setzt den Ladezustand im State.
+ * @property {(eventName: string, selector: string, callback: (e: Event, target: HTMLElement) => void) => void} delegate - Delegiert Event-Listener.
+ */

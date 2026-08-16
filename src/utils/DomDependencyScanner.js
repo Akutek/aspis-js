@@ -1,11 +1,4 @@
 /**
- * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
- * @typedef {Object} Store
- * @property {function(HTMLElement, string): void} addDependency - Registriert eine DOM-Element-Bindung an einen State-Pfad.
- * @property {function(HTMLElement): void} removeDomDependencies - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
- */
-
-/**
  * Utility-Klasse des Aspis-Frameworks zum Scannen und Verwalten von DOM-Abhängigkeiten.
  * Liest `data-depends-on`-Attribute aus und registriert bzw. entfernt die entsprechenden Bindungen im Store.
  * 
@@ -63,3 +56,10 @@ export class DomDependencyScanner {
         childElements.forEach(child => store.removeDomDependencies(child));
     }
 }
+
+/**
+ * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
+ * @typedef {Object} Store
+ * @property {function(HTMLElement, string): void} addDependency - Registriert eine DOM-Element-Bindung an einen State-Pfad.
+ * @property {function(HTMLElement): void} removeDomDependencies - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
+ */

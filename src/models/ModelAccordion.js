@@ -1,56 +1,4 @@
-import { BaseModel } from "./";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
- */
-/**
- * Rohdaten für ein einzelnes Accordion-Element.
- * @typedef {Object} ModelAccordionItemRawData
- * @property {string} [id] - Eindeutige ID des Elements (wird automatisch generiert, wenn nicht angegeben).
- * @property {string} [title=''] - Titel/Header des Accordion-Elements.
- * @property {string} [content=''] - Inhalt des Accordion-Elements.
- * @property {boolean} [isOpen=false] - Gibt an, ob das Element initial geöffnet ist.
- * @property {boolean} [disabled=false] - Gibt an, ob das Element deaktiviert ist.
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur eines Accordion-Elements.
- * @typedef {Object} ModelAccordionItemRenderData
- * @property {string} id - Eindeutige ID des Elements.
- * @property {string} title - Bereinigter Titel des Elements.
- * @property {string} content - Bereinigter Inhalt des Elements.
- * @property {boolean} isOpen - Öffnungsstatus des Elements.
- * @property {boolean} disabled - Deaktivierungsstatus des Elements.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelAccordion.
- * @typedef {Object} ModelAccordionOptionsObject
- * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
- * @property {boolean} [singleOpen=false] - Wenn true, kann jeweils nur ein Element gleichzeitig geöffnet sein.
- */
-/**
- * Erlaubte Parameter-Typen für die Optionen des `ModelAccordion` (Optionsobjekt oder direkter Layout-String).
- * @typedef {ModelAccordionOptionsObject | string} ModelAccordionOptions
- */
-/**
- * Struktur der Rohdaten, die an `ModelAccordion` übergeben werden können.
- * Array von Elemente-Objekten oder ein Objekt mit `items`- bzw. `data`-Array.
- * @typedef {Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>> | { items?: Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>>, data?: Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>> }} ModelAccordionRawData
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Accordion-Modells.
- * @typedef {Object} ModelAccordionRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {boolean} singleOpen - Modus für Einzelanzeige geöffneter Elemente.
- * @property {ModelAccordionItemRenderData[]} items - Aufbereitete Daten aller Accordion-Elements.
- */
+import { BaseModel } from "./BaseModel.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Repräsentation und Steuerung eines Akkordeon-Steuerelements (Accordion).
@@ -379,3 +327,55 @@ export class ModelAccordion extends BaseModel {
         };
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
+ */
+/**
+ * Rohdaten für ein einzelnes Accordion-Element.
+ * @typedef {Object} ModelAccordionItemRawData
+ * @property {string} [id] - Eindeutige ID des Elements (wird automatisch generiert, wenn nicht angegeben).
+ * @property {string} [title=''] - Titel/Header des Accordion-Elements.
+ * @property {string} [content=''] - Inhalt des Accordion-Elements.
+ * @property {boolean} [isOpen=false] - Gibt an, ob das Element initial geöffnet ist.
+ * @property {boolean} [disabled=false] - Gibt an, ob das Element deaktiviert ist.
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur eines Accordion-Elements.
+ * @typedef {Object} ModelAccordionItemRenderData
+ * @property {string} id - Eindeutige ID des Elements.
+ * @property {string} title - Bereinigter Titel des Elements.
+ * @property {string} content - Bereinigter Inhalt des Elements.
+ * @property {boolean} isOpen - Öffnungsstatus des Elements.
+ * @property {boolean} disabled - Deaktivierungsstatus des Elements.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelAccordion.
+ * @typedef {Object} ModelAccordionOptionsObject
+ * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
+ * @property {boolean} [singleOpen=false] - Wenn true, kann jeweils nur ein Element gleichzeitig geöffnet sein.
+ */
+/**
+ * Erlaubte Parameter-Typen für die Optionen des `ModelAccordion` (Optionsobjekt oder direkter Layout-String).
+ * @typedef {ModelAccordionOptionsObject | string} ModelAccordionOptions
+ */
+/**
+ * Struktur der Rohdaten, die an `ModelAccordion` übergeben werden können.
+ * Array von Elemente-Objekten oder ein Objekt mit `items`- bzw. `data`-Array.
+ * @typedef {Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>> | { items?: Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>>, data?: Array<ModelAccordionItemRawData | InstanceType<typeof ModelAccordion.Item>> }} ModelAccordionRawData
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Accordion-Modells.
+ * @typedef {Object} ModelAccordionRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {boolean} singleOpen - Modus für Einzelanzeige geöffneter Elemente.
+ * @property {ModelAccordionItemRenderData[]} items - Aufbereitete Daten aller Accordion-Elements.
+ */

@@ -1,25 +1,4 @@
-/**
- * Interface des Cleaner-Services zur Bereinigung von DOM-Bäumen.
- * @typedef {Object} CleanerService
- * @property {(node: HTMLElement) => void} cleanTree - Bereinigt Instanzen und Binding-Referenzen im übergebenen DOM-Baum.
- */
-/**
- * Registry-Interface für Services und Manager im Aspis-Framework.
- * @typedef {Object} ObserverRegistry
- * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz (z. B. 'cleaner').
- */
-/**
- * Zulässiges Ziel-Element für Mutation-Beobachtungen.
- * @typedef {Node} ObserverTarget
- */
-/**
- * Konfigurationsobjekt für den nativen MutationObserver der Web-API.
- * @typedef {MutationObserverInit} ObserverConfig
- */
-/**
- * Repräsentiert das Ergebnis eines DOM-Scans.
- * @typedef {Object.<string, any>} ScanResult
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Observer-Klasse des Aspis-Frameworks zur Überwachung von DOM-Mutationen
@@ -135,3 +114,26 @@ export class MutationObserverDOM extends BaseObserver {
         super.destroy();
     }
 }
+
+/**
+ * Interface des Cleaner-Services zur Bereinigung von DOM-Bäumen.
+ * @typedef {Object} CleanerService
+ * @property {(node: HTMLElement) => void} cleanTree - Bereinigt Instanzen und Binding-Referenzen im übergebenen DOM-Baum.
+ */
+/**
+ * Registry-Interface für Services und Manager im Aspis-Framework.
+ * @typedef {Object} ObserverRegistry
+ * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz (z. B. 'cleaner').
+ */
+/**
+ * Zulässiges Ziel-Element für Mutation-Beobachtungen.
+ * @typedef {Node} ObserverTarget
+ */
+/**
+ * Konfigurationsobjekt für den nativen MutationObserver der Web-API.
+ * @typedef {MutationObserverInit} ObserverConfig
+ */
+/**
+ * Repräsentiert das Ergebnis eines DOM-Scans.
+ * @typedef {Object.<string, any>} ScanResult
+ */

@@ -1,49 +1,5 @@
-import { BaseModel } from "./";
-import { ValidationService } from "../services/";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
- */
-/**
- * Validierungsregeln für ein Formularfeld.
- * @typedef {Record<string, any>} FormFieldRules
- */
-/**
- * Konfigurationsobjekt für die Erstellung eines Formularfeldes.
- * @typedef {Object} FormFieldConfig
- * @property {any} [value=''] - Der initiale Wert des Feldes.
- * @property {FormFieldRules} [rules={}] - Die Validierungsregeln für das Feld.
- */
-/**
- * Zuordnung von Feldnamen zu ihrer jeweiligen Feldkonfiguration.
- * @typedef {Record<string, FormFieldConfig>} InitialFieldsMap
- */
-/**
- * Interner Zustand eines verwalteten Formularfeldes.
- * @typedef {Object} FormField
- * @property {any} value - Der aktuelle Wert des Feldes.
- * @property {any} initialValue - Der ursprüngliche Initialwert des Feldes.
- * @property {string|null} error - Die aktuelle Fehlermeldung oder null, wenn valide.
- * @property {boolean} isTouched - Gibt an, ob das Feld vom Benutzer fokussiert/interagiert wurde.
- * @property {boolean} isDirty - Gibt an, ob sich der Wert vom Initialwert unterscheidet.
- * @property {FormFieldRules} rules - Die für das Feld definierten Validierungsregeln.
- */
-/**
- * Zuordnung von Feldnamen zu ihren Fehlermeldungen.
- * @typedef {Record<string, string>} FormErrorsMap
- */
-/**
- * Aufbereitetes Payload-Objekt für den Formularversand (Feldname -> Wert).
- * @typedef {Record<string, any>} FormPayload
- */
+import { BaseModel } from "./BaseModel.js";
+import { ValidationService } from "../services/ValidationService.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Verwaltung von Formularzuständen,
@@ -317,3 +273,47 @@ export class ModelForm extends BaseModel {
         this.#submitSuccess = false;
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
+ */
+/**
+ * Validierungsregeln für ein Formularfeld.
+ * @typedef {Record<string, any>} FormFieldRules
+ */
+/**
+ * Konfigurationsobjekt für die Erstellung eines Formularfeldes.
+ * @typedef {Object} FormFieldConfig
+ * @property {any} [value=''] - Der initiale Wert des Feldes.
+ * @property {FormFieldRules} [rules={}] - Die Validierungsregeln für das Feld.
+ */
+/**
+ * Zuordnung von Feldnamen zu ihrer jeweiligen Feldkonfiguration.
+ * @typedef {Record<string, FormFieldConfig>} InitialFieldsMap
+ */
+/**
+ * Interner Zustand eines verwalteten Formularfeldes.
+ * @typedef {Object} FormField
+ * @property {any} value - Der aktuelle Wert des Feldes.
+ * @property {any} initialValue - Der ursprüngliche Initialwert des Feldes.
+ * @property {string|null} error - Die aktuelle Fehlermeldung oder null, wenn valide.
+ * @property {boolean} isTouched - Gibt an, ob das Feld vom Benutzer fokussiert/interagiert wurde.
+ * @property {boolean} isDirty - Gibt an, ob sich der Wert vom Initialwert unterscheidet.
+ * @property {FormFieldRules} rules - Die für das Feld definierten Validierungsregeln.
+ */
+/**
+ * Zuordnung von Feldnamen zu ihren Fehlermeldungen.
+ * @typedef {Record<string, string>} FormErrorsMap
+ */
+/**
+ * Aufbereitetes Payload-Objekt für den Formularversand (Feldname -> Wert).
+ * @typedef {Record<string, any>} FormPayload
+ */

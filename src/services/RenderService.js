@@ -1,46 +1,4 @@
-/**
- * Generisches Key-Value-Objekt für Render-Daten.
- * @typedef {Record<string, any>} RenderData
- */
-/**
- * Konfigurations- oder Datenobjekt für den Compile-Prozess von Templates.
- * @typedef {Object} TemplateCompileOptions
- * @property {RenderData} data - Die Daten, die in das Template gerendert werden sollen.
- */
-/**
- * Interface für den Template-Service des Aspis-Frameworks.
- * Handles Compilation, Caching und das Laden von HTML-Templates.
- * @typedef {Object} TemplateService
- * @property {function(string, TemplateCompileOptions=): HTMLElement|Element|null} compile - Kompiliert ein Template direkt aus dem Cache oder Speicher.
- * @property {function(string): Promise<any>} get - Lädt die Template-Ressource asynchron nach, falls sie nicht vorhanden ist.
- */
-/**
- * Interface für einen optionalen DOM-Tree-Cleaner (z. B. Event-Listener-Remover / Abort-Cleanup).
- * @typedef {Object} TreeCleaner
- * @property {function(HTMLElement): void} cleanTree - Säubert den DOM-Baum des Ziel-Elements von alten Listeners oder Subscriptions.
- */
-/**
- * Schnittstelle für Objekte, die ein Aufbereiten ihrer Render-Daten über `toRenderData()` unterstützen.
- * @typedef {Object} RenderableItem
- * @property {function(): RenderData} toRenderData - Liefert die aufbereiteten Daten für das Rendering.
- */
-/**
- * Beliebiges Element aus einer Datenliste für die Loop-Verarbeitung (Objekt mit `toRenderData` oder primitives JSON-Objekt).
- * @typedef {RenderableItem | RenderData} LoopItem
- */
-/**
- * Möglicher Eingabetyp für Elemente, die in einen Ziel-Container zusammengefügt werden.
- * @typedef {Node | Array<Node>} AppendableElements
- */
-/**
- * Interface für das globale GuardDOM-Utility zur HTML-Sanitisierung.
- * @typedef {Object} GuardDOMGlobal
- * @property {function(string): string} purify - Säubert einen HTML-String von potenziellen XSS-Vektoren.
- */
-/**
- * Der Rückgabetyp der internen `#purifyElement`-Methode.
- * @typedef {Element | HTMLElement | null} PurifiedElement
- */
+import { LoggerService } from "./LoggerService.js";
 
 /**
  * Zentrale Rendering-Service-Klasse des Aspis-Frameworks.
@@ -202,3 +160,47 @@ export class RenderService {
         return element;
     }
 }
+
+/**
+ * Generisches Key-Value-Objekt für Render-Daten.
+ * @typedef {Record<string, any>} RenderData
+ */
+/**
+ * Konfigurations- oder Datenobjekt für den Compile-Prozess von Templates.
+ * @typedef {Object} TemplateCompileOptions
+ * @property {RenderData} data - Die Daten, die in das Template gerendert werden sollen.
+ */
+/**
+ * Interface für den Template-Service des Aspis-Frameworks.
+ * Handles Compilation, Caching und das Laden von HTML-Templates.
+ * @typedef {Object} TemplateService
+ * @property {function(string, TemplateCompileOptions=): HTMLElement|Element|null} compile - Kompiliert ein Template direkt aus dem Cache oder Speicher.
+ * @property {function(string): Promise<any>} get - Lädt die Template-Ressource asynchron nach, falls sie nicht vorhanden ist.
+ */
+/**
+ * Interface für einen optionalen DOM-Tree-Cleaner (z. B. Event-Listener-Remover / Abort-Cleanup).
+ * @typedef {Object} TreeCleaner
+ * @property {function(HTMLElement): void} cleanTree - Säubert den DOM-Baum des Ziel-Elements von alten Listeners oder Subscriptions.
+ */
+/**
+ * Schnittstelle für Objekte, die ein Aufbereiten ihrer Render-Daten über `toRenderData()` unterstützen.
+ * @typedef {Object} RenderableItem
+ * @property {function(): RenderData} toRenderData - Liefert die aufbereiteten Daten für das Rendering.
+ */
+/**
+ * Beliebiges Element aus einer Datenliste für die Loop-Verarbeitung (Objekt mit `toRenderData` oder primitives JSON-Objekt).
+ * @typedef {RenderableItem | RenderData} LoopItem
+ */
+/**
+ * Möglicher Eingabetyp für Elemente, die in einen Ziel-Container zusammengefügt werden.
+ * @typedef {Node | Array<Node>} AppendableElements
+ */
+/**
+ * Interface für das globale GuardDOM-Utility zur HTML-Sanitisierung.
+ * @typedef {Object} GuardDOMGlobal
+ * @property {function(string): string} purify - Säubert einen HTML-String von potenziellen XSS-Vektoren.
+ */
+/**
+ * Der Rückgabetyp der internen `#purifyElement`-Methode.
+ * @typedef {Element | HTMLElement | null} PurifiedElement
+ */

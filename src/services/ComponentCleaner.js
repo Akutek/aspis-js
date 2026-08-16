@@ -1,25 +1,4 @@
-/**
- * Interface für einen Service, der CSS-Klassen und Style-Cleanups auf Elementen verwaltet.
- * @typedef {Object} ClassService
- * @property {function(): void} [cleanup] - Entfernt gesetzte Klassen-Bindings und stellt den Ursprungszustand her.
- */
-/**
- * Interface für eine Controller-Instanz im Aspis-Framework.
- * @typedef {Object} ControllerInstance
- * @property {ClassService} [classService] - Optionaler Service zur Verwaltung von Klassen-Bindings.
- * @property {function(): void} [destroy] - Lifecycle-Methode zum Aufräumen und Freigeben von Ressourcen.
- */
-/**
- * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
- * @typedef {Object} Store
- * @property {function(HTMLElement): void} removeDomDependencies - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
- */
-/**
- * Interface für die Registry des Aspis-Frameworks zur Verwaltung von Services, Store und Controller-Instanzen.
- * @typedef {Object} ComponentRegistry
- * @property {function(string | HTMLElement): (Store | ControllerInstance | any)} get - Ruft einen Service über dessen Namen ODER einen Controller über dessen Element-Referenz ab.
- * @property {function(HTMLElement): boolean} delete - Entfernt die Zuordnung eines Controllers zu einem DOM-Element.
- */
+import { LoggerService } from "./LoggerService.js";
 
 /**
  * Interne Hilfsklasse des Aspis-Frameworks zum geordneten Abbau (Cleanup/Teardown) von Komponenten,
@@ -106,3 +85,26 @@ export class ComponentCleaner {
         }
     }
 }
+
+/**
+ * Interface für einen Service, der CSS-Klassen und Style-Cleanups auf Elementen verwaltet.
+ * @typedef {Object} ClassService
+ * @property {function(): void} [cleanup] - Entfernt gesetzte Klassen-Bindings und stellt den Ursprungszustand her.
+ */
+/**
+ * Interface für eine Controller-Instanz im Aspis-Framework.
+ * @typedef {Object} ControllerInstance
+ * @property {ClassService} [classService] - Optionaler Service zur Verwaltung von Klassen-Bindings.
+ * @property {function(): void} [destroy] - Lifecycle-Methode zum Aufräumen und Freigeben von Ressourcen.
+ */
+/**
+ * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
+ * @typedef {Object} Store
+ * @property {function(HTMLElement): void} removeDomDependencies - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
+ */
+/**
+ * Interface für die Registry des Aspis-Frameworks zur Verwaltung von Services, Store und Controller-Instanzen.
+ * @typedef {Object} ComponentRegistry
+ * @property {function(string | HTMLElement): (Store | ControllerInstance | any)} get - Ruft einen Service über dessen Namen ODER einen Controller über dessen Element-Referenz ab.
+ * @property {function(HTMLElement): boolean} delete - Entfernt die Zuordnung eines Controllers zu einem DOM-Element.
+ */

@@ -1,11 +1,4 @@
-/**
- * Konstruktor-Typ bzw. Klasse eines dynamisch geladenen Aspis-Controllers.
- * @typedef {new (...args: any[]) => any} ControllerConstructor
- */
-/**
- * Cache-Struktur für registrierte und aufgelöste Controller-Klassen.
- * @typedef {Map<string, ControllerConstructor>} ControllerRegistryCache
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Registry-Klasse des Aspis-Frameworks zum dynamischen Laden, Validieren und Cachen von Controller-Klassen.
@@ -117,3 +110,12 @@ export class ControllerRegistry {
         }
     }
 }
+
+/**
+ * Konstruktor-Typ bzw. Klasse eines dynamisch geladenen Aspis-Controllers.
+ * @typedef {new (...args: any[]) => any} ControllerConstructor
+ */
+/**
+ * Cache-Struktur für registrierte und aufgelöste Controller-Klassen.
+ * @typedef {Map<string, ControllerConstructor>} ControllerRegistryCache
+ */

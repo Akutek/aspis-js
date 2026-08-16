@@ -1,4 +1,35 @@
-import { ModelLoader } from "./";
+import { ModelLoader } from "./ModelLoader.js";
+
+/**
+ * Spezialisierte Modell-Klasse des Aspis-Frameworks zur Repräsentation eines visuellen Ladeindikators (Spinner) mit Standard-Layout 'spinner'.
+ * 
+ * @public
+ * @extends {ModelLoader}
+ */
+export class ModelSpinner extends ModelLoader {
+    /**
+     * Erstellt eine neue Instanz des ModelSpinner und setzt Standardwerte für Nachricht ('Lade Daten...') und Layout ('spinner').
+     * 
+     * @public
+     * @param {ModelSpinnerOptions} [options={}] - Konfigurationsoptionen für den Spinner oder direkt die Lade-Nachricht als String.
+     */
+    constructor(options = {}) {
+        let message = 'Lade Daten...';
+        let layout = 'spinner';
+
+        if (typeof options === 'string') {
+            message = options;
+        } else if (options && typeof options === 'object') {
+            message = options.message || 'Lade Daten...';
+            layout = options.layout || 'spinner';
+        }
+
+        super({
+            layout: layout,
+            message: message
+        });
+    }
+}
 
 /**
  * Basis-Optionen für Modelle im Aspis-Framework.
@@ -38,34 +69,3 @@ import { ModelLoader } from "./";
  * Erlaubte Parameter-Typen für den Konstruktor des `ModelSpinner` (Optionsobjekt oder direkter Nachrichten-String).
  * @typedef {ModelSpinnerOptionsObject | string} ModelSpinnerOptions
  */
-
-/**
- * Spezialisierte Modell-Klasse des Aspis-Frameworks zur Repräsentation eines visuellen Ladeindikators (Spinner) mit Standard-Layout 'spinner'.
- * 
- * @public
- * @extends {ModelLoader}
- */
-export class ModelSpinner extends ModelLoader {
-    /**
-     * Erstellt eine neue Instanz des ModelSpinner und setzt Standardwerte für Nachricht ('Lade Daten...') und Layout ('spinner').
-     * 
-     * @public
-     * @param {ModelSpinnerOptions} [options={}] - Konfigurationsoptionen für den Spinner oder direkt die Lade-Nachricht als String.
-     */
-    constructor(options = {}) {
-        let message = 'Lade Daten...';
-        let layout = 'spinner';
-
-        if (typeof options === 'string') {
-            message = options;
-        } else if (options && typeof options === 'object') {
-            message = options.message || 'Lade Daten...';
-            layout = options.layout || 'spinner';
-        }
-
-        super({
-            layout: layout,
-            message: message
-        });
-    }
-}

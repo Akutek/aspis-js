@@ -1,41 +1,4 @@
-/**
- * Interface für ein HTTP-Fetcher-Modul.
- * @typedef {Object} Fetcher
- * @property {function(string, Record<string, any>=, RequestInit=): Promise<any>} get - Führt einen HTTP-GET-Request aus.
- */
-/**
- * Interface für den Event-Dispatcher des Frameworks.
- * @typedef {Object} Dispatcher
- * @property {function(string, function(any): void): (function(): void)} on - Registriert einen Event-Listener und gibt eine Unsubscribe-Funktion zurück.
- * @property {function(string, any=): void} [dispatch] - Dispatched ein Framework-Event.
- */
-/**
- * Konfigurationsoptionen für den EventDelegator.
- * @typedef {Object} EventDelegatorOptions
- * @property {string} [eventPath] - Optionaler Server-Pfad zum Laden einer Event-Mapping-Konfiguration.
- * @property {Fetcher} [fetcher] - Benutzerdefinierter HTTP-Fetcher.
- * @property {Record<string, any>} [key: string] - Weitere benutzerdefinierte Optionen.
- */
-/**
- * Schnittstelle für das Zielobjekt (z. B. Controller), auf das Event-Callbacks gebunden werden.
- * @typedef {Object} EventDelegatorTarget
- * @property {function(string=): AbortSignal|null} [getSignal] - Erzeugt oder holt ein AbortSignal für einen spezifischen Task.
- * @property {function(string): void} [clearTask] - Bereinigt den AbortController eines abgeschlossenen Tasks.
- * @property {AbortSignal} [signal] - Haupt-AbortSignal des Zielobjekts.
- * @property {Fetcher} [fetcher] - Zugewiesener HTTP-Fetcher des Zielobjekts.
- * @property {Record<string, any>} [key: string] - Dynamische Methoden und Eigenschaften des Zielobjekts.
- */
-/**
- * Callback-Funktion für delegierte DOM-Events.
- * @callback DelegateHandler
- * @param {Event} event - Das ausgelöste ursprüngliche DOM-Event.
- * @param {HTMLElement} target - Das ermittelte Ziel-Element, das dem CSS-Selektor entspricht.
- * @returns {void}
- */
-/**
- * Erweiterte Optionseinstellungen für den DOM-Event-Listener.
- * @typedef {AddEventListenerOptions & { signal?: AbortSignal }} DelegateOptions
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Verwalter für delegierte DOM-Events und globale Dispatcher-Abonnements innerhalb des Aspis-Frameworks.
@@ -209,3 +172,42 @@ export class EventDelegator {
         this.#options = null;
     }
 }
+
+/**
+ * Interface für ein HTTP-Fetcher-Modul.
+ * @typedef {Object} Fetcher
+ * @property {function(string, Record<string, any>=, RequestInit=): Promise<any>} get - Führt einen HTTP-GET-Request aus.
+ */
+/**
+ * Interface für den Event-Dispatcher des Frameworks.
+ * @typedef {Object} Dispatcher
+ * @property {function(string, function(any): void): (function(): void)} on - Registriert einen Event-Listener und gibt eine Unsubscribe-Funktion zurück.
+ * @property {function(string, any=): void} [dispatch] - Dispatched ein Framework-Event.
+ */
+/**
+ * Konfigurationsoptionen für den EventDelegator.
+ * @typedef {Object} EventDelegatorOptions
+ * @property {string} [eventPath] - Optionaler Server-Pfad zum Laden einer Event-Mapping-Konfiguration.
+ * @property {Fetcher} [fetcher] - Benutzerdefinierter HTTP-Fetcher.
+ * @property {Record<string, any>} [key: string] - Weitere benutzerdefinierte Optionen.
+ */
+/**
+ * Schnittstelle für das Zielobjekt (z. B. Controller), auf das Event-Callbacks gebunden werden.
+ * @typedef {Object} EventDelegatorTarget
+ * @property {function(string=): AbortSignal|null} [getSignal] - Erzeugt oder holt ein AbortSignal für einen spezifischen Task.
+ * @property {function(string): void} [clearTask] - Bereinigt den AbortController eines abgeschlossenen Tasks.
+ * @property {AbortSignal} [signal] - Haupt-AbortSignal des Zielobjekts.
+ * @property {Fetcher} [fetcher] - Zugewiesener HTTP-Fetcher des Zielobjekts.
+ * @property {Record<string, any>} [key: string] - Dynamische Methoden und Eigenschaften des Zielobjekts.
+ */
+/**
+ * Callback-Funktion für delegierte DOM-Events.
+ * @callback DelegateHandler
+ * @param {Event} event - Das ausgelöste ursprüngliche DOM-Event.
+ * @param {HTMLElement} target - Das ermittelte Ziel-Element, das dem CSS-Selektor entspricht.
+ * @returns {void}
+ */
+/**
+ * Erweiterte Optionseinstellungen für den DOM-Event-Listener.
+ * @typedef {AddEventListenerOptions & { signal?: AbortSignal }} DelegateOptions
+ */

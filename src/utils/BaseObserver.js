@@ -1,13 +1,4 @@
 /**
- * Zuordnung/Interface der Observer-Registry im Aspis-Framework.
- * @typedef {Object.<string, any>} ObserverRegistry
- */
-/**
- * Zulässiges Ziel-Element für Beobachtungen.
- * @typedef {Node} ObserverTarget
- */
-
-/**
  * Abstrakte Basisklasse für alle Observer-Implementierungen des Aspis-Frameworks.
  * 
  * @abstract
@@ -138,3 +129,12 @@ export class BaseObserver {
         this.#registry = null;
     }
 }
+
+/**
+ * Zuordnung/Interface der Observer-Registry im Aspis-Framework.
+ * @typedef {Object.<string, any>} ObserverRegistry
+ */
+/**
+ * Zulässiges Ziel-Element für Beobachtungen.
+ * @typedef {Node} ObserverTarget
+ */

@@ -1,19 +1,4 @@
-/**
- * Mögliche Eingabetypen für die Textbereinigung und Escaping.
- * @typedef {string | number | boolean | null | undefined | any} SafeInput
- */
-/**
- * Der Rückgabewert der Textbereinigung (bereinigter String, Number oder Boolean).
- * @typedef {string | number | boolean} CleanResult
- */
-/**
- * Mögliche Eingabetypen für die HTML-Bereinigung.
- * @typedef {string | any} HTMLInput
- */
-/**
- * Optionale Konfigurationsoptionen für die HTML-Bereinigung bzw. DOMPurify.
- * @typedef {Record<string, any>} PurifyOptions
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Utility-Klasse des Aspis-Frameworks zur Bereinigung und Entschärfung (Sanitization)
@@ -122,3 +107,20 @@ export class GuardDOM {
         return doc.body.innerHTML;
     }
 }
+
+/**
+ * Mögliche Eingabetypen für die Textbereinigung und Escaping.
+ * @typedef {string | number | boolean | null | undefined | any} SafeInput
+ */
+/**
+ * Der Rückgabewert der Textbereinigung (bereinigter String, Number oder Boolean).
+ * @typedef {string | number | boolean} CleanResult
+ */
+/**
+ * Mögliche Eingabetypen für die HTML-Bereinigung.
+ * @typedef {string | any} HTMLInput
+ */
+/**
+ * Optionale Konfigurationsoptionen für die HTML-Bereinigung bzw. DOMPurify.
+ * @typedef {Record<string, any>} PurifyOptions
+ */

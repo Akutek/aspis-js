@@ -1,36 +1,6 @@
-import { TargetResolver, ModifierDOM } from "./";
-
-/**
- * Funktion zum Aufheben eines aktiven Effect-Subscriptions.
- * @typedef {() => void} UnsubscribeFunction
- */
-/**
- * Konfiguration für ein bestimmtes Target inklusive Klassen-Bindings.
- * @typedef {Object} TargetConfig
- * @property {string} selector - Der CSS-Selektor des Ziel-Elements.
- * @property {Record<string, string>} [bindClasses] - Mapping von State-Eigenschaften zu Style-Schlüsseln.
- */
-/**
- * Konfiguration innerhalb eines State-Slices.
- * @typedef {Object} SliceConfig
- * @property {Record<string, TargetConfig>} [targets] - Target-Konfigurationen für die Elementauflösung.
- * @property {Record<string, string>} [styles] - Mapping von Style-Schlüsseln zu CSS-Klassennamen.
- */
-/**
- * Repräsentiert ein State-Slice im Aspis-Store.
- * @typedef {Object.<string, any>} StateSlice
- * @property {SliceConfig} [config] - Konfiguration für Targets und Styles.
- */
-/**
- * Interface/Struktur des Aspis State-Stores.
- * @typedef {Object} Store
- * @property {(sliceKey: string) => StateSlice | undefined} getSlice - Liefert das State-Slice für einen Schlüssel zurück.
- * @property {(effectFn: () => void) => UnsubscribeFunction} effect - Registriert eine reaktive Effect-Funktion.
- */
-/**
- * Map, die Ziel-Namen den aufgelösten HTML-Elementen zuordnet.
- * @typedef {Map<string, HTMLElement>} ResolvedTargetsMap
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { TargetResolver } from "./TargetResolver.js";
+import { ModifierDOM } from "./ModifierDOM.js";
 
 /**
  * Bindet reaktive State-Änderungen eines Slices automatisch an DOM-Element-Klassen im Aspis-Framework.
@@ -136,3 +106,35 @@ export class ManifestBinder {
         LoggerService.info(`[ManifestBinder.unbind()] Auto-Bindings für '${this.#sliceKey}' sauber gelöst.`);
     }
 }
+
+/**
+ * Funktion zum Aufheben eines aktiven Effect-Subscriptions.
+ * @typedef {() => void} UnsubscribeFunction
+ */
+/**
+ * Konfiguration für ein bestimmtes Target inklusive Klassen-Bindings.
+ * @typedef {Object} TargetConfig
+ * @property {string} selector - Der CSS-Selektor des Ziel-Elements.
+ * @property {Record<string, string>} [bindClasses] - Mapping von State-Eigenschaften zu Style-Schlüsseln.
+ */
+/**
+ * Konfiguration innerhalb eines State-Slices.
+ * @typedef {Object} SliceConfig
+ * @property {Record<string, TargetConfig>} [targets] - Target-Konfigurationen für die Elementauflösung.
+ * @property {Record<string, string>} [styles] - Mapping von Style-Schlüsseln zu CSS-Klassennamen.
+ */
+/**
+ * Repräsentiert ein State-Slice im Aspis-Store.
+ * @typedef {Object.<string, any>} StateSlice
+ * @property {SliceConfig} [config] - Konfiguration für Targets und Styles.
+ */
+/**
+ * Interface/Struktur des Aspis State-Stores.
+ * @typedef {Object} Store
+ * @property {(sliceKey: string) => StateSlice | undefined} getSlice - Liefert das State-Slice für einen Schlüssel zurück.
+ * @property {(effectFn: () => void) => UnsubscribeFunction} effect - Registriert eine reaktive Effect-Funktion.
+ */
+/**
+ * Map, die Ziel-Namen den aufgelösten HTML-Elementen zuordnet.
+ * @typedef {Map<string, HTMLElement>} ResolvedTargetsMap
+ */

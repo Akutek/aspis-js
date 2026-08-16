@@ -1,16 +1,4 @@
-/**
- * Konfiguration für ein einzelnes Ziel-Element.
- * @typedef {Object} TargetConfig
- * @property {string} selector - Der CSS-Selektor zur Elementauswahl (z. B. '.my-class' oder ':scope').
- */
-/**
- * Zuordnung von Ziel-Namen zu ihren jeweiligen Selektor-Konfigurationen.
- * @typedef {Record<string, TargetConfig>} TargetsConfig
- */
-/**
- * Map, die aufgelöste Ziel-Namen den entsprechenden HTML-Elementen zuordnet.
- * @typedef {Map<string, HTMLElement>} ResolvedTargetsMap
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Utility-Klasse des Aspis-Frameworks zur Auflösung von DOM-Ziel-Elementen basierend auf Konfigurationsobjekten.
@@ -50,3 +38,17 @@ export class TargetResolver {
         return resolvedTargets;
     }
 }
+
+/**
+ * Konfiguration für ein einzelnes Ziel-Element.
+ * @typedef {Object} TargetConfig
+ * @property {string} selector - Der CSS-Selektor zur Elementauswahl (z. B. '.my-class' oder ':scope').
+ */
+/**
+ * Zuordnung von Ziel-Namen zu ihren jeweiligen Selektor-Konfigurationen.
+ * @typedef {Record<string, TargetConfig>} TargetsConfig
+ */
+/**
+ * Map, die aufgelöste Ziel-Namen den entsprechenden HTML-Elementen zuordnet.
+ * @typedef {Map<string, HTMLElement>} ResolvedTargetsMap
+ */

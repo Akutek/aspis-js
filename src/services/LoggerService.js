@@ -1,17 +1,4 @@
 /**
- * Der aktuelle Status des Debug-Modus im LoggerService.
- * `null` entspricht dem Preboot-/Sicherheitsmodus (Ausführung erlaubt), `true` aktiviert
- * und `false` deaktiviert reguläre Debug- und Warnmeldungen.
- * 
- * @typedef {boolean | null} DebugState
- */
-/**
- * Beliebige zusätzliche Parameter oder Objekte, die an die Log-Methoden übergeben werden.
- * 
- * @typedef {any[]} LogArguments
- */
-
-/**
  * Zentraler Logging-Dienst des Aspis-Frameworks.
  * Kapselt Konsolen-Ausgaben (`console.log`, `console.warn`, `console.error`) und steuert
  * deren Ausführung basierend auf dem globalen Debug-Status der Anwendung.
@@ -101,3 +88,16 @@ export class LoggerService {
         console.error(`[Aspis Error] ${message}`, ...args);
     }
 }
+
+/**
+ * Der aktuelle Status des Debug-Modus im LoggerService.
+ * `null` entspricht dem Preboot-/Sicherheitsmodus (Ausführung erlaubt), `true` aktiviert
+ * und `false` deaktiviert reguläre Debug- und Warnmeldungen.
+ * 
+ * @typedef {boolean | null} DebugState
+ */
+/**
+ * Beliebige zusätzliche Parameter oder Objekte, die an die Log-Methoden übergeben werden.
+ * 
+ * @typedef {any[]} LogArguments
+ */

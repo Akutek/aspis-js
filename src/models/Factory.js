@@ -1,50 +1,4 @@
-/**
- * Konfigurations- oder Bezeichnerwert für das Layout eines Hauptmodells.
- * @typedef {string | Record<string, any>} LayoutConfig
- */
-/**
- * Beliebiger JSON-Datensatz aus der Eingabe-Liste.
- * @typedef {Record<string, any>} JsonDataItem
- */
-/**
- * Möglicher Eingabetyp für das JSON-Datenargument (Array oder beliebiger Wert).
- * @typedef {Array<JsonDataItem> | unknown} JsonDataInput
- */
-/**
- * Schnittstelle für Instanzen von untergeordneten Modellen (Child-Instanzen).
- * @typedef {Record<string, any>} ChildModelInstance
- */
-/**
- * Schnittstelle für das Hauptmodell mit optionaler Zeilen-Hinzufügen-Methode.
- * @typedef {Object} MainModelInstance
- * @property {function(ChildModelInstance): void} [appendRow] - Fügt eine erzeugte Kind-Instanz an das Hauptmodell an.
- */
-/**
- * Statische Predicate-Funktion einer Kind-Klasse zur Ermittlung der Zuständigkeit für ein Daten-Item.
- * @callback CanHandlePredicate
- * @param {JsonDataItem} itemData - Der zu prüfende Einzel-Datensatz.
- * @returns {boolean} `true`, wenn die Klasse den Datensatz verarbeiten kann.
- */
-/**
- * Konstruktor-Signatur zur Instanziierung einer Kind-Klasse.
- * @template {ChildModelInstance} [C=ChildModelInstance]
- * @typedef {new (itemData: JsonDataItem) => C} ChildClassConstructorFn
- */
-/**
- * Statische Schnittstelle einer Kind-Klasse (Konstruktor + optionale `canHandle`-Methode).
- * @template {ChildModelInstance} [C=ChildModelInstance]
- * @typedef {ChildClassConstructorFn<C> & { canHandle?: CanHandlePredicate }} ChildClassConstructor
- */
-/**
- * Gültiger Eingabetyp für das `ChildClasses`-Argument (Einzelklasse oder Array von Klassen).
- * @template {ChildModelInstance} [C=ChildModelInstance]
- * @typedef {ChildClassConstructor<C> | Array<ChildClassConstructor<C>>} ChildClassesInput
- */
-/**
- * Konstruktor-Signatur für das Hauptmodell.
- * @template {MainModelInstance} [M=MainModelInstance]
- * @typedef {new (layout?: LayoutConfig) => M} MainClassConstructor
- */
+import { LoggerService } from "../services/LoggerService.js";
 
 /**
  * Zentrale Factory-Klasse des Aspis-Frameworks zur dynamischen Instanziierung
@@ -100,3 +54,51 @@ export class Factory {
         return mainInstance;
     }
 }
+
+/**
+ * Konfigurations- oder Bezeichnerwert für das Layout eines Hauptmodells.
+ * @typedef {string | Record<string, any>} LayoutConfig
+ */
+/**
+ * Beliebiger JSON-Datensatz aus der Eingabe-Liste.
+ * @typedef {Record<string, any>} JsonDataItem
+ */
+/**
+ * Möglicher Eingabetyp für das JSON-Datenargument (Array oder beliebiger Wert).
+ * @typedef {Array<JsonDataItem> | unknown} JsonDataInput
+ */
+/**
+ * Schnittstelle für Instanzen von untergeordneten Modellen (Child-Instanzen).
+ * @typedef {Record<string, any>} ChildModelInstance
+ */
+/**
+ * Schnittstelle für das Hauptmodell mit optionaler Zeilen-Hinzufügen-Methode.
+ * @typedef {Object} MainModelInstance
+ * @property {function(ChildModelInstance): void} [appendRow] - Fügt eine erzeugte Kind-Instanz an das Hauptmodell an.
+ */
+/**
+ * Statische Predicate-Funktion einer Kind-Klasse zur Ermittlung der Zuständigkeit für ein Daten-Item.
+ * @callback CanHandlePredicate
+ * @param {JsonDataItem} itemData - Der zu prüfende Einzel-Datensatz.
+ * @returns {boolean} `true`, wenn die Klasse den Datensatz verarbeiten kann.
+ */
+/**
+ * Konstruktor-Signatur zur Instanziierung einer Kind-Klasse.
+ * @template {ChildModelInstance} [C=ChildModelInstance]
+ * @typedef {new (itemData: JsonDataItem) => C} ChildClassConstructorFn
+ */
+/**
+ * Statische Schnittstelle einer Kind-Klasse (Konstruktor + optionale `canHandle`-Methode).
+ * @template {ChildModelInstance} [C=ChildModelInstance]
+ * @typedef {ChildClassConstructorFn<C> & { canHandle?: CanHandlePredicate }} ChildClassConstructor
+ */
+/**
+ * Gültiger Eingabetyp für das `ChildClasses`-Argument (Einzelklasse oder Array von Klassen).
+ * @template {ChildModelInstance} [C=ChildModelInstance]
+ * @typedef {ChildClassConstructor<C> | Array<ChildClassConstructor<C>>} ChildClassesInput
+ */
+/**
+ * Konstruktor-Signatur für das Hauptmodell.
+ * @template {MainModelInstance} [M=MainModelInstance]
+ * @typedef {new (layout?: LayoutConfig) => M} MainClassConstructor
+ */

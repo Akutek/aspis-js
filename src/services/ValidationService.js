@@ -1,39 +1,4 @@
 /**
- * Validator-Funktion zur Überprüfung eines Wertes.
- * @typedef {(value: any, param?: any) => boolean} ValidationRuleFn
- */
-/**
- * Objektstruktur für eine erweiterte Regel-Konfiguration.
- * @typedef {Object} RuleConfigObject
- * @property {any} [param] - Der Parameter für die Regel (z. B. Mindestlänge oder Regex-Muster).
- * @property {string} [message] - Die benutzerdefinierte Fehlermeldung.
- */
-/**
- * Tupel-Struktur für eine kompakte Regel-Konfiguration: [Parameter, Fehlermeldung].
- * @typedef {[any, string]} RuleConfigTuple
- */
-/**
- * Mögliche Konfigurationsformen für eine einzelne Validierungsregel.
- * @typedef {boolean | string | RuleConfigTuple | RuleConfigObject} RuleConfig
- */
-/**
- * Mapping von Regel-Namen zu ihren jeweiligen Konfigurationen für ein Feld.
- * @typedef {Record<string, RuleConfig>} FieldRules
- */
-/**
- * Key-Value-Objekt der zu validierenden Formularwerte.
- * @typedef {Record<string, any>} FormValues
- */
-/**
- * Validierungsschema für ein gesamtes Formular (Mapping von Feldnamen zu FieldRules).
- * @typedef {Record<string, FieldRules>} FormSchema
- */
-/**
- * Mapping von Feldnamen zu ihren jeweiligen Fehlermeldungen.
- * @typedef {Record<string, string>} FormErrors
- */
-
-/**
  * Service-Klasse des Aspis-Frameworks zur Validierung einzelner Formularfelder
  * sowie kompletter Formular-Datensätze anhand konfigurierbarer Prüfregeln.
  * 
@@ -145,3 +110,38 @@ export class ValidationService {
         return errors;
     }
 }
+
+/**
+ * Validator-Funktion zur Überprüfung eines Wertes.
+ * @typedef {(value: any, param?: any) => boolean} ValidationRuleFn
+ */
+/**
+ * Objektstruktur für eine erweiterte Regel-Konfiguration.
+ * @typedef {Object} RuleConfigObject
+ * @property {any} [param] - Der Parameter für die Regel (z. B. Mindestlänge oder Regex-Muster).
+ * @property {string} [message] - Die benutzerdefinierte Fehlermeldung.
+ */
+/**
+ * Tupel-Struktur für eine kompakte Regel-Konfiguration: [Parameter, Fehlermeldung].
+ * @typedef {[any, string]} RuleConfigTuple
+ */
+/**
+ * Mögliche Konfigurationsformen für eine einzelne Validierungsregel.
+ * @typedef {boolean | string | RuleConfigTuple | RuleConfigObject} RuleConfig
+ */
+/**
+ * Mapping von Regel-Namen zu ihren jeweiligen Konfigurationen für ein Feld.
+ * @typedef {Record<string, RuleConfig>} FieldRules
+ */
+/**
+ * Key-Value-Objekt der zu validierenden Formularwerte.
+ * @typedef {Record<string, any>} FormValues
+ */
+/**
+ * Validierungsschema für ein gesamtes Formular (Mapping von Feldnamen zu FieldRules).
+ * @typedef {Record<string, FieldRules>} FormSchema
+ */
+/**
+ * Mapping von Feldnamen zu ihren jeweiligen Fehlermeldungen.
+ * @typedef {Record<string, string>} FormErrors
+ */

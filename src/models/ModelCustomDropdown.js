@@ -1,78 +1,6 @@
-import { BaseModel } from "./";
-import { FormFieldService, ValidationService } from "../services/";
-
-/**
- * Basis-Optionen für Modelle im Aspis-Framework.
- * @typedef {Object} BaseModelOptions
- * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
- */
-/**
- * Basisklasse BaseModel im Aspis-Framework.
- * @typedef {Object} BaseModel
- * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
- * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
- */
-/**
- * Rohdaten zur Erstellung eines Dropdown-Eintrags.
- * @typedef {Object} ModelCustomDropdownItemRawData
- * @property {string} [value] - Der Wert des Eintrags.
- * @property {string} [id] - Alternative Schlüsselbezeichnung für den Wert des Eintrags.
- * @property {string} [label] - Die Bezeichnung/Anzeigetext des Eintrags.
- * @property {string} [title] - Alternative Schlüsselbezeichnung für die Bezeichnung des Eintrags.
- * @property {boolean} [disabled=false] - Gibt an, ob der Eintrag deaktiviert ist.
- */
-/**
- * Funktion zur Bereinigung/Sanitizing von Strings.
- * @typedef {(val: any) => string} SanitizeFunction
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur eines Dropdown-Eintrags.
- * @typedef {Object} ModelCustomDropdownItemRenderData
- * @property {string} value - Der bereinigte Wert des Eintrags.
- * @property {string} label - Die bereinigte Anzeigebezeichnung des Eintrags.
- * @property {boolean} disabled - Deaktivierungsstatus des Eintrags.
- * @property {boolean} isSelected - Gibt an, ob der Eintrag aktuell ausgewählt ist.
- * @property {boolean} isFocused - Gibt an, ob der Eintrag aktuell den Fokus besitzt.
- */
-/**
- * Validierungsregeln für das Dropdown-Feld.
- * @typedef {Record<string, any>} CustomDropdownRules
- */
-/**
- * Zustandsobjekt eines Formularfeldes im Dropdown.
- * @typedef {Object} CustomDropdownFieldState
- * @property {string} value - Der aktuelle Wert des Feldes.
- * @property {CustomDropdownRules} rules - Die definierten Validierungsregeln.
- * @property {string|null} error - Fehlermeldung oder null, wenn valide.
- * @property {boolean} isTouched - Gibt an, ob der Benutzer mit dem Feld interagiert hat.
- */
-/**
- * Optionsobjekt zur Initialisierung des ModelCustomDropdown.
- * @typedef {Object} ModelCustomDropdownOptionsObject
- * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
- * @property {string} [value=''] - Der initial ausgewählte Wert.
- * @property {CustomDropdownRules} [rules={}] - Validierungsregeln für das Feld.
- */
-/**
- * Erlaubte Parameter-Typen für die Optionen des `ModelCustomDropdown` (Optionsobjekt oder direkter Layout-String).
- * @typedef {ModelCustomDropdownOptionsObject | string} ModelCustomDropdownOptions
- */
-/**
- * Struktur der Rohdaten für die Optionen des Dropdowns.
- * Array von Elemente-Objekten/Instanzen oder ein Objekt mit `options`- bzw. `data`-Array.
- * @typedef {Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>> | { options?: Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>>, data?: Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>> }} ModelCustomDropdownRawData
- */
-/**
- * Für das Template-Rendering aufbereitete Datenstruktur des Dropdown-Modells.
- * @typedef {Object} ModelCustomDropdownRenderData
- * @property {string} layout - Das zu verwendende Template-Layout.
- * @property {boolean} isOpen - Öffnungsstatus des Menüs.
- * @property {string} value - Der aktuell ausgewählte Wert.
- * @property {string} selectedLabel - Bezeichnung des ausgewählten Eintrags oder Standardtext.
- * @property {string|null} error - Aktuelle Fehlermeldung oder null.
- * @property {boolean} isInvalid - Gibt an, ob ein Validierungsfehler vorliegt.
- * @property {ModelCustomDropdownItemRenderData[]} options - Liste aller aufbereiteten Optionen.
- */
+import { BaseModel } from "./BaseModel.js";
+import { FormFieldService } from "../services/FormFieldService.js";
+import { ValidationService } from "../services/ValidationService.js";
 
 /**
  * Modell-Klasse des Aspis-Frameworks zur Repräsentation und Steuerung eines benutzerdefinierten Dropdown-Steuerelements mit Tastaturnavigation und Validierung.
@@ -409,3 +337,76 @@ export class ModelCustomDropdown extends BaseModel {
         };
     }
 }
+
+/**
+ * Basis-Optionen für Modelle im Aspis-Framework.
+ * @typedef {Object} BaseModelOptions
+ * @property {string} [layout='default'] - Das zugewiesene Template-Layout des Modells.
+ */
+/**
+ * Basisklasse BaseModel im Aspis-Framework.
+ * @typedef {Object} BaseModel
+ * @property {string} _layout - Das zugewiesene Template-Layout des Modells.
+ * @property {<T>(input: T) => T} _sanitize - Sanitizes-Methode zur Bereinigung von Eingaben zur Vermeidung von XSS.
+ */
+/**
+ * Rohdaten zur Erstellung eines Dropdown-Eintrags.
+ * @typedef {Object} ModelCustomDropdownItemRawData
+ * @property {string} [value] - Der Wert des Eintrags.
+ * @property {string} [id] - Alternative Schlüsselbezeichnung für den Wert des Eintrags.
+ * @property {string} [label] - Die Bezeichnung/Anzeigetext des Eintrags.
+ * @property {string} [title] - Alternative Schlüsselbezeichnung für die Bezeichnung des Eintrags.
+ * @property {boolean} [disabled=false] - Gibt an, ob der Eintrag deaktiviert ist.
+ */
+/**
+ * Funktion zur Bereinigung/Sanitizing von Strings.
+ * @typedef {(val: any) => string} SanitizeFunction
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur eines Dropdown-Eintrags.
+ * @typedef {Object} ModelCustomDropdownItemRenderData
+ * @property {string} value - Der bereinigte Wert des Eintrags.
+ * @property {string} label - Die bereinigte Anzeigebezeichnung des Eintrags.
+ * @property {boolean} disabled - Deaktivierungsstatus des Eintrags.
+ * @property {boolean} isSelected - Gibt an, ob der Eintrag aktuell ausgewählt ist.
+ * @property {boolean} isFocused - Gibt an, ob der Eintrag aktuell den Fokus besitzt.
+ */
+/**
+ * Validierungsregeln für das Dropdown-Feld.
+ * @typedef {Record<string, any>} CustomDropdownRules
+ */
+/**
+ * Zustandsobjekt eines Formularfeldes im Dropdown.
+ * @typedef {Object} CustomDropdownFieldState
+ * @property {string} value - Der aktuelle Wert des Feldes.
+ * @property {CustomDropdownRules} rules - Die definierten Validierungsregeln.
+ * @property {string|null} error - Fehlermeldung oder null, wenn valide.
+ * @property {boolean} isTouched - Gibt an, ob der Benutzer mit dem Feld interagiert hat.
+ */
+/**
+ * Optionsobjekt zur Initialisierung des ModelCustomDropdown.
+ * @typedef {Object} ModelCustomDropdownOptionsObject
+ * @property {string} [layout='default'] - Das zu verwendende Template-Layout.
+ * @property {string} [value=''] - Der initial ausgewählte Wert.
+ * @property {CustomDropdownRules} [rules={}] - Validierungsregeln für das Feld.
+ */
+/**
+ * Erlaubte Parameter-Typen für die Optionen des `ModelCustomDropdown` (Optionsobjekt oder direkter Layout-String).
+ * @typedef {ModelCustomDropdownOptionsObject | string} ModelCustomDropdownOptions
+ */
+/**
+ * Struktur der Rohdaten für die Optionen des Dropdowns.
+ * Array von Elemente-Objekten/Instanzen oder ein Objekt mit `options`- bzw. `data`-Array.
+ * @typedef {Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>> | { options?: Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>>, data?: Array<ModelCustomDropdownItemRawData | InstanceType<typeof ModelCustomDropdown.Item>> }} ModelCustomDropdownRawData
+ */
+/**
+ * Für das Template-Rendering aufbereitete Datenstruktur des Dropdown-Modells.
+ * @typedef {Object} ModelCustomDropdownRenderData
+ * @property {string} layout - Das zu verwendende Template-Layout.
+ * @property {boolean} isOpen - Öffnungsstatus des Menüs.
+ * @property {string} value - Der aktuell ausgewählte Wert.
+ * @property {string} selectedLabel - Bezeichnung des ausgewählten Eintrags oder Standardtext.
+ * @property {string|null} error - Aktuelle Fehlermeldung oder null.
+ * @property {boolean} isInvalid - Gibt an, ob ein Validierungsfehler vorliegt.
+ * @property {ModelCustomDropdownItemRenderData[]} options - Liste aller aufbereiteten Optionen.
+ */

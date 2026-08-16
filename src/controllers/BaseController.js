@@ -1,77 +1,8 @@
-import { EventDelegator, LoadingStateHelper, DomDependencyScanner, ModifierDOM } from "../utils/";
-
-/**
- * Interface für ein HTTP-Fetcher-Modul.
- * @typedef {Object} Fetcher
- * @property {function(string, Record<string, any>=, RequestInit=): Promise<any>} get - Führt einen HTTP-GET-Request aus.
- */
-/**
- * Interface für die Service-Registry des Aspis-Frameworks.
- * @typedef {Object} ComponentRegistry
- * @property {function(string): boolean} has - Prüft, ob ein Service unter dem Namen registriert ist.
- * @property {function(string): any} get - Ruft einen registrierten Service ab.
- */
-/**
- * Optionen zur Konfiguration des BaseControllers.
- * @typedef {Object} ControllerOptions
- * @property {string} [sliceKey] - Der Pfad zum zugehörigen State-Slice im Store (z. B. 'features.filter').
- * @property {Fetcher} [fetcher] - Benutzerdefinierter HTTP-Fetcher.
- * @property {ComponentRegistry} [registry] - Die zentrale Registry der Anwendung.
- * @property {Record<string, any>} [key: string] - Weitere benutzerdefinierte Optionen.
- */
-/**
- * Interface für den reaktiven Haupt-Store.
- * @typedef {Object} Store
- * @property {function(function(): void): (function(): void)} [effect] - Registriert einen reaktiven Effekt.
- * @property {function(string): StateSlice|null} [getSlice] - Ruft einen State-Slice anhand seines Pfads ab.
- * @property {function(HTMLElement): void} [removeDomDependencies] - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
- */
-/**
- * Interface für den Event-Dispatcher des Frameworks.
- * @typedef {Object} Dispatcher
- * @property {function(string, any=): void} [dispatch] - Dispatched ein Framework-Event.
- */
-/**
- * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
- * @typedef {Object} TargetConfig
- * @property {string} selector - CSS-Selektor für das Ziel-Element.
- * @property {Record<string, string>} [bindClasses] - Mapping von State-Eigenschaften auf CSS-Klassenschlüssel.
- */
-/**
- * Konfiguration eines State-Slices.
- * @typedef {Object} SliceConfig
- * @property {Record<string, TargetConfig>} [targets] - Deklarierte Ziel-Elemente und deren Bindings.
- * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
- */
-/**
- * Zustandsobjekt eines State-Slices im Store.
- * @typedef {Object} StateSlice
- * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration des Slices.
- * @property {Record<string, any>} [key: string] - Dynamische State-Daten.
- */
-/**
- * Interface für den internen Event-Delegator.
- * @typedef {Object} EventDelegatorInterface
- * @property {function(string, string, function(Event): void, AddEventListenerOptions=): void} delegate - Registriert ein delegiertes Event.
- * @property {function(Fetcher): Promise<void>} initEvents - Initialisiert alle dekorierten Event-Handler.
- * @property {function(): void} destroy - Baut alle registrierten Event-Listener ab.
- */
-/**
- * Helper zur Steuerung visueller Ladezustände im DOM.
- * @typedef {Object} LoadingStateHelper
- * @property {function(HTMLElement, Object, string=): void} apply - Wendet den Lade-Zustand auf den Container an.
- */
-/**
- * Scanner zur Erfassung und Bereinigung von DOM-Abhängigkeiten.
- * @typedef {Object} DomDependencyScanner
- * @property {function(HTMLElement, Store): void} register - Registriert DOM-Abhängigkeiten im Store.
- * @property {function(HTMLElement, Store): void} unregister - Entfernt DOM-Abhängigkeiten aus dem Store.
- */
-/**
- * Hilfsklasse zur Manipulation von DOM-Klassen basierend auf Slices.
- * @typedef {Object} ModifierDOM
- * @property {function(HTMLElement, StateSlice, string, boolean): void} toggleSliceClass - Schaltet Slice-spezifische CSS-Klassen um.
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { EventDelegator } from "../utils/EventDelegator.js";
+import { LoadingStateHelper } from "../utils/LoadingStateHelper.js";
+import { DomDependencyScanner } from "../utils/DomDependencyScanner.js";
+import { ModifierDOM } from "../utils/ModifierDOM.js";
 
 /**
  * Abstrakte Basisklasse für alle Controller im Aspis-Framework.
@@ -80,7 +11,7 @@ import { EventDelegator, LoadingStateHelper, DomDependencyScanner, ModifierDOM }
  * 
  * @public
  */
-class BaseController {
+export class BaseController {
     /**
      * Referenz auf den reaktiven Store.
      * @internal
@@ -409,3 +340,76 @@ class BaseController {
         }
     }
 }
+
+/**
+ * Interface für ein HTTP-Fetcher-Modul.
+ * @typedef {Object} Fetcher
+ * @property {function(string, Record<string, any>=, RequestInit=): Promise<any>} get - Führt einen HTTP-GET-Request aus.
+ */
+/**
+ * Interface für die Service-Registry des Aspis-Frameworks.
+ * @typedef {Object} ComponentRegistry
+ * @property {function(string): boolean} has - Prüft, ob ein Service unter dem Namen registriert ist.
+ * @property {function(string): any} get - Ruft einen registrierten Service ab.
+ */
+/**
+ * Optionen zur Konfiguration des BaseControllers.
+ * @typedef {Object} ControllerOptions
+ * @property {string} [sliceKey] - Der Pfad zum zugehörigen State-Slice im Store (z. B. 'features.filter').
+ * @property {Fetcher} [fetcher] - Benutzerdefinierter HTTP-Fetcher.
+ * @property {ComponentRegistry} [registry] - Die zentrale Registry der Anwendung.
+ * @property {Record<string, any>} [key: string] - Weitere benutzerdefinierte Optionen.
+ */
+/**
+ * Interface für den reaktiven Haupt-Store.
+ * @typedef {Object} Store
+ * @property {function(function(): void): (function(): void)} [effect] - Registriert einen reaktiven Effekt.
+ * @property {function(string): StateSlice|null} [getSlice] - Ruft einen State-Slice anhand seines Pfads ab.
+ * @property {function(HTMLElement): void} [removeDomDependencies] - Entfernt ein Element aus allen Store-Reaktivitäts-Trackern.
+ */
+/**
+ * Interface für den Event-Dispatcher des Frameworks.
+ * @typedef {Object} Dispatcher
+ * @property {function(string, any=): void} [dispatch] - Dispatched ein Framework-Event.
+ */
+/**
+ * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
+ * @typedef {Object} TargetConfig
+ * @property {string} selector - CSS-Selektor für das Ziel-Element.
+ * @property {Record<string, string>} [bindClasses] - Mapping von State-Eigenschaften auf CSS-Klassenschlüssel.
+ */
+/**
+ * Konfiguration eines State-Slices.
+ * @typedef {Object} SliceConfig
+ * @property {Record<string, TargetConfig>} [targets] - Deklarierte Ziel-Elemente und deren Bindings.
+ * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
+ */
+/**
+ * Zustandsobjekt eines State-Slices im Store.
+ * @typedef {Object} StateSlice
+ * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration des Slices.
+ * @property {Record<string, any>} [key: string] - Dynamische State-Daten.
+ */
+/**
+ * Interface für den internen Event-Delegator.
+ * @typedef {Object} EventDelegatorInterface
+ * @property {function(string, string, function(Event): void, AddEventListenerOptions=): void} delegate - Registriert ein delegiertes Event.
+ * @property {function(Fetcher): Promise<void>} initEvents - Initialisiert alle dekorierten Event-Handler.
+ * @property {function(): void} destroy - Baut alle registrierten Event-Listener ab.
+ */
+/**
+ * Helper zur Steuerung visueller Ladezustände im DOM.
+ * @typedef {Object} LoadingStateHelper
+ * @property {function(HTMLElement, Object, string=): void} apply - Wendet den Lade-Zustand auf den Container an.
+ */
+/**
+ * Scanner zur Erfassung und Bereinigung von DOM-Abhängigkeiten.
+ * @typedef {Object} DomDependencyScanner
+ * @property {function(HTMLElement, Store): void} register - Registriert DOM-Abhängigkeiten im Store.
+ * @property {function(HTMLElement, Store): void} unregister - Entfernt DOM-Abhängigkeiten aus dem Store.
+ */
+/**
+ * Hilfsklasse zur Manipulation von DOM-Klassen basierend auf Slices.
+ * @typedef {Object} ModifierDOM
+ * @property {function(HTMLElement, StateSlice, string, boolean): void} toggleSliceClass - Schaltet Slice-spezifische CSS-Klassen um.
+ */

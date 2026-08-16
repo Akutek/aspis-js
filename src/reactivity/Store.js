@@ -1,43 +1,5 @@
-import { ReactiveEffect } from "./";
-/**
- * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
- * @typedef {Object} TargetConfig
- * @property {string} selector - CSS-Selektor für das Ziel-Element.
- * @property {Record<string, string>} [bindClasses] - Mapping von State-Keys zu CSS-Klassenschlüsseln.
- */
-/**
- * Konfiguration und Style-Binding eines State-Slices.
- * @typedef {Object} SliceConfig
- * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
- * @property {Record<string, TargetConfig>} [targets] - Ziel-Elemente und deren Bindings.
- */
-/**
- * Definition eines einzelnen State-Slices im Store.
- * @typedef {Object} StateSlice
- * @property {Record<string, any>} [initialState] - Initialer Zustand des Slices.
- * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
- */
-/**
- * Struktur der `state-manifest.json`.
- * @typedef {Object} StateManifest
- * @property {{ strictMode?: boolean }} [settings] - Globale Framework-Einstellungen.
- * @property {Record<string, string>} [globalStyles] - App-weit gültige CSS-Statusklassen.
- * @property {Record<string, StateSlice>} [slices] - Deklarierte Zustandsobjekte (z. B. 'app.ui', 'features.filter').
- */
-/**
- * Detail-Payload für das CustomEvent `aspis:data-mutation`.
- * @typedef {Object} AspisMutationEventDetail
- * @property {string | string[]} path - Der oder die geänderten State-Pfade.
- * @property {string[]} paths - Liste aller geänderten Pfade.
- * @property {string} [dependsOn] - Wert aus dem `data-depends-on` Attribut des Ziel-Elements.
- */
-/**
- * Interface für einen reaktiven Effekt.
- * @typedef {Object} ReactiveEffect
- * @property {function(): void} run - Führt die verknüpfte Funktion aus und erfasst Abhängigkeiten.
- * @property {function(): void} stop - Stoppt den Effekt und entfernt ihn aus allen Trackern.
- * @property {function(string): void} trackPath - Registriert einen beobachteten Pfad im Effekt.
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { ReactiveEffect } from "./ReactiveEffect.js";
 
 /**
  * Der reaktive Haupt-Store des Aspis-Frameworks.
@@ -733,3 +695,43 @@ export class Store extends EventTarget {
         });
     }
 }
+
+/**
+ * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
+ * @typedef {Object} TargetConfig
+ * @property {string} selector - CSS-Selektor für das Ziel-Element.
+ * @property {Record<string, string>} [bindClasses] - Mapping von State-Keys zu CSS-Klassenschlüsseln.
+ */
+/**
+ * Konfiguration und Style-Binding eines State-Slices.
+ * @typedef {Object} SliceConfig
+ * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
+ * @property {Record<string, TargetConfig>} [targets] - Ziel-Elemente und deren Bindings.
+ */
+/**
+ * Definition eines einzelnen State-Slices im Store.
+ * @typedef {Object} StateSlice
+ * @property {Record<string, any>} [initialState] - Initialer Zustand des Slices.
+ * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
+ */
+/**
+ * Struktur der `state-manifest.json`.
+ * @typedef {Object} StateManifest
+ * @property {{ strictMode?: boolean }} [settings] - Globale Framework-Einstellungen.
+ * @property {Record<string, string>} [globalStyles] - App-weit gültige CSS-Statusklassen.
+ * @property {Record<string, StateSlice>} [slices] - Deklarierte Zustandsobjekte (z. B. 'app.ui', 'features.filter').
+ */
+/**
+ * Detail-Payload für das CustomEvent `aspis:data-mutation`.
+ * @typedef {Object} AspisMutationEventDetail
+ * @property {string | string[]} path - Der oder die geänderten State-Pfade.
+ * @property {string[]} paths - Liste aller geänderten Pfade.
+ * @property {string} [dependsOn] - Wert aus dem `data-depends-on` Attribut des Ziel-Elements.
+ */
+/**
+ * Interface für einen reaktiven Effekt.
+ * @typedef {Object} ReactiveEffect
+ * @property {function(): void} run - Führt die verknüpfte Funktion aus und erfasst Abhängigkeiten.
+ * @property {function(): void} stop - Stoppt den Effekt und entfernt ihn aus allen Trackern.
+ * @property {function(string): void} trackPath - Registriert einen beobachteten Pfad im Effekt.
+ */

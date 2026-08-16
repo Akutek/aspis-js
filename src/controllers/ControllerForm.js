@@ -1,106 +1,8 @@
-import { BaseController } from "./";
-import { FormFieldService } from "../services/";
-import { ModelForm } from "../models/";
-import { ModifierDOM } from "../utils/";
-
-/**
- * Registry-Interface zum Abrufen von Services im Aspis-Framework.
- * @typedef {Object} ObserverRegistry
- * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
- */
-/**
- * Service zum Rendern von HTML-Templates im DOM.
- * @typedef {Object} RenderService
- * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
- */
-/**
- * Event-Dispatcher des Frameworks für entkoppelte Kommunikation.
- * @typedef {Object} EventDispatcher
- * @property {(event: string, callback: (data?: any) => void) => void} on - Registriert einen Event-Listener.
- * @property {(event: string, data?: any) => void} emit - Löst ein Event aus.
- */
-/**
- * Zentraler State-Store der Anwendung.
- * @typedef {Object} Store
- * @property {(sliceKey: string) => any} getState - Holt den aktuellen Zustand eines Redux/State-Slices.
- */
-/**
- * HTTP-Fetcher Service für AJAX/API-Anfragen.
- * @typedef {Object} Fetcher
- * @property {(url: string, options?: { method?: string, body?: any, signal?: AbortSignal }) => Promise<any>} [request] - Generische Request-Methode.
- * @property {(url: string, payload?: any, options?: { signal?: AbortSignal }) => Promise<any>} [post] - Convenience-Methode für POST-Requests.
- */
-/**
- * Statische Utility-Klasse zur sicheren DOM-Manipulation.
- * @typedef {Object} ModifierDOM
- * @property {(element: Element | null, className: string, force?: boolean) => void} toggleClass - Schaltet CSS-Klassen um.
- * @property {(element: Element | null, className: string) => void} addClass - Fügt eine CSS-Klasse hinzu.
- * @property {(element: Element | null, className: string) => void} removeClass - Entfernt eine CSS-Klasse.
- * @property {(element: Element | null, attrName: string, value: any) => void} attr - Setzt ein Attribut am Element.
- */
-/**
- * Validierungsregeln für ein Formularfeld.
- * @typedef {Record<string, any>} FieldRules
- */
-/**
- * Repräsentiert die Datenstruktur eines einzelnen Feldes im Model.
- * @typedef {Object} FormFieldState
- * @property {any} value - Der aktuelle Wert des Feldes.
- * @property {FieldRules} rules - Die zugehörigen Validierungsregeln.
- * @property {string | null} [error] - Aktueller Fehler oder null.
- * @property {boolean} [isTouched] - Flag, ob das Feld angefasst wurde.
- */
-/**
- * Instanz eines Formular-Models im Aspis-Framework.
- * @typedef {Object} ModelForm
- * @property {boolean} isSubmitting - Status der Formular-Übermittlung.
- * @property {(name: string, value: any, triggerValidation?: boolean) => void} setFieldValue - Setzt einen Feldwert.
- * @property {(name: string) => FormFieldState | undefined} getField - Holt ein Feld-Objekt.
- * @property {() => boolean} validateAll - Validiert alle Felder des Formulars.
- * @property {() => Record<string, any>} toPayload - Gibt die Formulardaten als Plain Object zurück.
- * @property {(isSubmitting: boolean) => void} setSubmitting - Setzt den Submitting-Status.
- * @property {(success: boolean, errorMsg?: string) => void} setSubmitResult - Speichert das Absendeergebnis.
- * @property {() => void} reset - Setzt das Model auf den Initialzustand zurück.
- * @property {() => Record<string, string>} getErrors - Gibt alle aktuellen Feldfehler zurück.
- * @property {() => Record<string, any>} [toRenderData] - Bereitet Daten für das Rendering auf.
- */
-/**
- * Konfigurationsoptionen für den ControllerForm.
- * @typedef {Object} ControllerFormOptions
- * @property {string} [sliceKey='forms.mainForm'] - Key für den zugewiesenen State-Slice im Store.
- * @property {boolean} [validateOnBlur=true] - Steuert, ob Felder beim Verlassen (Blur) validiert werden.
- * @property {boolean} [validateOnChange=false] - Steuert, ob Felder bei jeder Eingabe (Input) validiert werden.
- * @property {any} [layout] - Optionales Layout-Objekt für das Model.
- * @property {RenderService} [renderService] - Expliziter RenderService.
- * @property {ObserverRegistry} [registry] - Registry-Instanz zum Auflösen von Services.
- */
-/**
- * State-Slice für Formulardaten aus dem Zentral-Store.
- * @typedef {Object} FormSlice
- * @property {ModelForm} [model] - Die aktuell übergebene Model-Instanz.
- */
-/**
- * Typ für Meldungsarten des Formulars.
- * @typedef {'error' | 'success' | string} FormMessageType
- */
-/**
- * Event-Payload für das 'dropdown:change' Dispatcher-Event.
- * @typedef {Object} DropdownChangeEventData
- * @property {string} name - Feldname des Dropdowns.
- * @property {any} value - Neuer Wert des Dropdowns.
- * @property {HTMLElement} container - DOM-Container des Dropdowns zur Zugehörigkeitsprüfung.
- */
-/**
- * Event-Payload beim erfolgreichen Absenden des Formulars ('form:success').
- * @typedef {Object} FormSuccessEventData
- * @property {any} response - Die vom Server zurückgelieferte Antwort.
- * @property {Record<string, any>} payload - Die abgesendeten Formulardaten.
- */
-/**
- * Event-Payload beim fehlerhaften Absenden des Formulars ('form:error').
- * @typedef {Object} FormErrorEventData
- * @property {Error | any} error - Das aufgetretene Fehler-Objekt.
- */
+import { LoggerService } from "../services/LoggerService.js";
+import { BaseController } from "./BaseController.js";
+import { FormFieldService } from "../services/FormFieldService.js";
+import { ModelForm } from "../models/ModelForm.js";
+import { ModifierDOM } from "../utils/ModifierDOM.js";
 
 /**
  * Controller-Klasse des Aspis-Frameworks zur Steuerung von HTML-Formularen,
@@ -646,3 +548,102 @@ export class ControllerForm extends BaseController {
         }
     }
 }
+
+/**
+ * Registry-Interface zum Abrufen von Services im Aspis-Framework.
+ * @typedef {Object} ObserverRegistry
+ * @property {(key: string) => any} get - Holt eine registrierte Service-Instanz.
+ */
+/**
+ * Service zum Rendern von HTML-Templates im DOM.
+ * @typedef {Object} RenderService
+ * @property {(container: HTMLElement, templateName: string, data: Record<string, any>) => Promise<void>} paste - Fügt gerendertes HTML in ein Element ein.
+ */
+/**
+ * Event-Dispatcher des Frameworks für entkoppelte Kommunikation.
+ * @typedef {Object} EventDispatcher
+ * @property {(event: string, callback: (data?: any) => void) => void} on - Registriert einen Event-Listener.
+ * @property {(event: string, data?: any) => void} emit - Löst ein Event aus.
+ */
+/**
+ * Zentraler State-Store der Anwendung.
+ * @typedef {Object} Store
+ * @property {(sliceKey: string) => any} getState - Holt den aktuellen Zustand eines Redux/State-Slices.
+ */
+/**
+ * HTTP-Fetcher Service für AJAX/API-Anfragen.
+ * @typedef {Object} Fetcher
+ * @property {(url: string, options?: { method?: string, body?: any, signal?: AbortSignal }) => Promise<any>} [request] - Generische Request-Methode.
+ * @property {(url: string, payload?: any, options?: { signal?: AbortSignal }) => Promise<any>} [post] - Convenience-Methode für POST-Requests.
+ */
+/**
+ * Statische Utility-Klasse zur sicheren DOM-Manipulation.
+ * @typedef {Object} ModifierDOM
+ * @property {(element: Element | null, className: string, force?: boolean) => void} toggleClass - Schaltet CSS-Klassen um.
+ * @property {(element: Element | null, className: string) => void} addClass - Fügt eine CSS-Klasse hinzu.
+ * @property {(element: Element | null, className: string) => void} removeClass - Entfernt eine CSS-Klasse.
+ * @property {(element: Element | null, attrName: string, value: any) => void} attr - Setzt ein Attribut am Element.
+ */
+/**
+ * Validierungsregeln für ein Formularfeld.
+ * @typedef {Record<string, any>} FieldRules
+ */
+/**
+ * Repräsentiert die Datenstruktur eines einzelnen Feldes im Model.
+ * @typedef {Object} FormFieldState
+ * @property {any} value - Der aktuelle Wert des Feldes.
+ * @property {FieldRules} rules - Die zugehörigen Validierungsregeln.
+ * @property {string | null} [error] - Aktueller Fehler oder null.
+ * @property {boolean} [isTouched] - Flag, ob das Feld angefasst wurde.
+ */
+/**
+ * Instanz eines Formular-Models im Aspis-Framework.
+ * @typedef {Object} ModelForm
+ * @property {boolean} isSubmitting - Status der Formular-Übermittlung.
+ * @property {(name: string, value: any, triggerValidation?: boolean) => void} setFieldValue - Setzt einen Feldwert.
+ * @property {(name: string) => FormFieldState | undefined} getField - Holt ein Feld-Objekt.
+ * @property {() => boolean} validateAll - Validiert alle Felder des Formulars.
+ * @property {() => Record<string, any>} toPayload - Gibt die Formulardaten als Plain Object zurück.
+ * @property {(isSubmitting: boolean) => void} setSubmitting - Setzt den Submitting-Status.
+ * @property {(success: boolean, errorMsg?: string) => void} setSubmitResult - Speichert das Absendeergebnis.
+ * @property {() => void} reset - Setzt das Model auf den Initialzustand zurück.
+ * @property {() => Record<string, string>} getErrors - Gibt alle aktuellen Feldfehler zurück.
+ * @property {() => Record<string, any>} [toRenderData] - Bereitet Daten für das Rendering auf.
+ */
+/**
+ * Konfigurationsoptionen für den ControllerForm.
+ * @typedef {Object} ControllerFormOptions
+ * @property {string} [sliceKey='forms.mainForm'] - Key für den zugewiesenen State-Slice im Store.
+ * @property {boolean} [validateOnBlur=true] - Steuert, ob Felder beim Verlassen (Blur) validiert werden.
+ * @property {boolean} [validateOnChange=false] - Steuert, ob Felder bei jeder Eingabe (Input) validiert werden.
+ * @property {any} [layout] - Optionales Layout-Objekt für das Model.
+ * @property {RenderService} [renderService] - Expliziter RenderService.
+ * @property {ObserverRegistry} [registry] - Registry-Instanz zum Auflösen von Services.
+ */
+/**
+ * State-Slice für Formulardaten aus dem Zentral-Store.
+ * @typedef {Object} FormSlice
+ * @property {ModelForm} [model] - Die aktuell übergebene Model-Instanz.
+ */
+/**
+ * Typ für Meldungsarten des Formulars.
+ * @typedef {'error' | 'success' | string} FormMessageType
+ */
+/**
+ * Event-Payload für das 'dropdown:change' Dispatcher-Event.
+ * @typedef {Object} DropdownChangeEventData
+ * @property {string} name - Feldname des Dropdowns.
+ * @property {any} value - Neuer Wert des Dropdowns.
+ * @property {HTMLElement} container - DOM-Container des Dropdowns zur Zugehörigkeitsprüfung.
+ */
+/**
+ * Event-Payload beim erfolgreichen Absenden des Formulars ('form:success').
+ * @typedef {Object} FormSuccessEventData
+ * @property {any} response - Die vom Server zurückgelieferte Antwort.
+ * @property {Record<string, any>} payload - Die abgesendeten Formulardaten.
+ */
+/**
+ * Event-Payload beim fehlerhaften Absenden des Formulars ('form:error').
+ * @typedef {Object} FormErrorEventData
+ * @property {Error | any} error - Das aufgetretene Fehler-Objekt.
+ */

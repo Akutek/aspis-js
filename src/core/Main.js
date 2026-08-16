@@ -1,54 +1,14 @@
-import { Store } from "../reactivity/";
-import { ComponentCleaner, LoggerService, TemplateService, RenderService, DatenFetcher, EventDispatcher } from "../services/";
-import { ScannerDOM, ModifierDOM } from "../utils/";
-import { ControllerRegistry, Registry } from "./";
-
-/**
- * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
- * @typedef {Object} TargetConfig
- * @property {string} selector - CSS-Selektor für das Ziel-Element (z. B. ':scope', '#global-spinner').
- * @property {Record<string, string>} [bindClasses] - Mapping von State-Keys zu CSS-Klassenschlüsseln.
- */
-/**
- * Konfiguration und Style-Binding eines State-Slices.
- * @typedef {Object} SliceConfig
- * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
- * @property {Record<string, TargetConfig>} [targets] - Ziel-Elemente und deren Bindings.
- */
-/**
- * Definition eines einzelnen State-Slices im Store.
- * @typedef {Object} StateSlice
- * @property {Record<string, any>} initialState - Initialer Zustand des Slices.
- * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
- */
-/**
- * Struktur der `state-manifest.json`.
- * @typedef {Object} StateManifest
- * @property {{ strictMode: boolean }} [settings] - Globale Framework-Einstellungen.
- * @property {Record<string, string>} [globalStyles] - App-weit gültige CSS-Statusklassen.
- * @property {Record<string, StateSlice>} slices - Deklarierte Zustandsobjekte (z. B. 'app.ui', 'features.filter').
- */
-/**
- * Konfiguration einer einzelnen Komponente aus `app-config.json`.
- * @typedef {Object} ComponentConfig
- * @property {string} type - Name der Controller-Klasse (z. B. 'ControllerTable').
- * @property {string} sliceKey - Zugeteilter State-Slice-Key im Store.
- * @property {string} events - Relativer Dateipfad zur Event-Konfiguration.
- */
-/**
- * Struktur der `app-config.json`.
- * @typedef {Object} AppConfig
- * @property {Object} publicPaths - Basispfade für das Laden dynamischer Ressourcen.
- * @property {string} publicPaths.controllers - Ordnerpfad zu den Controller-Klassen.
- * @property {string} publicPaths.templates - Ordnerpfad zu den HTML/Template-Dateien.
- * @property {string} publicPaths.events - Ordnerpfad zu den Event-Konfigurationsdateien.
- * @property {Record<string, ComponentConfig>} components - Mapping von Custom-Element-Namen zu deren Konfiguration.
- */
-/**
- * Struktur der `event-manifest.json`.
- * Map von Feature-Bereichen zu ihren jeweiligen Event-JSON-Dateipfaden.
- * @typedef {Record<string, { events: string }>} EventManifest
- */
+import { Store } from "../reactivity/Store.js";
+import { ComponentCleaner } from "../services/ComponentCleaner.js";
+import { LoggerService } from "../services/LoggerService.js";
+import { TemplateService } from "../services/TemplateService.js";
+import { RenderService } from "../services/RenderService.js";
+import { DatenFetcher } from "../services/DatenFetcher.js";
+import { EventDispatcher } from "../services/EventDispatcher.js";
+import { ScannerDOM } from "../utils/ScannerDOM.js";
+import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerRegistry } from "./ControllerRegistry.js";
+import { Registry } from "./Registry.js";
 
 /**
  * Haupt-Bootstrapper und Orchestrator des Aspis-Frameworks.
@@ -230,3 +190,50 @@ export class Main {
         }
     }
 }
+
+/**
+ * Konfiguration für ein spezifisches DOM-Target innerhalb eines State-Slices.
+ * @typedef {Object} TargetConfig
+ * @property {string} selector - CSS-Selektor für das Ziel-Element (z. B. ':scope', '#global-spinner').
+ * @property {Record<string, string>} [bindClasses] - Mapping von State-Keys zu CSS-Klassenschlüsseln.
+ */
+/**
+ * Konfiguration und Style-Binding eines State-Slices.
+ * @typedef {Object} SliceConfig
+ * @property {Record<string, string>} [styles] - Mapping von Style-Konstanten zu CSS-Klassen.
+ * @property {Record<string, TargetConfig>} [targets] - Ziel-Elemente und deren Bindings.
+ */
+/**
+ * Definition eines einzelnen State-Slices im Store.
+ * @typedef {Object} StateSlice
+ * @property {Record<string, any>} initialState - Initialer Zustand des Slices.
+ * @property {SliceConfig} [config] - Layout- und Binding-Konfiguration.
+ */
+/**
+ * Struktur der `state-manifest.json`.
+ * @typedef {Object} StateManifest
+ * @property {{ strictMode: boolean }} [settings] - Globale Framework-Einstellungen.
+ * @property {Record<string, string>} [globalStyles] - App-weit gültige CSS-Statusklassen.
+ * @property {Record<string, StateSlice>} slices - Deklarierte Zustandsobjekte (z. B. 'app.ui', 'features.filter').
+ */
+/**
+ * Konfiguration einer einzelnen Komponente aus `app-config.json`.
+ * @typedef {Object} ComponentConfig
+ * @property {string} type - Name der Controller-Klasse (z. B. 'ControllerTable').
+ * @property {string} sliceKey - Zugeteilter State-Slice-Key im Store.
+ * @property {string} events - Relativer Dateipfad zur Event-Konfiguration.
+ */
+/**
+ * Struktur der `app-config.json`.
+ * @typedef {Object} AppConfig
+ * @property {Object} publicPaths - Basispfade für das Laden dynamischer Ressourcen.
+ * @property {string} publicPaths.controllers - Ordnerpfad zu den Controller-Klassen.
+ * @property {string} publicPaths.templates - Ordnerpfad zu den HTML/Template-Dateien.
+ * @property {string} publicPaths.events - Ordnerpfad zu den Event-Konfigurationsdateien.
+ * @property {Record<string, ComponentConfig>} components - Mapping von Custom-Element-Namen zu deren Konfiguration.
+ */
+/**
+ * Struktur der `event-manifest.json`.
+ * Map von Feature-Bereichen zu ihren jeweiligen Event-JSON-Dateipfaden.
+ * @typedef {Record<string, { events: string }>} EventManifest
+ */

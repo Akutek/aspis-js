@@ -1,12 +1,4 @@
 /**
- * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
- * @typedef {Object} Store
- * @property {function(ReactiveEffect): void} pushEffect - Legt einen Reaktivitäts-Effekt auf den Ausführungs-Stack.
- * @property {function(): void} popEffect - Entfernt den obersten Reaktivitäts-Effekt vom Ausführungs-Stack.
- * @property {function(ReactiveEffect, Set<string>): void} _cleanupEffect - Entfernt die Listener-Registrierungen eines Effekts für gegebene Pfade.
- */
-
-/**
  * Repräsentiert einen reaktiven Effekt im Aspis-Framework, der eine Funktion ausführt,
  * deren gelesene State-Pfade automatisch protokolliert und sich bei State-Änderungen erneut triggern lässt.
  * 
@@ -85,3 +77,11 @@ export class ReactiveEffect {
         this.#trackedPaths.clear();
     }
 }
+
+/**
+ * Interface für den reaktiven Haupt-Store des Aspis-Frameworks.
+ * @typedef {Object} Store
+ * @property {function(ReactiveEffect): void} pushEffect - Legt einen Reaktivitäts-Effekt auf den Ausführungs-Stack.
+ * @property {function(): void} popEffect - Entfernt den obersten Reaktivitäts-Effekt vom Ausführungs-Stack.
+ * @property {function(ReactiveEffect, Set<string>): void} _cleanupEffect - Entfernt die Listener-Registrierungen eines Effekts für gegebene Pfade.
+ */

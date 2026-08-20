@@ -1,4 +1,5 @@
 import { LoggerService } from "./LoggerService.js";
+import { GuardDOM } from "../utils/GuardDOM.js";
 
 /**
  * Zentrale Rendering-Service-Klasse des Aspis-Frameworks.

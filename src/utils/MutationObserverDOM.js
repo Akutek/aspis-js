@@ -1,3 +1,5 @@
+import { BaseObserver } from "./BaseObserver.js";
+import { ScannerDOM } from "./ScannerDOM.js";
 import { LoggerService } from "../services/LoggerService.js";
 
 /**

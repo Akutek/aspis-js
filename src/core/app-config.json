@@ -1,29 +1,16 @@
 {
-    "publicPaths": {
-        "controllers": "/src/controllers",
-        "templates": "/src/templates",
-        "events": "/src/controllers"
+    "settings": {
+        "strictMode": true,
+        "debug": true
     },
-    "components": {
-        "meine-tabelle": {
-            "type": "ControllerTable",
-            "sliceKey": "tableFeature",
-            "events": "table-events.json"
+    "cardinals": {
+        "registry-manifest":{
+            "directory": "/src/manifests",
+            "file": "registry-manifest.json"
         },
-        "wow-filter": {
-            "type": "ControllerDropdown",
-            "sliceKey": "filterFeature",
-            "events": "wow-filter-events.json"
-        },
-        "mein-accordion": {
-            "type": "ControllerAccordion",
-            "sliceKey": "accordionFeature",
-            "events": "accordion-events.json"
-        },
-        "mein-dropdown": {
-            "type": "ControllerDropdownMenu",
-            "sliceKey": "dropdownMenuFeature",
-            "events": "dropdown-events.json"
+        "RegistryManifestHydrator": {
+            "directory": "/src/hydrators",
+            "file": "RegistryManifestHydrator.js"
         }
     }
 }

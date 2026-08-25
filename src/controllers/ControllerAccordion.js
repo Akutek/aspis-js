@@ -4,7 +4,7 @@
 /** @typedef {import("../types/schema.js").AccordionItemView} AccordionItemView */
 /** @typedef {import("../types/schema.js").AccordionView} AccordionView */
 import { SchemaService } from "../services/SchemaService.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorMessage, errorName } from "./BaseController.js";
 /** @extends {AccordionHost} */
 class ControllerAccordion {
@@ -183,13 +183,13 @@ class ControllerAccordion {
     }
     const triggerEl = itemEl.querySelector('[data-target="trigger"]');
     const panelEl = itemEl.querySelector('[data-target="panel"]');
-    ModifierDOM.toggleClass(itemEl, "is-open", Boolean(item.isOpen));
+    ControllerModifierDOM.toggleClass(itemEl, "is-open", Boolean(item.isOpen));
     if (triggerEl) {
-      ModifierDOM.attr(triggerEl, "aria-expanded", item.isOpen);
+      ControllerModifierDOM.attr(triggerEl, "aria-expanded", item.isOpen);
     }
     if (panelEl) {
-      ModifierDOM.toggleClass(panelEl, "is-hidden", !item.isOpen);
-      ModifierDOM.attr(panelEl, "aria-hidden", !item.isOpen);
+      ControllerModifierDOM.toggleClass(panelEl, "is-hidden", !item.isOpen);
+      ControllerModifierDOM.attr(panelEl, "aria-hidden", !item.isOpen);
     }
   }
   async renderAccordion() {
@@ -211,7 +211,7 @@ class ControllerAccordion {
           this._debugMsg("renderAccordion", `HTML f\xFCr '${this._sliceKey}' aktualisiert.`);
         }
       } else {
-        this._warn("renderAccordion", "RenderService fehlt.");
+        this._warn("renderAccordion", "TemplateRenderService fehlt.");
       }
     } catch (error) {
       if (!this.signal.aborted) {

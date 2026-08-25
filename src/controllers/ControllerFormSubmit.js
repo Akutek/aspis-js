@@ -1,6 +1,6 @@
 /** @typedef {import("../types/controllers.js").FormHost} FormHost */
 import { SchemaService } from "../services/SchemaService.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorMessage, errorName } from "./BaseController.js";
 /** @extends {FormHost} */
 class ControllerFormSubmit {
@@ -91,8 +91,8 @@ class ControllerFormSubmit {
       const fieldEl = this._container?.querySelector(`[name="${escapedName}"]`);
       if (fieldEl) {
         const wrapper = fieldEl.closest(".form-group") || fieldEl.parentElement;
-        ModifierDOM.removeClass(wrapper, "has-error");
-        ModifierDOM.removeClass(fieldEl, "is-invalid");
+        ControllerModifierDOM.removeClass(wrapper, "has-error");
+        ControllerModifierDOM.removeClass(fieldEl, "is-invalid");
       }
     });
     if (typeof this.hideFormMessage === "function") {
@@ -106,9 +106,9 @@ class ControllerFormSubmit {
     const submitBtn = this._container.querySelector('[type="submit"]');
     if (submitBtn instanceof HTMLButtonElement || submitBtn instanceof HTMLInputElement) {
       submitBtn.disabled = isSubmitting;
-      ModifierDOM.toggleClass(submitBtn, "is-loading", isSubmitting);
+      ControllerModifierDOM.toggleClass(submitBtn, "is-loading", isSubmitting);
     }
-    ModifierDOM.toggleClass(this._container, "is-submitting", isSubmitting);
+    ControllerModifierDOM.toggleClass(this._container, "is-submitting", isSubmitting);
   }
   focusFirstInvalidField() {
     if (!this._view || !this._container) {

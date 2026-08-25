@@ -2,9 +2,9 @@
 
 /** @typedef {import("./managers.js").PlanItem} PlanItem */
 
-/** @typedef {import("../services/MixinService.js").MixinService} MixinService */
+/** @typedef {import("../services/ComposeMixinService.js").ComposeMixinService} ComposeMixinService */
 
-/** @typedef {import("../services/CompositionService.js").CompositionService} CompositionService */
+/** @typedef {import("../services/ComposeCompositionService.js").ComposeCompositionService} ComposeCompositionService */
 
 /**
  * @typedef {object} LoadTask

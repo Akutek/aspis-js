@@ -4,14 +4,14 @@
 /** @typedef {import("../types/services.js").RenderData} RenderData */
 /** @typedef {import("../types/services.js").TreeCleaner} TreeCleaner */
 import { DebugAgent } from "../agents/DebugAgent.js";
-import { GuardDOM } from "../utils/GuardDOM.js";
-class RenderService {
+import { TemplateGuardDOM } from "../utils/TemplateGuardDOM.js";
+class TemplateRenderService {
   #templates;
   #cleaner;
   /** Wirft, wenn kein `templateService` übergeben wurde. */
   constructor(templateService, cleaner = null) {
     if (!templateService) {
-      throw new Error("Aspis [RenderService]: TemplateService ist erforderlich.");
+      throw new Error("Aspis [TemplateRenderService]: TemplateService ist erforderlich.");
     }
     this.#templates = templateService;
     this.#cleaner = cleaner;
@@ -24,11 +24,11 @@ class RenderService {
    */
   async paste(targetContainer, templateName, data = {}) {
     if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
-      throw new Error("Aspis [RenderService]: Ung\xFCltiges Ziel-Element f\xFCr paste().");
+      throw new Error("Aspis [TemplateRenderService]: Ung\xFCltiges Ziel-Element f\xFCr paste().");
     }
     const element = await this.compile(templateName, data);
     if (!element) {
-      throw new Error(`Aspis [RenderService]: Rendering f\xFCr '${templateName}' fehlgeschlagen.`);
+      throw new Error(`Aspis [TemplateRenderService]: Rendering f\xFCr '${templateName}' fehlgeschlagen.`);
     }
     if (this.#cleaner && typeof this.#cleaner.cleanTree === "function") {
       this.#cleaner.cleanTree(targetContainer);
@@ -43,11 +43,11 @@ class RenderService {
    */
   async append(targetContainer, templateName, data = {}) {
     if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
-      throw new Error("Aspis [RenderService]: Ung\xFCltiges Ziel-Element f\xFCr append().");
+      throw new Error("Aspis [TemplateRenderService]: Ung\xFCltiges Ziel-Element f\xFCr append().");
     }
     const element = await this.compile(templateName, data);
     if (!element) {
-      throw new Error(`Aspis [RenderService]: Rendering f\xFCr '${templateName}' fehlgeschlagen.`);
+      throw new Error(`Aspis [TemplateRenderService]: Rendering f\xFCr '${templateName}' fehlgeschlagen.`);
     }
     const cleanElement = this.#purifyElement(element);
     targetContainer.appendChild(cleanElement);
@@ -69,7 +69,7 @@ class RenderService {
   }
   async loop(templateName, list = []) {
     if (!Array.isArray(list)) {
-      DebugAgent.warn("[RenderService.loop()] Aspis [RenderService]: loop() erwartet ein Array.");
+      DebugAgent.warn("[TemplateRenderService.loop()] Aspis [TemplateRenderService]: loop() erwartet ein Array.");
       return document.createDocumentFragment();
     }
     const fragment = document.createDocumentFragment();
@@ -89,15 +89,15 @@ class RenderService {
    */
   combine(targetContainer, elements = []) {
     if (!targetContainer || !(targetContainer instanceof HTMLElement)) {
-      throw new Error("Aspis [RenderService]: Ung\xFCltiges Ziel-Element f\xFCr combine().");
+      throw new Error("Aspis [TemplateRenderService]: Ung\xFCltiges Ziel-Element f\xFCr combine().");
     }
     const nodeList = Array.isArray(elements) ? elements : [elements];
     targetContainer.replaceChildren(...nodeList);
   }
-  /** Säubert das übergebene DOM-Element über `GuardDOM`, falls vorhanden. */
+  /** Säubert das übergebene DOM-Element über `TemplateGuardDOM`, falls vorhanden. */
   #purifyElement(element) {
-    if (typeof GuardDOM.purify === "function") {
-      const cleanHtml = GuardDOM.purify(element.outerHTML);
+    if (typeof TemplateGuardDOM.purify === "function") {
+      const cleanHtml = TemplateGuardDOM.purify(element.outerHTML);
       const template = document.createElement("template");
       template.innerHTML = cleanHtml;
       return template.content.firstElementChild || element;
@@ -106,5 +106,5 @@ class RenderService {
   }
 }
 export {
-  RenderService
+  TemplateRenderService
 };

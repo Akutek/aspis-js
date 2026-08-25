@@ -1,6 +1,6 @@
 ---
 description: Factory-Phase — SplicerManager, Tailor, spawn
-globs: src/core/Tailor.js,src/extensions/tailor/TailorExtension.js,src/core/Splicer.js,src/extensions/splicer/SplicerExtension.js,src/managers/SplicerManager.js,src/extensions/splicer/SplicerManagerExtension.js,src/managers/FactoryManager.js,src/extensions/factory/FactoryManagerExtension.js,src/managers/ObserverManager.js,src/extensions/observer/ObserverManagerExtension.js,src/managers/ComposeManager.js,src/extensions/compose/ComposeManagerExtension.js,src/managers/ControllerManager.js,src/extensions/controller/ControllerManagerExtension.js,src/services/MixinService.js,src/services/CompositionService.js,src/services/ControllerService.js,src/aspis.js
+globs: src/core/Tailor.js,src/extensions/tailor/TailorExtension.js,src/core/Splicer.js,src/extensions/splicer/SplicerExtension.js,src/managers/SplicerManager.js,src/extensions/splicer/SplicerManagerExtension.js,src/managers/FactoryManager.js,src/extensions/factory/FactoryManagerExtension.js,src/managers/ObserverManager.js,src/extensions/observer/ObserverManagerExtension.js,src/managers/ComposeManager.js,src/extensions/compose/ComposeManagerExtension.js,src/managers/ControllerManager.js,src/extensions/controller/ControllerManagerExtension.js,src/services/ComposeMixinService.js,src/services/ComposeCompositionService.js,src/services/ControllerService.js,src/aspis.js
 alwaysApply: false
 ---
 
@@ -21,7 +21,7 @@ await FactoryManager.factory(registry, spliced);
 
 Factory kennt die Unterphasen nicht. Registry bleibt Landkarte der Hosts (`tailor`, `splicer` wie `scanner`). Snapshots `splicer:current`, `factory:current` / `factory:history` sind Kopien.
 
-**Compose** liefert die Werkzeuge: `MixinService` (Klassen auf die Basis legen, mehr geladene Module) und `CompositionService` (Methoden an **eine** Klasse, keine Extra-Instanz). Specifier der Controller sind die Mixin-Quellen; Composition-Teile kommen später aus der Portion (`compositions`).
+**Compose** liefert die Werkzeuge: `ComposeMixinService` (Klassen auf die Basis legen, mehr geladene Module) und `ComposeCompositionService` (Methoden an **eine** Klasse, keine Extra-Instanz). Specifier der Controller sind die Mixin-Quellen; Composition-Teile kommen später aus der Portion (`compositions`).
 
 **ControllerService** lädt Referenzen über den Importer (`controllers.BaseController`, `controllers.ControllerTable`, …). Selbst kein `new`.
 
@@ -37,7 +37,7 @@ Factory kennt die Unterphasen nicht. Registry bleibt Landkarte der Hosts (`tailo
 
 **Spawn / Mount:** `compared.remove` und `compared.update` → `RegistryManager.unbind` (`destroy`). `update` danach wie `add`: neue Instanz + `start()`. `view` / `near` / `history` → `new Class(element, store, dispatcher, { registry, debug, error })` und `start()`. `far` bleibt ohne Instanz. `keep` mit bestehender Bindung bleibt. Am Knoten: `data-aspis-origin`, `data-aspis-controller`. Live-Set `compare:live` für den nächsten Compare (`add` / `keep` / `update`). Dispatcher faul über Importer (`services.EventDispatcher`), sonst Registry.
 
-**Controller-Mixins:** `ControllerTable`, `ControllerForm` (+ Form-Teile), `ControllerAccordion`, `ControllerDropdown`, `ControllerModal` (+ Host/Content) erben nicht von `BaseController`. Kein Konstruktor, keine `#`-Felder — `MixinService` kopiert nur Prototype-Methoden. Zustand auf der gemischten Instanz (`this._view` in `prepare`, Daten über `SchemaService` nach JSON-Schemas). Fach-Start in `onReady` (Basis ruft das aus `onInit`). Logs über `this._debugMsg` / `this._warn` / `this._capture`. Feldregeln: `FormFieldService.rulesFromElement`.
+**Controller-Mixins:** `ControllerTable`, `ControllerForm` (+ Form-Teile), `ControllerAccordion`, `ControllerDropdown`, `ControllerModal` (+ Host/Content) erben nicht von `BaseController`. Kein Konstruktor, keine `#`-Felder — `ComposeMixinService` kopiert nur Prototype-Methoden. Zustand auf der gemischten Instanz (`this._view` in `prepare`, Daten über `SchemaService` nach JSON-Schemas). Fach-Start in `onReady` (Basis ruft das aus `onInit`). Logs über `this._debugMsg` / `this._warn` / `this._capture`. Feldregeln: `FormFieldService.rulesFromElement`.
 
 Form-Portion: mehrere Specifier (`ControllerFormView`, `Fields`, optional `DropdownSync`/`Validation`/`Render`, `Submit`, zuletzt `ControllerForm`). Simple-Form lässt Validation/Render/Dropdown weg. Modal-Portion: `ControllerModalHost`, `ControllerModalContent`, `ControllerModal`.
 

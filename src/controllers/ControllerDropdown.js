@@ -5,7 +5,7 @@
 /** @typedef {import("../types/schema.js").DropdownView} DropdownView */
 import { SchemaService } from "../services/SchemaService.js";
 import { FormFieldService } from "../services/FormFieldService.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorName } from "./BaseController.js";
 /** @extends {DropdownHost} */
 class ControllerDropdown {
@@ -39,7 +39,7 @@ class ControllerDropdown {
     });
     this.scanDomOptions();
     this.bindDropdownEvents();
-    ModifierDOM.attr(this._container, "aria-expanded", "false");
+    ControllerModifierDOM.attr(this._container, "aria-expanded", "false");
     const url = this._container.dataset.url;
     if (url) {
       await this.loadOptions(url);
@@ -67,7 +67,7 @@ class ControllerDropdown {
     SchemaService.setDropdownOptions(this._view, options);
     const listEl = this._container.querySelector('[data-target="list"]');
     if (listEl) {
-      ModifierDOM.hide(listEl);
+      ControllerModifierDOM.hide(listEl);
     }
   }
   onStateChange(slice) {
@@ -109,8 +109,8 @@ class ControllerDropdown {
     if (!this._container) {
       return;
     }
-    ModifierDOM.attr(this._container, "tabindex", "0");
-    ModifierDOM.attr(this._container, "role", "combobox");
+    ControllerModifierDOM.attr(this._container, "tabindex", "0");
+    ControllerModifierDOM.attr(this._container, "role", "combobox");
     this.delegate("click", '[data-target="trigger"]', () => {
       this.toggle();
     });
@@ -182,10 +182,10 @@ class ControllerDropdown {
     SchemaService.setDropdownOpen(this._view, true);
     const listEl = this._container.querySelector('[data-target="list"]');
     if (listEl) {
-      ModifierDOM.show(listEl);
+      ControllerModifierDOM.show(listEl);
     }
-    ModifierDOM.addClass(this._container, "is-open");
-    ModifierDOM.attr(this._container, "aria-expanded", "true");
+    ControllerModifierDOM.addClass(this._container, "is-open");
+    ControllerModifierDOM.attr(this._container, "aria-expanded", "true");
     this.updateFocusUI();
     if (this._dispatcher && typeof this._dispatcher.onClickOutside === "function") {
       this._clickOutsideUnsub = this._dispatcher.onClickOutside(this._container, () => this.close());
@@ -198,10 +198,10 @@ class ControllerDropdown {
     SchemaService.setDropdownOpen(this._view, false);
     const listEl = this._container.querySelector('[data-target="list"]');
     if (listEl) {
-      ModifierDOM.hide(listEl);
+      ControllerModifierDOM.hide(listEl);
     }
-    ModifierDOM.removeClass(this._container, "is-open");
-    ModifierDOM.attr(this._container, "aria-expanded", "false");
+    ControllerModifierDOM.removeClass(this._container, "is-open");
+    ControllerModifierDOM.attr(this._container, "aria-expanded", "false");
     if (this._clickOutsideUnsub) {
       this._clickOutsideUnsub();
       this._clickOutsideUnsub = null;
@@ -237,12 +237,12 @@ class ControllerDropdown {
       return;
     }
     const isValid = SchemaService.validateDropdown(this._view);
-    ModifierDOM.toggleClass(this._container, "is-invalid", !isValid);
-    ModifierDOM.toggleClass(this._container, "is-valid", isValid && this._view.value !== "");
+    ControllerModifierDOM.toggleClass(this._container, "is-invalid", !isValid);
+    ControllerModifierDOM.toggleClass(this._container, "is-valid", isValid && this._view.value !== "");
     const errorEl = this._container.querySelector('[data-target="error"]');
     if (errorEl) {
       errorEl.textContent = this._view.error || "";
-      ModifierDOM.toggleClass(errorEl, "is-hidden", isValid);
+      ControllerModifierDOM.toggleClass(errorEl, "is-hidden", isValid);
     }
   }
   updateFocusUI() {
@@ -253,7 +253,7 @@ class ControllerDropdown {
     const optionEls = this._container.querySelectorAll("[data-option-value]");
     optionEls.forEach((el, idx) => {
       const isFocused = idx === view.focusedIndex;
-      ModifierDOM.toggleClass(el, "is-focused", isFocused);
+      ControllerModifierDOM.toggleClass(el, "is-focused", isFocused);
       if (isFocused && el instanceof HTMLElement) {
         el.scrollIntoView({ block: "nearest" });
       }
@@ -290,7 +290,7 @@ class ControllerDropdown {
       if (renderService && typeof renderService.paste === "function") {
         await renderService.paste(this._container, templateName, SchemaService.toRenderData(this._view));
       } else {
-        this._warn("renderDropdown", "RenderService fehlt.");
+        this._warn("renderDropdown", "TemplateRenderService fehlt.");
       }
     } catch (error) {
       if (!this.signal.aborted) {

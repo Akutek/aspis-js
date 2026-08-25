@@ -1,6 +1,6 @@
 import { DebugAgent } from "../agents/DebugAgent.js";
 import { RuntimeEnv } from "../core/RuntimeEnv.js";
-class DataFetcher {
+class ControllerDataFetcher {
   #defaultTimeoutMs;
   constructor(defaultTimeoutMs = 8e3) {
     this.#defaultTimeoutMs = defaultTimeoutMs;
@@ -15,7 +15,7 @@ class DataFetcher {
       body = null
     } = options;
     if (!url || typeof url !== "string") {
-      throw new Error("DataFetcher: Keine g\xFCltige URL \xFCbergeben.");
+      throw new Error("ControllerDataFetcher: Keine g\xFCltige URL \xFCbergeben.");
     }
     const endpointUrl = new URL(url, RuntimeEnv.origin());
     Object.entries(params).forEach(([key, value]) => {
@@ -78,15 +78,15 @@ class DataFetcher {
     } catch (error) {
       const err = error;
       if (err.name === "TimeoutError") {
-        DebugAgent.warn(`[DataFetcher.request()] Request auf '${url}' \xFCberschritt das Timeout von ${timeout}ms.`);
+        DebugAgent.warn(`[ControllerDataFetcher.request()] Request auf '${url}' \xFCberschritt das Timeout von ${timeout}ms.`);
         return null;
       }
       if (err.name === "AbortError") {
         const reason = combinedSignal.reason || signal?.reason || "Abgebrochen";
-        DebugAgent.info(`[DataFetcher.request()] Request auf '${url}' storniert -> Grund: ${reason}`);
+        DebugAgent.info(`[ControllerDataFetcher.request()] Request auf '${url}' storniert -> Grund: ${reason}`);
         return null;
       }
-      DebugAgent.error(`[DataFetcher.request()] Fehler bei ${method} ${url}:`, error);
+      DebugAgent.error(`[ControllerDataFetcher.request()] Fehler bei ${method} ${url}:`, error);
       throw error;
     }
   }
@@ -104,5 +104,5 @@ class DataFetcher {
   }
 }
 export {
-  DataFetcher
+  ControllerDataFetcher
 };

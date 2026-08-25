@@ -3,7 +3,7 @@
 /** @typedef {import("../types/controllers.js").ModalHost} ModalHost */
 /** @typedef {import("../types/schema.js").ModalView} ModalView */
 import { SchemaService } from "../services/SchemaService.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 /** @extends {ModalHost} */
 class ControllerModal {
 
@@ -141,10 +141,10 @@ class ControllerModal {
     if (!root || !this._view || SchemaService.isLoader(this._view)) {
       return;
     }
-    ModifierDOM.toggleClass(root, "is-open", this._view.isOpen);
-    ModifierDOM.attr(root, "aria-hidden", !this._view.isOpen);
+    ControllerModifierDOM.toggleClass(root, "is-open", this._view.isOpen);
+    ControllerModifierDOM.attr(root, "aria-hidden", !this._view.isOpen);
     if (this._container && this._container !== root) {
-      ModifierDOM.toggleClass(this._container, "is-open", this._view.isOpen);
+      ControllerModifierDOM.toggleClass(this._container, "is-open", this._view.isOpen);
     }
   }
   onDestroy() {

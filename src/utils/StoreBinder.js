@@ -4,9 +4,9 @@
 /** @typedef {import("../types/utils.js").ResolvedTargetsMap} ResolvedTargetsMap */
 /** @typedef {import("../types/utils.js").UnsubscribeFunction} UnsubscribeFunction */
 import { DebugAgent } from "../agents/DebugAgent.js";
-import { ManifestTargetResolver } from "./ManifestTargetResolver.js";
-import { ModifierDOM } from "./ModifierDOM.js";
-class ManifestBinder {
+import { StoreTargetResolver } from "./StoreTargetResolver.js";
+import { ControllerModifierDOM } from "./ControllerModifierDOM.js";
+class StoreBinder {
   #container;
   #store;
   #sliceKey;
@@ -23,7 +23,7 @@ class ManifestBinder {
     const targetsConfig = slice?.config?.targets;
     const stylesConfig = slice?.config?.styles;
     if (!targetsConfig || !stylesConfig) return;
-    this.#resolvedTargets = ManifestTargetResolver.resolve(this.#container, targetsConfig);
+    this.#resolvedTargets = StoreTargetResolver.resolve(this.#container, targetsConfig);
     Object.entries(targetsConfig).forEach(([targetName, targetConfig]) => {
       const element = this.#resolvedTargets.get(targetName);
       if (!element || !targetConfig.bindClasses) return;
@@ -33,20 +33,20 @@ class ManifestBinder {
         const unsub = this.#store.effect(() => {
           const currentSlice = this.#store.getSlice(this.#sliceKey);
           const isConditionMet = !!currentSlice[stateProp];
-          ModifierDOM.toggleClass(element, className, isConditionMet);
+          ControllerModifierDOM.toggleClass(element, className, isConditionMet);
         });
         this.#unsubscribeEffects.push(unsub);
       });
     });
-    DebugAgent.info(`[ManifestBinder.bind()] Auto-Bindings f\xFCr '${this.#sliceKey}' erfolgreich etabliert.`);
+    DebugAgent.info(`[StoreBinder.bind()] Auto-Bindings f\xFCr '${this.#sliceKey}' erfolgreich etabliert.`);
   }
   unbind() {
     this.#unsubscribeEffects.forEach((unsub) => unsub());
     this.#unsubscribeEffects = [];
     this.#resolvedTargets.clear();
-    DebugAgent.info(`[ManifestBinder.unbind()] Auto-Bindings f\xFCr '${this.#sliceKey}' sauber gel\xF6st.`);
+    DebugAgent.info(`[StoreBinder.unbind()] Auto-Bindings f\xFCr '${this.#sliceKey}' sauber gel\xF6st.`);
   }
 }
 export {
-  ManifestBinder
+  StoreBinder
 };

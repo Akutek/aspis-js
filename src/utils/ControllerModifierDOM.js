@@ -10,7 +10,7 @@ function isDomElement(value) {
   }
   return "nodeType" in value && value.nodeType === 1;
 }
-class ModifierDOM {
+class ControllerModifierDOM {
   static #isValid(target) {
     return isDomElement(target);
   }
@@ -99,5 +99,5 @@ class ModifierDOM {
   }
 }
 export {
-  ModifierDOM
+  ControllerModifierDOM
 };

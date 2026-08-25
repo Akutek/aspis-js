@@ -19,9 +19,9 @@ import { RouteIndexHydrator } from "../hydrators/RouteIndexHydrator.js";
 import { EventManifestHydrator } from "../hydrators/EventManifestHydrator.js";
 import { StoreExtension } from "../extensions/store/StoreExtension.js";
 import { TemplateService } from "../services/TemplateService.js";
-import { RenderService } from "../services/RenderService.js";
+import { TemplateRenderService } from "../services/TemplateRenderService.js";
 import { EventDispatcher } from "../services/EventDispatcher.js";
-import { DataFetcher } from "../services/DataFetcher.js";
+import { ControllerDataFetcher } from "../services/ControllerDataFetcher.js";
 import { ControllerCleaner } from "../services/ControllerCleaner.js";
 import { SchemaCatalog } from "../services/schema/SchemaCatalog.js";
 import { TemplateCatalog } from "../services/template/TemplateCatalog.js";
@@ -118,9 +118,9 @@ class BootManager extends BaseManager {
       );
       CacheManager.set(cache, "manifest:events", eventManifest);
       RegistryManager.register(registry, "eventManifest", eventManifest);
-      const renderService = new RenderService(templates, cleaner);
+      const renderService = new TemplateRenderService(templates, cleaner);
       RegistryManager.register(registry, {
-        fetcher: new DataFetcher(),
+        fetcher: new ControllerDataFetcher(),
         dispatcher: new EventDispatcher(eventManifest),
         cleaner,
         templates,

@@ -32,6 +32,16 @@ const registry = await start();
 
 Kein npm-Paket, kein Vite, kein Node. Einbindung: relatives `./src/aspis.js` derselben Origin.
 
+## Typen (IDE)
+
+Geteilte Formen liegen in `src/types/` als JSDoc-`@typedef`. Cursor prüft über `jsconfig.json` (`checkJs`, kein Emit, kein Node-`@types`). Der Browser sieht nur `.js`. Im Code die Form nicht wiederholen, nur verweisen:
+
+```js
+/** @param {import("./types/registry.js").Registry} registry */
+```
+
+Kein `types.d.ts`, kein `tsconfig.json`. Factory-Mixins (Table, Form, Modal, Accordion, Dropdown) sind in `jsconfig.json` ausgenommen: `ComposeMixinService` kopiert Methoden, `checkJs` folgt dem Mix nicht.
+
 ## Pfade
 
 Manifest-, Import- und Fetch-Pfade über `AssetPath` (`src/core/AssetPath.js`):

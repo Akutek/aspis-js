@@ -1,6 +1,6 @@
 /** @typedef {import("../types/controllers.js").FormHost} FormHost */
 import { SchemaService } from "../services/SchemaService.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 /** @extends {FormHost} */
 class ControllerFormValidation {
   updateFieldUI(name) {
@@ -18,13 +18,13 @@ class ControllerFormValidation {
     }
     const wrapper = fieldEl.closest(".form-group") || fieldEl.parentElement;
     const hasError = Boolean(field.error && field.isTouched);
-    ModifierDOM.toggleClass(wrapper, "has-error", hasError);
-    ModifierDOM.toggleClass(fieldEl, "is-invalid", hasError);
-    ModifierDOM.attr(fieldEl, "aria-invalid", hasError);
+    ControllerModifierDOM.toggleClass(wrapper, "has-error", hasError);
+    ControllerModifierDOM.toggleClass(fieldEl, "is-invalid", hasError);
+    ControllerModifierDOM.attr(fieldEl, "aria-invalid", hasError);
     const errorEl = wrapper?.querySelector('[data-target="field-error"]') || wrapper?.querySelector(".error-message");
     if (errorEl) {
       errorEl.textContent = hasError ? field.error : "";
-      ModifierDOM.toggleClass(errorEl, "is-hidden", !hasError);
+      ControllerModifierDOM.toggleClass(errorEl, "is-hidden", !hasError);
     }
   }
   showFormMessage(msg, type = "error") {
@@ -36,8 +36,8 @@ class ControllerFormValidation {
       return;
     }
     msgEl.textContent = msg;
-    ModifierDOM.removeClass(msgEl, "is-hidden success error");
-    ModifierDOM.addClass(msgEl, type);
+    ControllerModifierDOM.removeClass(msgEl, "is-hidden success error");
+    ControllerModifierDOM.addClass(msgEl, type);
   }
   hideFormMessage() {
     if (!this._container) {
@@ -45,7 +45,7 @@ class ControllerFormValidation {
     }
     const msgEl = this._container.querySelector('[data-target="form-message"]');
     if (msgEl) {
-      ModifierDOM.addClass(msgEl, "is-hidden");
+      ControllerModifierDOM.addClass(msgEl, "is-hidden");
     }
   }
 }

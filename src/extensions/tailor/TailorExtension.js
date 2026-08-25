@@ -5,8 +5,8 @@ import { BaseExtension } from "../BaseExtension.js";
 import { DebugAgent } from "../../agents/DebugAgent.js";
 import { ErrorAgent } from "../../agents/ErrorAgent.js";
 import { RegistryManager } from "../../managers/RegistryManager.js";
-import { MixinService } from "../../services/MixinService.js";
-import { CompositionService } from "../../services/CompositionService.js";
+import { ComposeMixinService } from "../../services/ComposeMixinService.js";
+import { ComposeCompositionService } from "../../services/ComposeCompositionService.js";
 class TailorExtension extends BaseExtension {
   static prepare(tailor) {
     super.prepare(tailor, {
@@ -40,8 +40,8 @@ class TailorExtension extends BaseExtension {
     if (!tailor.runtime) {
       this.prepare(tailor);
     }
-    const mixinService = tools.mixin || MixinService;
-    const compositionService = tools.composition || CompositionService;
+    const mixinService = tools.mixin || ComposeMixinService;
+    const compositionService = tools.composition || ComposeCompositionService;
     if (this.steps(tailor).length > 0) {
       return this;
     }
@@ -67,7 +67,7 @@ class TailorExtension extends BaseExtension {
     if (!tailor.runtime) {
       this.prepare(tailor);
     }
-    const seed = context && typeof context === "object" ? { ...context, Class: context.Class || context.Base || null } : { Base: null, mixins: [], compositions: [], mode: "full", Class: null, mixinService: MixinService, compositionService: CompositionService };
+    const seed = context && typeof context === "object" ? { ...context, Class: context.Class || context.Base || null } : { Base: null, mixins: [], compositions: [], mode: "full", Class: null, mixinService: ComposeMixinService, compositionService: ComposeCompositionService };
     const run = this.#pipeline(this.steps(tailor), (current) => current);
     const result = run(seed);
     return result && typeof result.Class === "function" ? result.Class : null;

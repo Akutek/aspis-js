@@ -1,7 +1,7 @@
 /** @typedef {import("../types/utils.js").TargetsConfig} TargetsConfig */
 /** @typedef {import("../types/utils.js").ResolvedTargetsMap} ResolvedTargetsMap */
 import { DebugAgent } from "../agents/DebugAgent.js";
-class ManifestTargetResolver {
+class StoreTargetResolver {
   static resolve(container, targetsConfig) {
     const resolvedTargets = /* @__PURE__ */ new Map();
     if (!targetsConfig || !(container instanceof HTMLElement)) return resolvedTargets;
@@ -16,12 +16,12 @@ class ManifestTargetResolver {
       if (element instanceof HTMLElement) {
         resolvedTargets.set(targetName, element);
       } else {
-        DebugAgent.warn(`[ManifestTargetResolver.resolve()] Element f\xFCr Selektor '${config.selector}' nicht im DOM gefunden.`);
+        DebugAgent.warn(`[StoreTargetResolver.resolve()] Element f\xFCr Selektor '${config.selector}' nicht im DOM gefunden.`);
       }
     });
     return resolvedTargets;
   }
 }
 export {
-  ManifestTargetResolver
+  StoreTargetResolver
 };

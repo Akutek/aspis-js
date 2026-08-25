@@ -14,8 +14,8 @@ import { RegistryManager } from "../../managers/RegistryManager.js";
 import { CacheManager } from "../../managers/CacheManager.js";
 import { CompareManager } from "../../managers/CompareManager.js";
 import { DebugErrorManager } from "../../managers/DebugErrorManager.js";
-import { MixinService } from "../../services/MixinService.js";
-import { CompositionService } from "../../services/CompositionService.js";
+import { ComposeMixinService } from "../../services/ComposeMixinService.js";
+import { ComposeCompositionService } from "../../services/ComposeCompositionService.js";
 import { DebugAgent } from "../../agents/DebugAgent.js";
 import { ErrorAgent } from "../../agents/ErrorAgent.js";
 import { ObserverManagerExtension } from "../observer/ObserverManagerExtension.js";
@@ -36,7 +36,7 @@ class FactoryManagerExtension {
     return { skipped: true, specifiers: [], queue: ObserverManagerExtension.emptyQueue() };
   }
   static emptyCompose() {
-    return { items: [], mixin: MixinService, composition: CompositionService };
+    return { items: [], mixin: ComposeMixinService, composition: ComposeCompositionService };
   }
   static emptyControllers() {
     return { specifiers: [], classes: {} };
@@ -76,8 +76,8 @@ class FactoryManagerExtension {
       },
       compose: {
         items: Array.isArray(compose.items) ? compose.items.slice() : [],
-        mixin: typeof compose.mixin === "function" ? compose.mixin : MixinService,
-        composition: typeof compose.composition === "function" ? compose.composition : CompositionService
+        mixin: typeof compose.mixin === "function" ? compose.mixin : ComposeMixinService,
+        composition: typeof compose.composition === "function" ? compose.composition : ComposeCompositionService
       },
       controllers: {
         specifiers: Array.isArray(controllers.specifiers) ? controllers.specifiers.slice() : [],

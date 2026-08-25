@@ -10,7 +10,7 @@ Ausbau des **bezogenen** Hosts oder Kapitels (`prepare` / `apply` / `graft` / `e
 
 Alles unter `src/extensions/<was-sie-erweitern>/`. Der Ordnername ist das Erweiterte. Hosts und Phasen-Manager importieren von dort.
 
-Datei = Klassenname. Präfix = Host oder Familie: `Scanner` + `ScannerExtension` + `ScannerDOM`, `Importer` + `ImporterExtension`, `CompareManager` + `CompareManagerExtension`, `BaseWatcher` + `BaseWatcherExtension`, `ControllerTable` / `ControllerDropdown`, `StoreDomDependencyScanner`, `ManifestBinder` + `ManifestTargetResolver`, `ControllerLoadingHelper`, `ControllerCleaner`.
+Datei = Klassenname. Präfix = Host oder Familie: `Scanner` + `ScannerExtension` + `ScannerDOM`, `Importer` + `ImporterExtension`, `CompareManager` + `CompareManagerExtension`, `BaseWatcher` + `BaseWatcherExtension`, `ControllerTable` / `ControllerDropdown`, `StoreDomDependencyScanner`, `StoreBinder` + `StoreTargetResolver`, `ControllerLoadingHelper`, `ControllerCleaner`, `TemplateGuardDOM`, `ControllerModifierDOM`.
 
 `BaseExtension`: `prepare`, `apply`, `graft`, `use`, `install`, `load`, `expand`. Zustandslos. Hosts halten `runtime`, `manifest`, `extension`. Pipeline-Name: `static get pipelineKey()`.
 

@@ -4,7 +4,7 @@
 /** @typedef {import("../types/services.js").FormValues} FormValues */
 /** @typedef {import("../types/services.js").RuleConfigObject} RuleConfigObject */
 /** @typedef {import("../types/services.js").ValidationRuleFn} ValidationRuleFn */
-class ValidationService {
+class FormValidationService {
   static #rules = {
     required: (value) => {
       if (value === null || value === void 0) return false;
@@ -73,5 +73,5 @@ class ValidationService {
   }
 }
 export {
-  ValidationService
+  FormValidationService
 };

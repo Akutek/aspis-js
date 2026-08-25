@@ -41,7 +41,7 @@ Keine Umbenennung.
 
 Demo ist natives Browser-ESM: `index.html` → `src/entry.js`. Lokal `php -S localhost:8080`. lima-city: `index.html`, `src/`, `.htaccess`. Kein npm-Paket, kein Vite, kein Node.
 
-Typen: JSDoc (`@typedef` in `src/types/`). `jsconfig.json` ist IDE-Hilfe, kein Laufzwang.
+Typen: JSDoc (`@typedef` in `src/types/`). `jsconfig.json` prüft in der IDE (`checkJs`, `noEmit`). Kein `types.d.ts`, kein `tsconfig.json`.
 
 Runtime: `BootManager.boot()` einmal (Debug/Error → Cache → Registry+Store → Importer → Manifeste). Danach `runCycle(registry)`, in der Registry als `cycle` für den MutationWatcher.
 
@@ -104,7 +104,7 @@ Root-JSON: `version: "1"` in `registry-manifest.json` und `app-config.json`. Sta
 Kein Umbau der Namen Manager/Extension.
 
 - `TemplateService` bleibt Host (Cache + Compile). Katalog, URL-Auflösung und Laden von JSON/HTML: `TemplateCatalog`. Template-JSON über `TemplateManifestHydrator`. Typen: `src/types/templates.js`. Index über `RouteIndexHydrator`.
-- `SchemaCatalog.load` im Boot (`manifestRouting.schemas`): Index plus Portionen über `SchemaManifestHydrator`. `SchemaService` bleibt Normalizer. `ValidationService` / `FormFieldService` unverändert.
+- `SchemaCatalog.load` im Boot (`manifestRouting.schemas`): Index plus Portionen über `SchemaManifestHydrator`. `SchemaService` bleibt Normalizer. `FormValidationService` / `FormFieldService` unverändert.
 
 ---
 

@@ -7,7 +7,7 @@
 /** @typedef {import("../types/templates.js").CompilePayload} CompilePayload */
 /** @typedef {import("./template/TemplateCatalog.js").TemplateRoute} TemplateRoute */
 import { DebugAgent } from "../agents/DebugAgent.js";
-import { GuardDOM } from "../utils/GuardDOM.js";
+import { TemplateGuardDOM } from "../utils/TemplateGuardDOM.js";
 import { TemplateCatalog } from "./template/TemplateCatalog.js";
 class TemplateService {
   #cache = /* @__PURE__ */ new Map();
@@ -212,15 +212,15 @@ class TemplateService {
   }
   /**
    * Standard-Sanitizer zur Vorbeugung von XSS-Schwachstellen.
-   * Nutzt `GuardDOM` falls vorhanden oder führt ein HTML-Entities-Escaping durch.
+   * Nutzt `TemplateGuardDOM` falls vorhanden oder führt ein HTML-Entities-Escaping durch.
    */
   #defaultSanitizer(val) {
     const text = val === null || val === void 0 ? "" : typeof val === "string" || typeof val === "number" || typeof val === "boolean" ? val : String(val);
-    if (typeof GuardDOM.clean === "function") {
-      return String(GuardDOM.clean(text));
+    if (typeof TemplateGuardDOM.clean === "function") {
+      return String(TemplateGuardDOM.clean(text));
     }
-    if (typeof GuardDOM.purify === "function") {
-      return String(GuardDOM.purify(String(text)));
+    if (typeof TemplateGuardDOM.purify === "function") {
+      return String(TemplateGuardDOM.purify(String(text)));
     }
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
   }

@@ -1,23 +1,33 @@
-﻿{
+{
     "PriorityQueueService": {
         "directory": "services",
         "file": "PriorityQueueService.js",
         "export": "PriorityQueueService"
     },
-    "MixinService": {
+    "ComposeMixinService": {
         "directory": "services",
-        "file": "MixinService.js",
-        "export": "MixinService"
+        "file": "ComposeMixinService.js",
+        "export": "ComposeMixinService"
     },
-    "CompositionService": {
+    "ComposeCompositionService": {
         "directory": "services",
-        "file": "CompositionService.js",
-        "export": "CompositionService"
+        "file": "ComposeCompositionService.js",
+        "export": "ComposeCompositionService"
     },
     "ControllerService": {
         "directory": "services",
         "file": "ControllerService.js",
         "export": "ControllerService"
+    },
+    "ControllerDataFetcher": {
+        "directory": "services",
+        "file": "ControllerDataFetcher.js",
+        "export": "ControllerDataFetcher"
+    },
+    "ControllerCleaner": {
+        "directory": "services",
+        "file": "ControllerCleaner.js",
+        "export": "ControllerCleaner"
     },
     "EventDispatcher": {
         "directory": "services",
@@ -29,25 +39,25 @@
         "file": "SchemaService.js",
         "export": "SchemaService"
     },
-    "DataFetcher": {
-        "directory": "services",
-        "file": "DataFetcher.js",
-        "export": "DataFetcher"
+    "SchemaCatalog": {
+        "directory": "services/schema",
+        "file": "SchemaCatalog.js",
+        "export": "SchemaCatalog"
     },
     "FormFieldService": {
         "directory": "services",
         "file": "FormFieldService.js",
         "export": "FormFieldService"
     },
-    "ValidationService": {
+    "FormValidationService": {
         "directory": "services",
-        "file": "ValidationService.js",
-        "export": "ValidationService"
+        "file": "FormValidationService.js",
+        "export": "FormValidationService"
     },
-    "RenderService": {
+    "TemplateRenderService": {
         "directory": "services",
-        "file": "RenderService.js",
-        "export": "RenderService"
+        "file": "TemplateRenderService.js",
+        "export": "TemplateRenderService"
     },
     "TemplateService": {
         "directory": "services",
@@ -59,11 +69,6 @@
         "file": "TemplateCatalog.js",
         "export": "TemplateCatalog"
     },
-    "SchemaCatalog": {
-        "directory": "services/schema",
-        "file": "SchemaCatalog.js",
-        "export": "SchemaCatalog"
-    },
     "ManifestLoaderService": {
         "directory": "services",
         "file": "ManifestLoaderService.js",
@@ -73,10 +78,5 @@
         "directory": "services",
         "file": "CacheSearchPatternService.js",
         "export": "CacheSearchPatternService"
-    },
-    "ControllerCleaner": {
-        "directory": "services",
-        "file": "ControllerCleaner.js",
-        "export": "ControllerCleaner"
     }
 }

@@ -33,7 +33,7 @@ class ControllerModalHost {
     }
     this._modalRoot = this._container;
     this._modalMountedOnBody = false;
-    this._warn("mountModal", "RenderService fehlt, Modal bleibt im Controller-Knoten.");
+    this._warn("mountModal", "TemplateRenderService fehlt, Modal bleibt im Controller-Knoten.");
   }
 }
 export {

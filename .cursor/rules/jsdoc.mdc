@@ -6,4 +6,4 @@ alwaysApply: false
 
 # JSDoc
 
-Typen und geteilte `@typedef`s liegen in JSDoc (`src/types`, Methodensignaturen). Prüfung über `checkJs`. Die Regel: `ssot-types.mdc`.
+Typen und geteilte `@typedef`s liegen in JSDoc (`src/types`, Methodensignaturen). Prüfung über `jsconfig.json` (`checkJs`). Kein `types.d.ts`. Die Regel: `ssot-types.mdc`.

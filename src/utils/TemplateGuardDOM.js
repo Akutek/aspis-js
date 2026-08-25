@@ -1,6 +1,6 @@
 import { DebugAgent } from "../agents/DebugAgent.js";
 import { RuntimeEnv } from "../core/RuntimeEnv.js";
-class GuardDOM {
+class TemplateGuardDOM {
   /**
    * Konvertiert unsichere Eingaben in HTML-escapeten Text.
    * `boolean` und `number` bleiben unverändert, `null` und `undefined` werden `""`.
@@ -58,7 +58,7 @@ class GuardDOM {
       const tagName = element.tagName.toUpperCase();
       if (forbiddenTags.has(tagName)) {
         element.remove();
-        DebugAgent.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Gef\xE4hrlicher Tag <${tagName.toLowerCase()}> wurde entfernt.`);
+        DebugAgent.warn(`[TemplateGuardDOM.purify()] Aspis [TemplateGuardDOM]: Gef\xE4hrlicher Tag <${tagName.toLowerCase()}> wurde entfernt.`);
         return;
       }
       const attributeNames = element.getAttributeNames ? element.getAttributeNames() : Array.from(element.attributes).map((a) => a.name);
@@ -68,14 +68,14 @@ class GuardDOM {
         const normalizedValue = rawAttrValue.replace(/[\x00-\x20\x7F-\x9F]/g, "").toLowerCase();
         if (lowerAttrName.startsWith("on")) {
           element.removeAttribute(attrName);
-          DebugAgent.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Event-Handler '${attrName}' entfernt.`);
+          DebugAgent.warn(`[TemplateGuardDOM.purify()] Aspis [TemplateGuardDOM]: Event-Handler '${attrName}' entfernt.`);
           return;
         }
         if (uriAttributes.has(lowerAttrName) || lowerAttrName.endsWith(":href")) {
           const isDangerousProtocol = normalizedValue.startsWith("javascript:") || normalizedValue.startsWith("vbscript:") || normalizedValue.startsWith("data:text/html") || normalizedValue.startsWith("data:image/svg+xml") || normalizedValue.startsWith("data:application/");
           if (isDangerousProtocol) {
             element.setAttribute(attrName, "#");
-            DebugAgent.warn(`[GuardDOM.purify()] Aspis [GuardDOM]: Unsichere URL in '${attrName}' auf '#' zur\xFCckgesetzt.`);
+            DebugAgent.warn(`[TemplateGuardDOM.purify()] Aspis [TemplateGuardDOM]: Unsichere URL in '${attrName}' auf '#' zur\xFCckgesetzt.`);
           }
         }
       });
@@ -84,5 +84,5 @@ class GuardDOM {
   }
 }
 export {
-  GuardDOM
+  TemplateGuardDOM
 };

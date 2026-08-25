@@ -7,8 +7,8 @@
 /** @typedef {import("../types/schema.js").LoaderView} LoaderView */
 /** @typedef {import("../types/schema.js").ModalView} ModalView */
 /** @typedef {import("../types/schema.js").TableView} TableView */
-import { GuardDOM } from "../utils/GuardDOM.js";
-import { ValidationService } from "./ValidationService.js";
+import { TemplateGuardDOM } from "../utils/TemplateGuardDOM.js";
+import { FormValidationService } from "./FormValidationService.js";
 import { FormFieldService } from "./FormFieldService.js";
 import { SchemaCatalog } from "./schema/SchemaCatalog.js";
 function asRecord(value) {
@@ -220,7 +220,7 @@ class SchemaService {
     if (markTouched) {
       field.isTouched = true;
     }
-    field.error = ValidationService.validateField(field.value, field.rules);
+    field.error = FormValidationService.validateField(field.value, field.rules);
     return view;
   }
   static field(view, name) {
@@ -251,7 +251,7 @@ class SchemaService {
     Object.keys(fields).forEach((name) => {
       const field = fields[name];
       field.isTouched = true;
-      field.error = ValidationService.validateField(field.value, field.rules);
+      field.error = FormValidationService.validateField(field.value, field.rules);
     });
     return this.formIsValid(view);
   }
@@ -440,7 +440,7 @@ class SchemaService {
     if (!this.isDropdown(view)) {
       return true;
     }
-    view.error = ValidationService.validateField(view.value, view.rules || {});
+    view.error = FormValidationService.validateField(view.value, view.rules || {});
     return !view.error;
   }
   static selectedDropdownOption(view) {
@@ -451,7 +451,7 @@ class SchemaService {
   }
   static #clean(data) {
     if (typeof data === "string") {
-      return GuardDOM.clean(data);
+      return TemplateGuardDOM.clean(data);
     }
     if (Array.isArray(data)) {
       return data.map((item) => this.#clean(item));
@@ -468,9 +468,9 @@ class SchemaService {
   }
   static #text(value) {
     if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-      return String(GuardDOM.clean(value));
+      return String(TemplateGuardDOM.clean(value));
     }
-    return String(GuardDOM.clean(value == null ? "" : String(value)));
+    return String(TemplateGuardDOM.clean(value == null ? "" : String(value)));
   }
   static #progress(percent) {
     const value = Number(percent);

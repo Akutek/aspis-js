@@ -6,6 +6,10 @@
         "moduleResolution": "bundler",
         "checkJs": true,
         "allowJs": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "maxNodeModuleJsDepth": 0,
+        "types": [],
         "strict": false,
         "noImplicitAny": false,
         "noImplicitThis": false,
@@ -17,9 +21,6 @@
         "noUnusedParameters": false,
         "noUncheckedIndexedAccess": false,
         "exactOptionalPropertyTypes": false,
-        "noEmit": true,
-        "skipLibCheck": true,
-        "maxNodeModuleJsDepth": 0,
         "forceConsistentCasingInFileNames": true
     },
     "include": ["src/**/*.js"],
@@ -37,5 +38,8 @@
         "src/controllers/ControllerModal.js",
         "src/controllers/ControllerModalHost.js",
         "src/controllers/ControllerModalContent.js"
-    ]
+    ],
+    "typeAcquisition": {
+        "enable": false
+    }
 }

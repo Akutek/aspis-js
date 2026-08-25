@@ -14,7 +14,7 @@ import { ErrorAgent } from "../agents/ErrorAgent.js";
 import { ControllerEventDelegator } from "../utils/ControllerEventDelegator.js";
 import { ControllerLoadingHelper } from "../utils/ControllerLoadingHelper.js";
 import { StoreDomDependencyScanner } from "../utils/StoreDomDependencyScanner.js";
-import { ModifierDOM } from "../utils/ModifierDOM.js";
+import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 class BaseController {
   /** @type {Store | null} */
   _store;
@@ -251,8 +251,8 @@ class BaseController {
         }
         for (const [stateProp, styleKey] of Object.entries(targetConfig.bindClasses)) {
           const isActive = Boolean(slice[stateProp]);
-          if (typeof ModifierDOM.toggleSliceClass === "function") {
-            ModifierDOM.toggleSliceClass(element, slice, styleKey, isActive);
+          if (typeof ControllerModifierDOM.toggleSliceClass === "function") {
+            ControllerModifierDOM.toggleSliceClass(element, slice, styleKey, isActive);
           }
         }
       }

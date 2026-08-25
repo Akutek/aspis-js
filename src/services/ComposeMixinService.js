@@ -1,5 +1,5 @@
 /** @typedef {import("../types/services.js").AnyConstructor} AnyConstructor */
-class MixinService {
+class ComposeMixinService {
   static mix(Base, mixins = []) {
     if (typeof Base !== "function") {
       return null;
@@ -43,5 +43,5 @@ class MixinService {
   }
 }
 export {
-  MixinService
+  ComposeMixinService
 };

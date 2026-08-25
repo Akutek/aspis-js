@@ -1,5 +1,5 @@
 /** @typedef {import("../types/services.js").AnyConstructor} AnyConstructor */
-class CompositionService {
+class ComposeCompositionService {
   static compose(Base, parts = []) {
     if (typeof Base !== "function") {
       return null;
@@ -32,5 +32,5 @@ class CompositionService {
   }
 }
 export {
-  CompositionService
+  ComposeCompositionService
 };

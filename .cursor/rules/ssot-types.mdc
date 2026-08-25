@@ -8,9 +8,9 @@ alwaysApply: true
 
 Gilt für `*.js`.
 
-**Typen liegen in JSDoc.** `{string}`, `{number}`, `{boolean}`, `{Promise<T>}`, `@param {…}`, `@returns {…}`, `@type {…}`, `@typedef`, `@template` sind die Typquelle. Geteilte Formen in `src/types/*.js` als `@typedef` (kein `export type`). Prüfung: `jsconfig.json` mit `checkJs` in der IDE. TypeScript bleibt nur der Checker, nicht die Runtime-Sprache. Kein npm, kein `tsc`-Skript.
+**Typen liegen in JSDoc.** `{string}`, `{number}`, `{boolean}`, `{Promise<T>}`, `@param {…}`, `@returns {…}`, `@type {…}`, `@typedef`, `@template` sind die Typquelle. Geteilte Formen in `src/types/*.js` als `@typedef` (kein `export type`, Datei endet mit `export {}` damit `import()` greift). Prüfung: `jsconfig.json` (`checkJs`, `allowJs`, `noEmit`) in der IDE. TypeScript bleibt nur der Checker, nicht die Runtime-Sprache. Kein npm, kein `tsc`-Skript, kein `types.d.ts`, kein `tsconfig.json`, keine Ambient-Globals.
 
-**Keine TypeScript-Syntax.** Keine `.ts`/`.tsx`-Dateien, kein `import type`, keine Annotationen `x: string` oder `function f(): T` am Code. Runtime ist ESM-JavaScript.
+**Keine TypeScript-Syntax.** Keine `.ts`/`.tsx`-Dateien, kein `import type`, keine Annotationen `x: string` oder `function f(): T` am Code. Runtime ist ESM-JavaScript. Verweis im JSDoc, Form nicht inline wiederholen: `/** @param {import("../types/registry.js").Registry} registry */`.
 
 **JSDoc auch für Human UX.** Blöcke, wenn sie fachlichen Mehrwert geben: Erklärungen, Nebeneffekte, Randfälle, `@deprecated`, `@example`, `{@link}` als Verweis.
 

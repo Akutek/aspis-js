@@ -2,10 +2,10 @@
 import { BaseWatcherExtension } from "./BaseWatcherExtension.js";
 import { IntersectionWatcherDOM } from "../../utils/IntersectionWatcherDOM.js";
 import { DebugErrorManager } from "../../managers/DebugErrorManager.js";
-import { RuntimeEnv } from "../../core/RuntimeEnv.js";
+import { RegistryManager } from "../../managers/RegistryManager.js";
 const DEFAULT_INIT = Object.freeze({
   root: null,
-  rootMargin: "0px",
+  rootMargin: "100%",
   threshold: 0
 });
 class IntersectionWatcherExtension extends BaseWatcherExtension {
@@ -21,25 +21,19 @@ class IntersectionWatcherExtension extends BaseWatcherExtension {
       );
       return this;
     }
-    const root = this.#element(target);
-    if (!root) {
-      DebugErrorManager.warn(
-        this.debugOf(watcher),
-        "[IntersectionWatcherExtension.start()] Kein Zielelement."
-      );
-      return this;
-    }
     const runtime = watcher.runtime;
     if (!runtime) {
       return this;
     }
     runtime.config = { ...DEFAULT_INIT, ...init || {} };
     this.#ensureObserver(watcher);
-    const observer = runtime.observer;
-    observer?.observe(root);
-    runtime.roots ??= /* @__PURE__ */ new Set();
-    runtime.roots.add(root);
     runtime.watching = true;
+    const node = this.#element(target);
+    if (node) {
+      runtime.observer?.observe(node);
+      runtime.roots ??= /* @__PURE__ */ new Set();
+      runtime.roots.add(node);
+    }
     DebugErrorManager.info(
       this.debugOf(watcher),
       "[IntersectionWatcherExtension.start()] Beobachtung aktiv."
@@ -88,12 +82,60 @@ class IntersectionWatcherExtension extends BaseWatcherExtension {
       this.debugOf(watcher),
       `[IntersectionWatcherExtension.#onEntries()] sichtbar ${batch.shown.length}, verdeckt ${batch.hidden.length}.`
     );
+    const registry = watcher.runtime?.registry ?? null;
+    if (!registry || typeof registry.has !== "function") {
+      return;
+    }
+    let pull = false;
+    for (let i = 0; i < batch.shown.length; i += 1) {
+      const target = batch.shown[i].target;
+      if (target instanceof HTMLElement && !registry.has(target)) {
+        pull = true;
+        break;
+      }
+    }
+    if (pull) {
+      void this.#pull(watcher, registry);
+    }
+  }
+  static async #pull(watcher, registry) {
+    try {
+      await Promise.resolve();
+      if (!registry.has("cycle")) {
+        DebugErrorManager.warn(
+          this.debugOf(watcher),
+          "[IntersectionWatcherExtension.#pull()] Kein cycle in der Registry."
+        );
+        return;
+      }
+      const cycle = RegistryManager.get(registry, "cycle");
+      if (typeof cycle === "function") {
+        await cycle();
+      }
+      this.#releaseMounted(watcher, registry);
+    } catch (error) {
+      DebugErrorManager.capture(
+        this.errorOf(watcher),
+        error,
+        "[IntersectionWatcherExtension.#pull()]"
+      );
+    }
+  }
+  static #releaseMounted(watcher, registry) {
+    const observer = watcher.runtime?.observer;
+    const roots = watcher.runtime?.roots;
+    if (!observer || !(roots instanceof Set)) {
+      return;
+    }
+    for (const root of [...roots]) {
+      if (root instanceof HTMLElement && registry.has(root)) {
+        observer.unobserve(root);
+        roots.delete(root);
+      }
+    }
   }
   static #element(target) {
-    if (target instanceof Element) {
-      return target;
-    }
-    return RuntimeEnv.documentElement();
+    return target instanceof Element ? target : null;
   }
 }
 export {

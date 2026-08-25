@@ -12,6 +12,7 @@ import { ImportManager } from "../../managers/ImportManager.js";
 import { RegistryManager } from "../../managers/RegistryManager.js";
 import { RuntimeEnv } from "../../core/RuntimeEnv.js";
 const NEED_TAGS = ["watcher", "observer"];
+const INTERSECTION_SPECIFIER = "watchers.IntersectionWatcher";
 class ObserverManagerExtension {
   static get cacheKey() {
     return "factory:watchers";
@@ -36,13 +37,24 @@ class ObserverManagerExtension {
     const difference = compared && typeof compared === "object" ? compared : CompareManager.last(registry);
     const plan = difference.plan || PlanManager.last(registry);
     const queue = this.queue(difference);
-    if (!this.needed(plan)) {
+    const watcherNeeded = this.needed(plan);
+    const hasFar = Array.isArray(queue.far) && queue.far.length > 0;
+    if (!watcherNeeded && !hasFar) {
       return { skipped: true, specifiers: [], queue };
     }
-    const fromPlan = Array.isArray(plan.watchers) ? plan.watchers.filter(Boolean) : [];
+    let specifiers;
+    if (watcherNeeded) {
+      const fromPlan = Array.isArray(plan.watchers) ? plan.watchers.filter(Boolean) : [];
+      specifiers = fromPlan.length > 0 ? fromPlan.slice() : this.catalog();
+    } else {
+      specifiers = [];
+    }
+    if (!specifiers.includes(INTERSECTION_SPECIFIER)) {
+      specifiers.push(INTERSECTION_SPECIFIER);
+    }
     return {
       skipped: false,
-      specifiers: fromPlan.length > 0 ? fromPlan.slice() : this.catalog(),
+      specifiers,
       queue
     };
   }
@@ -74,6 +86,24 @@ class ObserverManagerExtension {
       mounted.push(watcher);
     }
     return mounted;
+  }
+  /** Beobachtet `far`-Knoten, bis sie in view/near rutschen und ein Cycle sie spawnt. */
+  static watchFar(registry, queue) {
+    if (!registry || typeof registry.has !== "function" || !registry.has("intersectionWatcher")) {
+      return this;
+    }
+    const watcher = RegistryManager.get(registry, "intersectionWatcher");
+    if (!watcher || typeof watcher.observe !== "function") {
+      return this;
+    }
+    const far = queue && Array.isArray(queue.far) ? queue.far : [];
+    for (let i = 0; i < far.length; i += 1) {
+      const element = far[i] && far[i].item ? far[i].item.element : null;
+      if (element instanceof Element) {
+        watcher.observe(element);
+      }
+    }
+    return this;
   }
   static hostKey(specifier) {
     const name = String(specifier || "").split(".").pop() || "";

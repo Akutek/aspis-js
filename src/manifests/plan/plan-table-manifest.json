@@ -6,6 +6,7 @@
     "specifiers": ["controllers.ControllerTable"],
     "watchers": [
         "watchers.MutationWatcher",
+        "watchers.IntersectionWatcher",
         "watchers.ResizeWatcher"
     ]
 }

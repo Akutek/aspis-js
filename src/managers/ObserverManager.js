@@ -23,6 +23,7 @@ class ObserverManager extends BaseManager {
         this.info(registry, "Plan ohne Watcher-Hosts, Specifier \xFCbersprungen.");
       } else {
         const hosts = await this.extension.hosts(registry, prepared.specifiers);
+        this.extension.watchFar(registry, prepared.queue);
         this.info(registry, `${hosts.length} Watcher-Hosts gebunden.`);
       }
       return prepared;

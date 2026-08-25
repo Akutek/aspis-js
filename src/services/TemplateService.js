@@ -95,14 +95,43 @@ class TemplateService {
     workingHtml = this.#replacePlaceholders(workingHtml, template.sortedData, payloadData);
     workingHtml = this.#replacePlaceholders(workingHtml, template.sortedAttributes, payloadAttributes);
     workingHtml = this.#replaceDataTokens(workingHtml, payloadData);
-    const fragment = document.createRange().createContextualFragment(workingHtml);
-    const element = fragment.firstElementChild;
+    const packed = this.#packTableFragment(workingHtml);
+    const fragment = document.createRange().createContextualFragment(packed.html);
+    const element = packed.unwrap(fragment);
     if (!element) {
       DebugAgent.error("[TemplateService.#compileHtml()] Transformation in den DOM fehlgeschlagen.");
       return null;
     }
     this.#fillSlots(element, slotDefs, payload, template);
     return element;
+  }
+  /**
+   * thead/tbody/tfoot/tr/td parst der HTML-Parser nur im Table-Kontext.
+   * Ohne Hülle wird firstElementChild null und die Slots bleiben leer.
+   */
+  #packTableFragment(html) {
+    const trimmed = String(html).trim();
+    const match = trimmed.match(/^<(thead|tbody|tfoot|tr|th|td)\b/i);
+    if (!match) {
+      return { html, unwrap: (fragment) => fragment.firstElementChild };
+    }
+    const tag = match[1].toLowerCase();
+    if (tag === "thead" || tag === "tbody" || tag === "tfoot") {
+      return {
+        html: `<table>${trimmed}</table>`,
+        unwrap: (fragment) => fragment.querySelector(tag)
+      };
+    }
+    if (tag === "tr") {
+      return {
+        html: `<table><tbody>${trimmed}</tbody></table>`,
+        unwrap: (fragment) => fragment.querySelector("tr")
+      };
+    }
+    return {
+      html: `<table><tbody><tr>${trimmed}</tr></tbody></table>`,
+      unwrap: (fragment) => fragment.querySelector(tag)
+    };
   }
   #fillSlots(rootElement, slotDefs, payload, template) {
     const defs = Array.isArray(slotDefs) ? slotDefs : [];
@@ -171,10 +200,13 @@ class TemplateService {
     if (!placeholder) {
       return null;
     }
-    const walker = document.createTreeWalker(rootElement, NodeFilter.SHOW_TEXT);
+    const walker = document.createTreeWalker(
+      rootElement,
+      NodeFilter.SHOW_TEXT | NodeFilter.SHOW_COMMENT
+    );
     let currentNode = walker.nextNode();
     while (currentNode) {
-      if (currentNode instanceof Text && currentNode.nodeValue && currentNode.nodeValue.includes(placeholder)) {
+      if (currentNode.nodeValue && currentNode.nodeValue.includes(placeholder)) {
         return currentNode;
       }
       currentNode = walker.nextNode();

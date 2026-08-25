@@ -84,14 +84,25 @@ class ControllerModifierDOM {
       }
     }
   }
+  /**
+   * Setzt oder entfernt ein Attribut. `true`/`false` bei `aria-*` werden zu `"true"`/`"false"`
+   * (WAI-ARIA). Bei normalen Boolean-Attributen entfernt `false` das Attribut.
+   */
   static attr(target, attrName, value) {
     if (!attrName || typeof attrName !== "string") return;
     this.#normalize(target).forEach((el) => {
       if (!this.#isValid(el)) return;
-      if (value === null || value === void 0 || value === false) {
+      const isAria = attrName.length > 5 && attrName.startsWith("aria-");
+      if (value === null || value === void 0) {
         el.removeAttribute(attrName);
+      } else if (value === false) {
+        if (isAria) {
+          el.setAttribute(attrName, "false");
+        } else {
+          el.removeAttribute(attrName);
+        }
       } else if (value === true) {
-        el.setAttribute(attrName, attrName.startsWith("aria-") ? "true" : "");
+        el.setAttribute(attrName, isAria ? "true" : "");
       } else {
         el.setAttribute(attrName, String(value));
       }

@@ -11,6 +11,8 @@ import { TemplateGuardDOM } from "../utils/TemplateGuardDOM.js";
 import { TemplateCatalog } from "./template/TemplateCatalog.js";
 class TemplateService {
   #cache = /* @__PURE__ */ new Map();
+  /** Gleicher Name teilt denselben Fetch — compile wartet, statt parallel ins Leere zu laufen. */
+  #inflight = /* @__PURE__ */ new Map();
   #basePath;
   #sanitizer;
   #catalog = null;
@@ -55,22 +57,33 @@ class TemplateService {
   }
   clearCache() {
     this.#cache.clear();
+    this.#inflight.clear();
   }
+  /**
+   * Liefert das normalisierte Template. Cache-Treffer sofort, sonst ein Fetch;
+   * parallele Aufrufe desselben Namens teilen dieselbe Promise.
+   *
+   * @param {string} name
+   * @returns {Promise<import("../types/templates.js").NormalizedTemplate|null>}
+   */
   async get(name) {
     if (this.#cache.has(name)) {
       return this.#cache.get(name) ?? null;
     }
-    DebugAgent.warn(`[TemplateService.get()] Aspis [TemplateService]: '${name}' nicht im Cache. Starte dynamischen Fetch...`);
-    try {
-      return await this.#loadFromServer(name);
-    } catch (error) {
-      return null;
+    const pending = this.#inflight.get(name);
+    if (pending) {
+      return pending;
     }
+    DebugAgent.info(`[TemplateService.get()] '${name}' nicht im Cache, lade.`);
+    const loading = this.#loadFromServer(name).then((template) => template, () => null).finally(() => {
+      this.#inflight.delete(name);
+    });
+    this.#inflight.set(name, loading);
+    return loading;
   }
   compile(name, payload = {}) {
     const template = this.#cache.get(name);
     if (!template) {
-      DebugAgent.error(`[TemplateService.compile()] Aspis [TemplateService]: Template '${name}' nicht im Cache gefunden. Kompilierung abgebrochen.`);
       return null;
     }
     return this.#compileHtml(template.html, template.slotDefs ?? [], payload, template);

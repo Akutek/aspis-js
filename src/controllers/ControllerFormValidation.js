@@ -27,27 +27,6 @@ class ControllerFormValidation {
       ControllerModifierDOM.toggleClass(errorEl, "is-hidden", !hasError);
     }
   }
-  showFormMessage(msg, type = "error") {
-    if (!this._container) {
-      return;
-    }
-    const msgEl = this._container.querySelector('[data-target="form-message"]');
-    if (!msgEl) {
-      return;
-    }
-    msgEl.textContent = msg;
-    ControllerModifierDOM.removeClass(msgEl, "is-hidden success error");
-    ControllerModifierDOM.addClass(msgEl, type);
-  }
-  hideFormMessage() {
-    if (!this._container) {
-      return;
-    }
-    const msgEl = this._container.querySelector('[data-target="form-message"]');
-    if (msgEl) {
-      ControllerModifierDOM.addClass(msgEl, "is-hidden");
-    }
-  }
 }
 export {
   ControllerFormValidation

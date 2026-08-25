@@ -54,18 +54,15 @@ class TemplateRenderService {
     return cleanElement;
   }
   /**
-   * Kompiliert ein Template mit Daten. Baut bei Bedarf eine Asynchron-Sperre auf,
-   * um nicht geladene Templates aus der Quelle nachzuladen.
+   * Lädt das Template (geteilt bei parallelen paste/append), dann kompiliert synchron aus dem Cache.
    */
   async compile(templateName, data = {}) {
-    let element = this.#templates.compile(templateName, { data });
-    if (!element) {
-      const templateData = await this.#templates.get(templateName);
-      if (templateData) {
-        element = this.#templates.compile(templateName, { data });
-      }
+    const loaded = await this.#templates.get(templateName);
+    if (!loaded) {
+      DebugAgent.error(`[TemplateRenderService.compile()] Template '${templateName}' nicht geladen.`);
+      return null;
     }
-    return element;
+    return this.#templates.compile(templateName, { data });
   }
   async loop(templateName, list = []) {
     if (!Array.isArray(list)) {

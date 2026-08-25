@@ -65,6 +65,12 @@ class ControllerDropdown {
       });
     });
     SchemaService.setDropdownOptions(this._view, options);
+    const selected = SchemaService.selectedDropdownOption(this._view);
+    const labelEl = this._container.querySelector('[data-target="label"]');
+    if (labelEl && selected && typeof selected.label === "string") {
+      labelEl.textContent = selected.label;
+    }
+    this.syncWithNativeInput();
     const listEl = this._container.querySelector('[data-target="list"]');
     if (listEl) {
       ControllerModifierDOM.hide(listEl);

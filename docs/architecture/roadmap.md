@@ -39,7 +39,7 @@ Keine Umbenennung.
 
 ## Baseline (Phase 0)
 
-Demo ist natives Browser-ESM: `index.html` → `src/entry.js`. Lokal `php -S localhost:8080`. lima-city: `index.html`, `src/`, `.htaccess`. Kein Vite, kein Node auf dem Server. Optional in `package.json`: `npm start` (PHP), `npm test` / `npm run bench` (nur Block Tests, Vitest).
+Demo ist natives Browser-ESM: `index.html` → `src/entry.js`. Lokal `php -S localhost:8080`. lima-city: `index.html`, `src/`, `.htaccess`. Kein npm-Paket, kein Vite, kein Node.
 
 Typen: JSDoc (`@typedef` in `src/types/`). `jsconfig.json` ist IDE-Hilfe, kein Laufzwang.
 
@@ -59,7 +59,7 @@ Automatisierte Tests erst **am Ende**. Tag `baseline` setzt die entwickelnde Per
 
 Runtime ist ESM-JavaScript im Browser. Importer: `import(href)` derselben Origin. Keine `.ts`-Quellen.
 
-Paket **aspis-js**: `exports` auf `src/aspis.js`. SemVer 1.x für `start` / `stop` / `runCycle`.
+Öffentlich: `start` / `stop` / `runCycle` in `src/aspis.js`. Konsum über relatives `./src/aspis.js` derselben Origin.
 
 Erfolg: Demo über PHP-Server, Upload-fähig.
 
@@ -77,7 +77,7 @@ Kein Umbau der Namen.
 
 ## Phase 3 — Lifecycle testen (am Ende)
 
-Vitest + jsdom, **nach** Static-ESM und Architektur. `npm test`. Fälle in `tests/dom-cycle.test.js`.
+Lifecycle im Browser (Demo), **nach** Static-ESM und Architektur. Kein Node-Testharnisch.
 
 Compare-Pfad `update` ist im Typ und in der Loop: gleicher DOM-Knoten, andere Pflicht → `destroy` dann neu `start()`. `keep` bleibt ohne neue Instanz.
 
@@ -110,7 +110,7 @@ Kein Umbau der Namen Manager/Extension.
 
 ## Phase 6 — Öffentliche API (P1)
 
-Einstieg `src/aspis.js`: `start()`, `stop(registry?)`, `runCycle(registry)`. Kein Barrel für Manager, Extension, Agent, Watcher, Tailor, Splicer. `stop()`: `cycle` lösen, Watcher-Hosts `stop()`, Live-Set und DOM-Baum `destroy`, EventDispatcher `destroy`. Paket `aspis-js` 1.0.0, `exports` auf die Quelle. CJS bleibt aus. Konsum: relatives `./src/aspis.js` oder gleicher Origin, kein Vite-Zwang.
+Einstieg `src/aspis.js`: `start()`, `stop(registry?)`, `runCycle(registry)`. Kein Barrel für Manager, Extension, Agent, Watcher, Tailor, Splicer. `stop()`: `cycle` lösen, Watcher-Hosts `stop()`, Live-Set und DOM-Baum `destroy`, EventDispatcher `destroy`. Konsum: relatives `./src/aspis.js` derselben Origin. Kein npm-Paket.
 
 ---
 
@@ -128,7 +128,7 @@ Pipeline-Log in `runCycle` und Compare. Controller-Knoten: `data-aspis-origin`, 
 
 ## Phase 9 — Benchmarks (P3)
 
-`npm run bench` (`tests/dom-pressure.bench.js`): 10 / 100 / 1 000 Controller. Startup, Keep-Cycle, scoped Add, Churn (add/remove), Heap (`heapUsed` / RSS).
+Optional später im Browser: 10 / 100 / 1 000 Controller. Startup, Keep-Cycle, scoped Add, Churn (add/remove), Heap. Kein npm-Bench.
 
 ---
 
@@ -136,6 +136,6 @@ Pipeline-Log in `runCycle` und Compare. Controller-Knoten: `data-aspis-origin`, 
 
 1. Static-ESM (PHP-Server, lima-city, Importer nur Browser)
 2. Hydrator-Vertrag, Public API, lokale Mutation, DX
-3. Lifecycle-Tests (`tests/dom-cycle.test.js`) und optional Bench — **zuletzt**
+3. Lifecycle im Browser prüfen — **zuletzt**
 
 Priorität: Lauffähig im Browser > Correctness > API > Performance > Tests.

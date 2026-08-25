@@ -6,7 +6,7 @@ Scan → Plan → Compare → Observer → Compose → Controller → Splice →
 
 **Manager** dirigieren ein Pipeline-Kapitel (Routing, Schritte). **Extension** baut den bezogenen Host oder das Kapitel aus. **Hydrator** formt einen Manifest-Typ (Index, Normalisieren); `BaseHydrator` plus Sub-Hydratoren.
 
-Kein TypeScript, kein Bundler, kein Node auf dem Server. Der Browser lädt Module nativ (`<script type="module">`).
+Kein TypeScript, kein Bundler, kein npm-Paket, kein Node. Der Browser lädt Module nativ (`<script type="module">`).
 
 Ausführlich: [`docs/architecture/roadmap.md`](docs/architecture/roadmap.md).
 
@@ -20,7 +20,7 @@ php -S localhost:8080
 
 Dann `http://localhost:8080/` — nicht `file://`, sonst schlägt `fetch` der Manifeste fehl.
 
-**lima-city:** `index.html`, `src/` und `.htaccess` hochladen. Nicht hochladen: `node_modules`, `.git`, `tests/`. Apache braucht `.js` als JavaScript und `.json` als JSON (steht in `.htaccess`).
+**lima-city:** `index.html`, `src/` und `.htaccess` hochladen. Nicht hochladen: `.git`. Apache braucht `.js` als JavaScript und `.json` als JSON (steht in `.htaccess`).
 
 Öffentliche Runtime: `start()`, `stop(registry?)`, `runCycle(registry)`. Manager, Extension, Tailor und Splicer bleiben intern. Die Demo ruft nur `start()`.
 
@@ -30,7 +30,7 @@ import { start, stop, runCycle } from "./src/aspis.js";
 const registry = await start();
 ```
 
-Der npm-Name `aspis` ist fremd belegt; dieses Paket heißt **aspis-js**.
+Kein npm-Paket, kein Vite, kein Node. Einbindung: relatives `./src/aspis.js` derselben Origin.
 
 ## Pfade
 

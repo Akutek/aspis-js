@@ -8,7 +8,7 @@ alwaysApply: true
 
 Gilt für `*.js`.
 
-**Typen liegen in JSDoc.** `{string}`, `{number}`, `{boolean}`, `{Promise<T>}`, `@param {…}`, `@returns {…}`, `@type {…}`, `@typedef`, `@template` sind die Typquelle. Geteilte Formen in `src/types/*.js` als `@typedef` (kein `export type`). Prüfung: `jsconfig.json` mit `checkJs`, `npm run check` (`tsc --noEmit -p jsconfig.json`). TypeScript bleibt nur der Checker, nicht die Runtime-Sprache.
+**Typen liegen in JSDoc.** `{string}`, `{number}`, `{boolean}`, `{Promise<T>}`, `@param {…}`, `@returns {…}`, `@type {…}`, `@typedef`, `@template` sind die Typquelle. Geteilte Formen in `src/types/*.js` als `@typedef` (kein `export type`). Prüfung: `jsconfig.json` mit `checkJs` in der IDE. TypeScript bleibt nur der Checker, nicht die Runtime-Sprache. Kein npm, kein `tsc`-Skript.
 
 **Keine TypeScript-Syntax.** Keine `.ts`/`.tsx`-Dateien, kein `import type`, keine Annotationen `x: string` oder `function f(): T` am Code. Runtime ist ESM-JavaScript.
 

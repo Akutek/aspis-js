@@ -1,0 +1,77 @@
+﻿{
+    "BaseObserver": {
+        "directory": "utils",
+        "file": "BaseObserver.js",
+        "export": "BaseObserver"
+    },
+    "CachePipelineHelper": {
+        "directory": "utils",
+        "file": "CachePipelineHelper.js",
+        "export": "CachePipelineHelper"
+    },
+    "StoreDomDependencyScanner": {
+        "directory": "utils",
+        "file": "StoreDomDependencyScanner.js",
+        "export": "StoreDomDependencyScanner"
+    },
+    "ControllerEventDelegator": {
+        "directory": "utils",
+        "file": "ControllerEventDelegator.js",
+        "export": "ControllerEventDelegator"
+    },
+    "GuardDOM": {
+        "directory": "utils",
+        "file": "GuardDOM.js",
+        "export": "GuardDOM"
+    },
+    "ControllerLoadingHelper": {
+        "directory": "utils",
+        "file": "ControllerLoadingHelper.js",
+        "export": "ControllerLoadingHelper"
+    },
+    "ManifestBinder": {
+        "directory": "utils",
+        "file": "ManifestBinder.js",
+        "export": "ManifestBinder"
+    },
+    "ModifierDOM": {
+        "directory": "utils",
+        "file": "ModifierDOM.js",
+        "export": "ModifierDOM"
+    },
+    "MutationObserverDOM": {
+        "directory": "utils",
+        "file": "MutationObserverDOM.js",
+        "export": "MutationObserverDOM"
+    },
+    "MutationWatcherDOM": {
+        "directory": "utils",
+        "file": "MutationWatcherDOM.js",
+        "export": "MutationWatcherDOM"
+    },
+    "IntersectionWatcherDOM": {
+        "directory": "utils",
+        "file": "IntersectionWatcherDOM.js",
+        "export": "IntersectionWatcherDOM"
+    },
+    "ResizeWatcherDOM": {
+        "directory": "utils",
+        "file": "ResizeWatcherDOM.js",
+        "export": "ResizeWatcherDOM"
+    },
+    "ScannerDOM": {
+        "directory": "utils",
+        "file": "ScannerDOM.js",
+        "export": "ScannerDOM"
+    },
+    "ControllerTrigger": {
+        "directory": "utils",
+        "file": "ControllerTrigger.js",
+        "export": "ControllerTrigger"
+    },
+    "ManifestTargetResolver": {
+        "directory": "utils",
+        "file": "ManifestTargetResolver.js",
+        "export": "ManifestTargetResolver"
+    }
+}

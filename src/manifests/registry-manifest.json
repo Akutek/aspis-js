@@ -1,0 +1,85 @@
+﻿{
+    "version": "1",
+    "boot": {
+        "essentials": {
+            "core": {
+                "directory": "manifests/class",
+                "file": "core-index-manifest.json"
+            },
+            "manager": {
+                "directory": "manifests/class",
+                "file": "manager-index-manifest.json"
+            },
+            "states": {
+                "directory": "manifests/state",
+                "file": "states-index-manifest.json"
+            }
+        }
+    },
+    "classRouting": {
+        "controllers": {
+            "directory": "manifests/class",
+            "file": "controllers-index-manifest.json"
+        },
+        "hydrators": {
+            "directory": "manifests/class",
+            "file": "hydrators-index-manifest.json"
+        },
+        "services": {
+            "directory": "manifests/class",
+            "file": "services-index-manifest.json"
+        },
+        "utils": {
+            "directory": "manifests/class",
+            "file": "utils-index-manifest.json"
+        },
+        "manager": {
+            "directory": "manifests/class",
+            "file": "manager-index-manifest.json"
+        },
+        "core": {
+            "directory": "manifests/class",
+            "file": "core-index-manifest.json"
+        },
+        "store": {
+            "directory": "manifests/class",
+            "file": "store-index-manifest.json"
+        },
+        "watchers": {
+            "directory": "manifests/class",
+            "file": "watchers-index-manifest.json"
+        }
+    },
+    "manifestRouting": {
+        "events": {
+            "directory": "manifests/events",
+            "file": "events-index-manifest.json"
+        },
+        "states": {
+            "directory": "manifests/state",
+            "file": "states-index-manifest.json"
+        },
+        "schemas": {
+            "directory": "manifests/schemas",
+            "file": "schemas-index-manifest.json"
+        },
+        "templates": {
+            "directory": "manifests/templates",
+            "file": "templates-index-manifest.json"
+        },
+        "plan": {
+            "directory": "manifests/plan",
+            "file": "plan-index-manifest.json"
+        }
+    },
+    "errorAndDebug": {
+        "debug": {
+            "directory": "manifests/debug",
+            "file": "debug-index-manifest.json"
+        },
+        "error": {
+            "directory": "manifests/error",
+            "file": "error-index-manifest.json"
+        }
+    }
+}

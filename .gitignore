@@ -1,5 +1,6 @@
 # Dependency-Ordner
 node_modules/
+dist/
 
 # OS & Editor-Dateien
 .DS_Store
@@ -7,6 +8,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Log- & Temp-Dateien
+# Temp
+.tmp-zip-restore/
 *.log
 *.tmp

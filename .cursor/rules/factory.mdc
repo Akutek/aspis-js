@@ -1,0 +1,44 @@
+---
+description: Factory-Phase — SplicerManager, Tailor, spawn
+globs: src/core/Tailor.js,src/extensions/tailor/TailorExtension.js,src/core/Splicer.js,src/extensions/splicer/SplicerExtension.js,src/managers/SplicerManager.js,src/extensions/splicer/SplicerManagerExtension.js,src/managers/FactoryManager.js,src/extensions/factory/FactoryManagerExtension.js,src/managers/ObserverManager.js,src/extensions/observer/ObserverManagerExtension.js,src/managers/ComposeManager.js,src/extensions/compose/ComposeManagerExtension.js,src/managers/ControllerManager.js,src/extensions/controller/ControllerManagerExtension.js,src/services/MixinService.js,src/services/CompositionService.js,src/services/ControllerService.js,src/aspis.js
+alwaysApply: false
+---
+
+# Factory
+
+Kein `new FactoryManager()`. Loop in `src/aspis.js`: Compare-Return weiterreichen, Unterphasen selbst aufrufen, Paket an die Factory.
+
+Fragen: Observer = Wann neu bewerten? Compose = Welche Fähigkeiten? Controller = Wie verhält sich die Instanz? Splice = Wie kombinieren? Factory = Welche Instanz?
+
+```js
+const compared = await CompareManager.compare(registry);
+const watchers = await ObserverManager.observe(registry, compared);
+const compose = await ComposeManager.compose(registry, compared);
+const controllers = await ControllerManager.control(registry, compared, watchers);
+const spliced = await SplicerManager.splice(registry, { compared, watchers, compose, controllers });
+await FactoryManager.factory(registry, spliced);
+```
+
+Factory kennt die Unterphasen nicht. Registry bleibt Landkarte der Hosts (`tailor`, `splicer` wie `scanner`). Snapshots `splicer:current`, `factory:current` / `factory:history` sind Kopien.
+
+**Compose** liefert die Werkzeuge: `MixinService` (Klassen auf die Basis legen, mehr geladene Module) und `CompositionService` (Methoden an **eine** Klasse, keine Extra-Instanz). Specifier der Controller sind die Mixin-Quellen; Composition-Teile kommen später aus der Portion (`compositions`).
+
+**ControllerService** lädt Referenzen über den Importer (`controllers.BaseController`, `controllers.ControllerTable`, …). Selbst kein `new`.
+
+**Observer** baut aus Plan+Compare eine Warteschlange: `view` (sofort voll), `near` (halb, ohne Composition), `far` (nur bekannt, nicht laden), `history` (Klassen aus Cache `factory:history`). `ObserverManager.observe` bindet Watcher-Hosts (`watchers.MutationWatcher`, …) einmal in die Registry. Viewport-Heuristik bis IntersectionWatcher nachzieht.
+
+**Tailor:** Host mit `TailorExtension`. Pipeline Mixin → Composition verstärkt `BaseController`. Näht eine Klasse; kennt die Queue nicht.
+
+**Splicer:** Host mit `SplicerExtension`. Liest die Observer-Queue, wählt Base + Mixins, ruft `tailor.strengthen`. Registry-Key `splicer`, Specifier `core.Splicer`.
+
+**SplicerManager:** Kapitel wie Scan. `splice(registry, parts)` lädt Tailor + Splicer, ruft `splicer.splice`, Cache `splicer:current`. Kennt Observer/Compose/Controller nicht als Aufrufer.
+
+**Factory:** `factory` spawnt (`new` + `start`). Fehlt `parts.splicer`, ruft sie `SplicerManager.splice` selbst.
+
+**Spawn / Mount:** `compared.remove` und `compared.update` → `RegistryManager.unbind` (`destroy`). `update` danach wie `add`: neue Instanz + `start()`. `view` / `near` / `history` → `new Class(element, store, dispatcher, { registry, debug, error })` und `start()`. `far` bleibt ohne Instanz. `keep` mit bestehender Bindung bleibt. Am Knoten: `data-aspis-origin`, `data-aspis-controller`. Live-Set `compare:live` für den nächsten Compare (`add` / `keep` / `update`). Dispatcher faul über Importer (`services.EventDispatcher`), sonst Registry.
+
+**Controller-Mixins:** `ControllerTable`, `ControllerForm` (+ Form-Teile), `ControllerAccordion`, `ControllerDropdown`, `ControllerModal` (+ Host/Content) erben nicht von `BaseController`. Kein Konstruktor, keine `#`-Felder — `MixinService` kopiert nur Prototype-Methoden. Zustand auf der gemischten Instanz (`this._view` in `prepare`, Daten über `SchemaService` nach JSON-Schemas). Fach-Start in `onReady` (Basis ruft das aus `onInit`). Logs über `this._debugMsg` / `this._warn` / `this._capture`. Feldregeln: `FormFieldService.rulesFromElement`.
+
+Form-Portion: mehrere Specifier (`ControllerFormView`, `Fields`, optional `DropdownSync`/`Validation`/`Render`, `Submit`, zuletzt `ControllerForm`). Simple-Form lässt Validation/Render/Dropdown weg. Modal-Portion: `ControllerModalHost`, `ControllerModalContent`, `ControllerModal`.
+
+Table-Portion: Specifier `controllers.ControllerTable` wird auf `BaseController` gemischt.

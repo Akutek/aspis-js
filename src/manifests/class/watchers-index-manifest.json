@@ -1,0 +1,32 @@
+﻿{
+    "BaseWatcher": {
+        "directory": "watchers",
+        "file": "BaseWatcher.js",
+        "export": "BaseWatcher"
+    },
+    "MutationWatcher": {
+        "directory": "watchers",
+        "file": "MutationWatcher.js",
+        "export": "MutationWatcher"
+    },
+    "IntersectionWatcher": {
+        "directory": "watchers",
+        "file": "IntersectionWatcher.js",
+        "export": "IntersectionWatcher"
+    },
+    "ResizeWatcher": {
+        "directory": "watchers",
+        "file": "ResizeWatcher.js",
+        "export": "ResizeWatcher"
+    },
+    "PerformanceWatcher": {
+        "directory": "watchers",
+        "file": "PerformanceWatcher.js",
+        "export": "PerformanceWatcher"
+    },
+    "ReportingWatcher": {
+        "directory": "watchers",
+        "file": "ReportingWatcher.js",
+        "export": "ReportingWatcher"
+    }
+}

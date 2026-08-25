@@ -1,0 +1,17 @@
+---
+description: Watcher-Hosts statt Observer-API-Namen, Katalog, kein Manager-new
+globs: src/watchers/**/*.js,src/extensions/watcher/**/*.js,src/utils/*WatcherDOM.js,src/manifests/class/watchers-index-manifest.json
+alwaysApply: false
+---
+
+# Watcher
+
+Native Web-APIs heißen Observer. Unsere Hosts heißen **Watcher**, damit nichts zusammenfällt: `MutationWatcher`, `IntersectionWatcher`, `ResizeWatcher`, `PerformanceWatcher`, `ReportingWatcher`, Basis `BaseWatcher`.
+
+`BaseWatcher` ist wie der Scanner ein **geplanter Host** (`runtime` / `manifest` / `extension`). Konkrete Watcher setzen `static get extension()`. `BaseWatcherExtension` ist zustandslos.
+
+**Hosts:** `MutationWatcher`, `IntersectionWatcher`, `ResizeWatcher`, `PerformanceWatcher`, `ReportingWatcher`. Native API nur in der jeweiligen `*WatcherExtension`. DOM-Helfer: `MutationWatcherDOM`, `IntersectionWatcherDOM`, `ResizeWatcherDOM`.
+
+**Mutation:** Entfernte Knoten: `ControllerCleaner.cleanTree`. Neue Knoten: `ScanManager.scan`. Altstand `BaseObserver` / `MutationObserverDOM`: Referenz, nicht nachbauen. Kein `MutationManager`.
+
+Dirigent: `ObserverManager` (Manager bleibt `static`). Plan+Compare → Lade-Warteschlange (`view` / `near` / `far` / `history`). `hosts()` legt die Watcher einmal in die Registry (`mutationWatcher`, …) und ruft `bind`/`start`. IntersectionWatcher darf die Bänder später korrigieren; bis dahin Viewport-Rechteck.

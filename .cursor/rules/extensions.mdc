@@ -1,0 +1,39 @@
+---
+description: BaseExtension und Pakete unter src/extensions
+globs: src/extensions/**/*.js
+alwaysApply: false
+---
+
+# Extensions
+
+Ausbau des **bezogenen** Hosts oder Kapitels (`prepare` / `apply` / `graft` / `expand`). Nicht die Loop dirigieren — das bleibt der Manager. Zustandslos, `static`.
+
+Alles unter `src/extensions/<was-sie-erweitern>/`. Der Ordnername ist das Erweiterte. Hosts und Phasen-Manager importieren von dort.
+
+Datei = Klassenname. Präfix = Host oder Familie: `Scanner` + `ScannerExtension` + `ScannerDOM`, `Importer` + `ImporterExtension`, `CompareManager` + `CompareManagerExtension`, `BaseWatcher` + `BaseWatcherExtension`, `ControllerTable` / `ControllerDropdown`, `StoreDomDependencyScanner`, `ManifestBinder` + `ManifestTargetResolver`, `ControllerLoadingHelper`, `ControllerCleaner`.
+
+`BaseExtension`: `prepare`, `apply`, `graft`, `use`, `install`, `load`, `expand`. Zustandslos. Hosts halten `runtime`, `manifest`, `extension`. Pipeline-Name: `static get pipelineKey()`.
+
+Phasen-Manager bleiben in `src/managers/` (nur das Kapitel). Ihr Ausbau liegt im passenden Paket.
+
+| Paket | Klasse | Erweitert |
+| --- | --- | --- |
+| `extensions/registry/` | `RegistryExtension` | Registry |
+| `extensions/importer/` | `ImporterExtension` | Importer |
+| `extensions/scanner/` | `ScannerExtension` | Scanner |
+| `extensions/scan/` | `ScanManagerExtension` | ScanManager |
+| `extensions/plan/` | `PlanManagerExtension` | PlanManager |
+| `extensions/compare/` | `CompareManagerExtension` | Compare-Phase |
+| `extensions/observer/` | `ObserverManagerExtension` | ObserverManager |
+| `extensions/compose/` | `ComposeManagerExtension` | ComposeManager |
+| `extensions/controller/` | `ControllerManagerExtension` | ControllerManager |
+| `extensions/factory/` | `FactoryManagerExtension` | FactoryManager |
+| `extensions/tailor/` | `TailorExtension` | Tailor |
+| `extensions/splicer/` | `SplicerExtension`, `SplicerManagerExtension` | Splicer, SplicerManager |
+| `extensions/watcher/` | `BaseWatcherExtension`, `MutationWatcherExtension`, `IntersectionWatcherExtension`, `ResizeWatcherExtension`, `PerformanceWatcherExtension`, `ReportingWatcherExtension` | Watcher-Hosts |
+| `extensions/debug-agent/` | `DebugAgentExtension` | DebugAgent |
+| `extensions/error-agent/` | `ErrorAgentExtension` | ErrorAgent |
+| `extensions/store/` | `StoreExtension` | Store |
+| `extensions/priority-queue/` | `PriorityQueueExtension` | PriorityQueue |
+
+Aufruf: `HostExtension.expand(host, { manifest, middleware, plugin, load })` oder `host.expand(…)`. Agent-`hydrate()` geht an `apply`.

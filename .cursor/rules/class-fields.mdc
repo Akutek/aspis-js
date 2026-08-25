@@ -1,0 +1,24 @@
+---
+description: Keine Klassenvariablen außer auf geplanten Instanzen
+alwaysApply: true
+---
+
+# Keine Klassenvariablen
+
+Felder (`static x =`, `#x =`, `x =` am Rumpf) nur auf **geplanten Instanzen**: `Store`, `Registry`, `Cache`, `Importer`, `Scanner`, `Tailor`, `Splicer`, `BaseWatcher` (und konkrete Watcher), `DebugAgent`, `ErrorAgent`, mutierte Controller.
+
+Manager, Extensions, Hydratoren, Store-Helfer (`src/core/store/`), Services, `AssetPath`, `RuntimeEnv`, `TemplateCatalog`, `SchemaCatalog`: **zustandslos**. Nur `static` Methoden. Kein `new Manager()`. Konstanten als Modul-`const` oder als `static get`. Wenn eine Klasse keinen Instanz-/Konstruktortzustand nutzt, dann keine Felder am Klassenrumpf (`x =`, `#x =`, `static x =`) – stattdessen nur `static` Methoden und ggf. Modul-`const`. Locals in Methoden sind erlaubt.
+
+```js
+// falsch (Extension/Manager)
+static pipelineKey = "pipeline";
+
+// richtig
+static get pipelineKey() {
+    return "pipeline";
+}
+```
+
+`this.extension === StoreExtension` am Host ist Instanzfeld — erlaubt. `DebugAgent.#shared` ist Host-Zustand — erlaubt.
+
+Factory-Mixins (`ControllerTable`, Form-Teile, Modal-Teile): keine `#`-Felder, kein Konstruktor-Zustand. Nach dem Mix lebt der Zustand auf der Instanz (`this._view`, `this._kind`).

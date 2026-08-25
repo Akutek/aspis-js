@@ -1,0 +1,6 @@
+﻿{
+    "state": {
+        "directory": "manifests/state",
+        "file": "state-manifest.json"
+    }
+}

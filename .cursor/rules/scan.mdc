@@ -1,0 +1,19 @@
+---
+description: Scan-Phase, Loop-Einstieg, Scanner über Importer, ScanManagerExtension
+globs: src/managers/ScanManager.js,src/extensions/scan/ScanManagerExtension.js,src/core/Scanner.js,src/extensions/scanner/ScannerExtension.js,src/utils/ScannerDOM.js
+alwaysApply: false
+---
+
+# Scan
+
+Frage: Was existiert im DOM?
+
+Kein `new ScanManager()`. Loop-Einstieg nach dem Boot: `ScanManager.scan(registry, root?)`. Plan startet die Loop nicht, kein LoopStartPointManager.
+
+ScanManager ist nur Dirigent. Ausbau: `ScanManagerExtension` (`ScanManager.extension`). Host: `Scanner` in der Registry (eine Instanz). Laden faul über den Importer (`core.Scanner` / `classRouting`). Arbeit: `ScannerExtension` → `ScannerDOM`. Extra Quellen/Filter: `ScanManager.expand(registry, expansion)` → `scanner.expand`.
+
+Agenten: `bind` hängt `debug`/`error` an die Scanner-Runtime; Log und `capture` über `DebugErrorManager`.
+
+Rückgabe und Cache `scan:results` (`ScanManager.last`). `PlanManager.plan(registry)` liest Scan-Resultate und den Trigger-Katalog, nicht den Scanner-Host.
+
+Signal von außen (Mutation, Start): wieder `ScanManager.scan`. Erster Kick nach dem Boot: `src/aspis.js`. Danach Plan, Compare, Unterphasen, Splice, Factory.

@@ -1,0 +1,17 @@
+---
+description: Compare-Phase, Plan-Items gegen Live, Sortierung über PriorityQueue
+globs: src/managers/CompareManager.js,src/extensions/compare/CompareManagerExtension.js
+alwaysApply: false
+---
+
+# Compare
+
+Frage: Was hat sich verändert? (`add` / `keep` / `update` / `remove`)
+
+Kein `new CompareManager()`. Nach dem Plan: `CompareManager.compare(registry)`. Factory startet Compare nicht.
+
+CompareManager ist Dirigent. Arbeit: `CompareManagerExtension` — Soll sind `plan.items` (Specifier, Needs, Element), nicht nur Scan-Rohdaten. Ist: Cache `compare:live` (Factory schreibt; leer = alles `add`). Identität: DOM-Knoten (`element`). Gleiche Pflicht (Typ, Layout, Slice, Specifier, Mixins, Compositions) → `keep` (Plan-Item bleibt). Andere Pflicht, gleicher Knoten → `update`. `keep` trägt das Plan-Item (Specifier bleiben erhalten).
+
+Danach sortiert `PriorityQueueManager.sort` die vier Listen (`add` / `keep` / `update` / `remove`) nach Cache-Muster `priority-queue:pattern`. Ohne Muster bleibt die Plan-Reihenfolge (stabil). Snapshot `compare:difference`.
+
+Nächste Phase: Loop reicht `compared` an Observer / Compose / Controller / Splicer und dann `FactoryManager.factory`.

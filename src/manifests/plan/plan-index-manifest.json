@@ -1,0 +1,34 @@
+﻿{
+    "table": {
+        "directory": "manifests/plan",
+        "file": "plan-table-manifest.json"
+    },
+    "form": {
+        "directory": "manifests/plan",
+        "file": "plan-form-manifest.json"
+    },
+    "form.simple": {
+        "directory": "manifests/plan",
+        "file": "plan-form-simple-manifest.json"
+    },
+    "form-simple": {
+        "directory": "manifests/plan",
+        "file": "plan-form-simple-type-manifest.json"
+    },
+    "accordion": {
+        "directory": "manifests/plan",
+        "file": "plan-accordion-manifest.json"
+    },
+    "dropdown": {
+        "directory": "manifests/plan",
+        "file": "plan-dropdown-manifest.json"
+    },
+    "custom-dropdown": {
+        "directory": "manifests/plan",
+        "file": "plan-dropdown-manifest.json"
+    },
+    "modal": {
+        "directory": "manifests/plan",
+        "file": "plan-modal-manifest.json"
+    }
+}

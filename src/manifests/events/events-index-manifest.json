@@ -1,0 +1,6 @@
+﻿{
+    "events": {
+        "directory": "manifests/events",
+        "file": "event-manifest.json"
+    }
+}

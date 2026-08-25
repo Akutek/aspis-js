@@ -1,0 +1,15 @@
+---
+description: Manifeste laden, Hydratoren, Pipelines
+globs: src/hydrators/**/*.js,src/services/ManifestLoaderService.js,src/manifests/**/*.json,src/config/app-config.json
+alwaysApply: false
+---
+
+# Manifeste und Pipelines
+
+Laden immer über `ManifestLoaderService.load(path, Hydrator?)`. Ein Hydrator pro Manifest-Typ: Index, Teil-Manifeste, Normalisieren, stabile Form. `extends BaseHydrator`: `hydrate` prüft Objekt und Manifest-Major (`version` fehlt = 1, sonst Major 1), ruft `transform`. Sub-Hydratoren überschreiben und ergänzen, bleiben flexibel. Kein Manager-Schritt `hydrate()`, keine zweite Validate-Klasse. Listen-Helfer in `src/hydrators/helpers/` (`asRecord`, `normalizeStringList`, `normalizePipelines`, `assertManifestVersion`) sind keine Hydratoren. Klassen-/Template-/Schema-Indizes: `RouteIndexHydrator` (`directory` + `file` Pflicht). Template-JSON: `TemplateManifestHydrator` (`files` oder `html`). Import-Fehler (fehlendes Modul, Export, Zyklus, unbekannter Specifier) wirft der Importer über `ErrorAgent.throw`.
+
+Cardinals in `src/config/app-config.json` zeigen auf Root-Manifeste. Registry-Katalog: `src/manifests/registry-manifest.json`. Klassen-Indizes: `src/manifests/class/` (core, manager, store-Helfer, Controller, …). Plan-Portionen: `src/manifests/plan/`. State: `src/manifests/state/` (`states-index` → `state-manifest`). Events: `src/manifests/events/`. Schemas: `src/manifests/schemas/` (`schemas-index` → table/form/accordion/dropdown/loader/modal). Debug/Error: `src/manifests/debug/` und `src/manifests/error/`. `registry-manifest.errorAndDebug` zeigt auf die Debug-/Error-Indizes. `manifestRouting.plan` zeigt auf `plan-index-manifest.json`. `manifestRouting.schemas` zeigt auf `schemas-index-manifest.json`. `manifestRouting.states` / `events` zeigen auf die jeweiligen Indizes. Templates: Index `manifestRouting.templates`.
+
+Hydrierte Daten: Cache und Registry. Store: `StoreExtension.apply`. Klassen-Katalog: `ImportManager.apply`. Schema-Katalog: `SchemaCatalog.load`. Events: `EventManifestHydrator`.
+
+Debug, Cache, Registry, Store: eine Instanz, Verhalten als `(ctx, next) => …` plus Manifest. Cache: `CachePipelineHelper`. Store-Sets: `store.runtime.setPipeline`.

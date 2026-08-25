@@ -1,0 +1,27 @@
+---
+description: Keine Globalvariablen, nichts an window/globalThis hängen
+alwaysApply: true
+---
+
+# Keine Globals
+
+Nichts in den globalen Namensraum schreiben: kein `window.x =`, kein `globalThis.x =`, kein `self.x =`, und auch keine globalen Funktionen via `window.foo = ...` / `globalThis.foo = ...` / `self.foo = ...`. Ebenso kein ungebundenes `var`/`function` auf Modulebene, das zur Globalen wird.
+
+Hilfslogik gehört in `class ... { static ... }` oder als lokale Funktionen innerhalb von Methoden, nicht als „globale“ Funktion im Runtime-Namensraum.
+
+Geteilter Zustand gehört auf **geplante Instanzen** (Registry, Store, Cache, Agenten, Importer) oder in Modul-`const`. Die Registry ist die Landkarte, nicht `window.Aspis`.
+
+Lesen der Umgebung ist erlaubt: `window.location`, `addEventListener`, `document`. Bundeln über `RuntimeEnv` (Origin, Viewport, `body`, `documentElement`, fremdes `DOMPurify`). Fremd-Globals nur lesen (Altstand), nicht selbst anlegen. `document.createElement` und Event-APIs bleiben am Dokument.
+
+Ausnahmen (keine Globals): ES-`import`/`export`, Modul-`const`. Typen liegen als JSDoc-`@typedef` in `src/types` — das ist ein Modul, kein `window`.
+
+```js
+// falsch
+window.Aspis = { debug, registry };
+globalThis.__store = store;
+
+// richtig
+import { DebugAgent } from "../agents/DebugAgent.js";
+/** @typedef {import("../types/store.js").StateManifest} StateManifest */
+RegistryManager.register(registry, { debug, store, cache });
+```

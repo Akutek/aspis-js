@@ -1,0 +1,9 @@
+---
+description: JSDoc ist Typ-SSOT und Human UX
+globs: **/*.js
+alwaysApply: false
+---
+
+# JSDoc
+
+Typen und geteilte `@typedef`s liegen in JSDoc (`src/types`, Methodensignaturen). Prüfung über `checkJs`. Die Regel: `ssot-types.mdc`.

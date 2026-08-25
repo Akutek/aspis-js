@@ -1,0 +1,14 @@
+{
+    "name": "accordion",
+    "files": {
+        "layout": "accordion_layout.html",
+        "item": "accordion_item.html"
+    },
+    "loops": {
+        "item": {
+            "placeholder": "{{item-loop}}",
+            "from": "items",
+            "part": "item"
+        }
+    }
+}

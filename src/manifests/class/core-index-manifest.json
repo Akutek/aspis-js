@@ -1,0 +1,32 @@
+﻿{
+    "AssetPath": {
+        "directory": "core",
+        "file": "AssetPath.js",
+        "export": "AssetPath"
+    },
+    "RuntimeEnv": {
+        "directory": "core",
+        "file": "RuntimeEnv.js",
+        "export": "RuntimeEnv"
+    },
+    "Store": {
+        "directory": "core",
+        "file": "Store.js",
+        "export": "Store"
+    },
+    "Scanner": {
+        "directory": "core",
+        "file": "Scanner.js",
+        "export": "Scanner"
+    },
+    "Tailor": {
+        "directory": "core",
+        "file": "Tailor.js",
+        "export": "Tailor"
+    },
+    "Splicer": {
+        "directory": "core",
+        "file": "Splicer.js",
+        "export": "Splicer"
+    }
+}

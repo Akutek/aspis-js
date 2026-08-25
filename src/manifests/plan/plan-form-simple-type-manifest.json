@@ -1,0 +1,12 @@
+{
+    "trigger": {
+        "type": "form-simple"
+    },
+    "needs": ["store"],
+    "specifiers": [
+        "controllers.ControllerFormView",
+        "controllers.ControllerFormFields",
+        "controllers.ControllerFormSubmit",
+        "controllers.ControllerForm"
+    ]
+}

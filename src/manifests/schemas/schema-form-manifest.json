@@ -1,0 +1,19 @@
+{
+    "id": "form",
+    "kind": "form",
+    "defaults": {
+        "layout": "default",
+        "isSubmitting": false,
+        "submitError": null,
+        "submitSuccess": false,
+        "fields": {}
+    },
+    "field": {
+        "value": "",
+        "initialValue": "",
+        "error": null,
+        "isTouched": false,
+        "isDirty": false,
+        "rules": {}
+    }
+}

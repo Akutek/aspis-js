@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Aspis Demo</title>
+    <style>
+        :root {
+            --ink: #1a1a1a;
+            --muted: #5c5c5c;
+            --line: #d6d6d6;
+            --bg: #f7f5f1;
+            --accent: #0f6b5c;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            color: var(--ink);
+            background: var(--bg);
+            line-height: 1.45;
+        }
+        main {
+            max-width: 52rem;
+            margin: 0 auto;
+            padding: 2rem 1.25rem 4rem;
+        }
+        h1 { font-size: 1.75rem; margin: 0 0 0.35rem; }
+        .lede { color: var(--muted); margin: 0 0 2rem; }
+        section {
+            margin: 0 0 2.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--line);
+        }
+        h2 { font-size: 1.15rem; margin: 0 0 0.75rem; }
+        .hint { color: var(--muted); font-size: 0.9rem; margin: 0 0 1rem; }
+        code { font-size: 0.85em; }
+
+        [data-accordion-item] { border: 1px solid var(--line); margin-bottom: 0.5rem; background: #fff; }
+        [data-accordion-item] [data-target="trigger"] {
+            display: block; width: 100%; text-align: left;
+            padding: 0.75rem 1rem; background: #fff; border: 0; cursor: pointer; font: inherit;
+        }
+        [data-accordion-item] [data-target="panel"] { padding: 0 1rem 1rem; }
+        [data-accordion-item] [data-target="panel"].is-hidden,
+        .is-hidden { display: none !important; }
+
+        [data-controller="dropdown"] {
+            position: relative; display: inline-block; min-width: 12rem;
+            background: #fff; border: 1px solid var(--line); padding: 0.5rem 0.75rem;
+            cursor: pointer;
+        }
+        [data-controller="dropdown"] [data-target="list"] {
+            position: absolute; left: 0; right: 0; top: 100%;
+            background: #fff; border: 1px solid var(--line); z-index: 5; margin: 0; padding: 0; list-style: none;
+        }
+        [data-controller="dropdown"] [data-option-value] { padding: 0.5rem 0.75rem; }
+        [data-controller="dropdown"] [data-option-value]:hover { background: #eee; }
+
+        form[data-controller="form"] {
+            display: grid; gap: 0.75rem; max-width: 22rem;
+            background: #fff; padding: 1rem; border: 1px solid var(--line);
+        }
+        label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
+        input, button { font: inherit; padding: 0.45rem 0.6rem; }
+        button[type="submit"], .btn {
+            background: var(--accent); color: #fff; border: 0; cursor: pointer;
+        }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid var(--line); padding: 0.5rem 0.65rem; text-align: left; }
+
+        .aspis-modal {
+            position: fixed; inset: 0; z-index: 40;
+            display: none; align-items: center; justify-content: center;
+        }
+        .aspis-modal.is-open { display: flex; }
+        .aspis-modal__backdrop {
+            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35);
+        }
+        .aspis-modal__dialog {
+            position: relative; background: #fff; padding: 1.25rem 1.5rem;
+            min-width: 16rem; max-width: 24rem; border: 1px solid var(--line);
+        }
+        .aspis-modal__close {
+            position: absolute; top: 0.35rem; right: 0.5rem;
+            border: 0; background: transparent; font-size: 1.25rem; cursor: pointer;
+        }
+        .aspis-loader__spin {
+            display: inline-block; width: 1.25rem; height: 1.25rem;
+            border: 2px solid var(--line); border-top-color: var(--accent);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .aspis-loader__track { height: 0.4rem; background: var(--line); margin-top: 0.5rem; }
+        .aspis-loader__fill { height: 100%; background: var(--accent); }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Aspis</h1>
+    <p class="lede">
+        Kurze Trigger-Keys (<code>accordion</code>, <code>dropdown</code>, <code>form</code>, <code>table</code>, <code>modal</code>).
+        Plan näht Specifiers; Klassennamen wie <code>ControllerAccordion</code> werden normalisiert.
+    </p>
+
+    <section>
+        <h2>Accordion</h2>
+        <p class="hint"><code>data-controller="accordion"</code> · DOM-Scan · single-open · ARIA</p>
+        <div data-controller="accordion"
+             data-slice-key="features.accordionFeature"
+             data-single-open="true">
+            <div data-accordion-item data-id="a1">
+                <button type="button" data-target="trigger" aria-expanded="false">Erster Abschnitt</button>
+                <div data-target="panel">Inhalt A.</div>
+            </div>
+            <div data-accordion-item data-id="a2" class="is-open">
+                <button type="button" data-target="trigger" aria-expanded="true">Zweiter Abschnitt</button>
+                <div data-target="panel">Inhalt B — startet offen.</div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h2>Dropdown</h2>
+        <p class="hint"><code>data-controller="dropdown"</code></p>
+        <div data-controller="dropdown"
+             data-slice-key="features.dropdownFeature"
+             data-value="beta"
+             data-name="city">
+            <span data-target="trigger"><span data-target="label">Bitte wählen…</span></span>
+            <ul data-target="list">
+                <li data-option-value="alpha">Alpha</li>
+                <li data-option-value="beta">Beta</li>
+                <li data-option-value="gamma">Gamma</li>
+            </ul>
+        </div>
+    </section>
+
+    <section>
+        <h2>Form (simple)</h2>
+        <p class="hint"><code>form</code> + <code>data-layout="simple"</code> — schlanke Mixins</p>
+        <form data-controller="form"
+              data-layout="simple"
+              data-slice-key="features.mainForm"
+              data-url="./demo/table-data.json"
+              method="get"
+              data-reset-on-success="false">
+            <label>
+                Name
+                <input name="name" type="text" value="Demo" required>
+            </label>
+            <button type="submit">Senden</button>
+            <p data-target="form-message" class="is-hidden"></p>
+        </form>
+    </section>
+
+    <section>
+        <h2>Table</h2>
+        <p class="hint"><code>data-url</code> Pflicht · Template <code>table</code></p>
+        <div data-controller="table"
+             data-slice-key="features.gildeTable"
+             data-url="./demo/table-data.json">
+            <table>
+                <thead>
+                    <tr>
+                        <th data-sort-key="name">Name</th>
+                        <th data-sort-key="status">Status</th>
+                    </tr>
+                </thead>
+                <tbody data-target="table-body">
+                    <tr><td colspan="2">Lädt…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Modal</h2>
+        <p class="hint"><code>data-mount="body"</code> · Loader-Spinner im Overlay</p>
+        <button type="button" class="btn" data-open-modal="demo-modal">Modal öffnen</button>
+        <div id="demo-modal"
+             data-controller="modal"
+             data-slice-key="features.modal"
+             data-content="loader"
+             data-loader="spinner"
+             data-mount="body"
+             data-title="Bitte warten"
+             data-message="Daten werden geladen…"></div>
+    </section>
+</main>
+
+<script type="module" src="./src/entry.js"></script>
+</body>
+</html>

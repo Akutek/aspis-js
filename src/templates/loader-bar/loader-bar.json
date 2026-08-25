@@ -1,0 +1,10 @@
+{
+    "name": "loader-bar",
+    "placeholder": {
+        "message": "{{message}}",
+        "progress": "{{progress}}"
+    },
+    "files": {
+        "markup": "loader-bar.html"
+    }
+}

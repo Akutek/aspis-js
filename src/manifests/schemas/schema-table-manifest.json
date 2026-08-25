@@ -1,0 +1,11 @@
+{
+    "id": "table",
+    "kind": "table",
+    "defaults": {
+        "layout": "default",
+        "rows": []
+    },
+    "row": {
+        "type": "object"
+    }
+}

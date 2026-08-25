@@ -1,0 +1,39 @@
+---
+description: Typen nur in JSDoc; keine TypeScript-Syntax
+globs: **/*.js
+alwaysApply: true
+---
+
+# Single Source of Truth for Types (SSOT)
+
+Gilt für `*.js`.
+
+**Typen liegen in JSDoc.** `{string}`, `{number}`, `{boolean}`, `{Promise<T>}`, `@param {…}`, `@returns {…}`, `@type {…}`, `@typedef`, `@template` sind die Typquelle. Geteilte Formen in `src/types/*.js` als `@typedef` (kein `export type`). Prüfung: `jsconfig.json` mit `checkJs`, `npm run check` (`tsc --noEmit -p jsconfig.json`). TypeScript bleibt nur der Checker, nicht die Runtime-Sprache.
+
+**Keine TypeScript-Syntax.** Keine `.ts`/`.tsx`-Dateien, kein `import type`, keine Annotationen `x: string` oder `function f(): T` am Code. Runtime ist ESM-JavaScript.
+
+**JSDoc auch für Human UX.** Blöcke, wenn sie fachlichen Mehrwert geben: Erklärungen, Nebeneffekte, Randfälle, `@deprecated`, `@example`, `{@link}` als Verweis.
+
+**Keine redundanten Beschreibungen.** Selbsterklärende Funktionen brauchen keinen Prosatext. Parameter nicht nur um den Namen zu wiederholen — der Typ gehört in `{…}`.
+
+```js
+// falsch (TypeScript-Syntax)
+static async import(importer: Importer, specifier: string): Promise<Function | null> {}
+
+/**
+ * Importiert eine Klasse.
+ * @param specifier Der Specifier
+ */
+static async import(importer, specifier) {}
+
+// richtig
+/**
+ * @param {import("../types/importer.js").Importer} importer
+ * @param {string} specifier
+ * @returns {Promise<Function|null>}
+ */
+static async import(importer, specifier) {}
+
+/** Pfropft Manifest, Middleware oder Plugin auf den Scanner-Host. */
+static async expand(registry, expansion = {}) {}
+```

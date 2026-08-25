@@ -1,0 +1,15 @@
+---
+description: Zustandslose Priority-Queue — Service, Extension, Manager, kein Host
+globs: src/services/PriorityQueueService.js,src/extensions/priority-queue/PriorityQueueExtension.js,src/managers/PriorityQueueManager.js
+alwaysApply: false
+---
+
+# Priority-Queue
+
+Kein `new`. Kein Host in der Registry. Eine Liste rein, dieselbe Liste sortiert raus.
+
+- `PriorityQueueService.sort(items, pattern)` — nur Rang: `item.rank`, sonst `pattern.ranks[key]`, sonst Index in `pattern.order`. Gleicher Rang: Eingabereihenfolge. Default-Key `type`.
+- `PriorityQueueExtension` — Muster normalisieren/mergen, Cache-Schlüssel `priority-queue:pattern`.
+- `PriorityQueueManager` — Dirigent: `sort(registry, items, pattern?)`, `pattern(registry)`, `expand(registry, extra)` pfropft Ränge/Reihenfolge in den Cache.
+
+Kein `BaseExtension.prepare(host)`. Ausbau später: Manifest-Muster, Pipelines. Compare nutzt den Dirigenten; andere Phasen dürfen das auch.

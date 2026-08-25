@@ -1,0 +1,20 @@
+---
+description: Manifeste bei jeder Klassen-Änderung mitführen, bei Größe aufteilen
+alwaysApply: true
+---
+
+# Manifeste mit der Klasse
+
+Klasse anlegen, ändern (Pfad, Export, Name, Area) oder löschen: **dieselbe Änderung in den Manifesten**. Code ohne Katalog-Eintrag ist für den Importer unsichtbar.
+
+Fast immer anfassen:
+
+- `src/manifests/registry-manifest.json` — `classRouting` / `manifestRouting` / `boot`, wenn eine **Gruppe** neu ist
+- Gruppen-Index in `src/manifests/class/`, z. B. `core-index-manifest.json`, `controllers-index-manifest.json`
+- Debug-/Error-Index in `src/manifests/debug/` und `src/manifests/error/`
+
+Nur bei Bedarf: `src/config/app-config.json` (Cardinals), State-/Event-Manifeste, Hydrator-Index.
+
+Wird eine Datei unübersichtlich oder die Struktur spricht dafür: **Sub-Manifeste** und vom Parent nur `{ directory, file }` zeigen. Laden faul über Importer / `ManifestLoaderService`, nicht alles im Boot. Beispiel: `classRouting` bleibt der Index. Plan: `src/manifests/plan/plan-index-manifest.json` zeigt auf Portionen; Trigger `type` = Scan-`data-controller`, ohne die Klasse zu laden. Watcher-Hosts: `watchers-index-manifest.json` plus `classRouting.watchers`. Tailor: `core.Tailor`. Splicer: `core.Splicer`. SplicerManager: `manager.SplicerManager`. Dienste: `services-index-manifest.json`.
+
+Gelöschte Klassen: Einträge entfernen, keine toten Pfade.

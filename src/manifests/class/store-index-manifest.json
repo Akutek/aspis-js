@@ -1,0 +1,42 @@
+﻿{
+    "StoreSchema": {
+        "directory": "core/store",
+        "file": "StoreSchema.js",
+        "export": "StoreSchema"
+    },
+    "StoreProxy": {
+        "directory": "core/store",
+        "file": "StoreProxy.js",
+        "export": "StoreProxy"
+    },
+    "StoreEffects": {
+        "directory": "core/store",
+        "file": "StoreEffects.js",
+        "export": "StoreEffects"
+    },
+    "StoreReactiveEffect": {
+        "directory": "core/store",
+        "file": "StoreReactiveEffect.js",
+        "export": "StoreReactiveEffect"
+    },
+    "StoreDependencies": {
+        "directory": "core/store",
+        "file": "StoreDependencies.js",
+        "export": "StoreDependencies"
+    },
+    "StoreFlush": {
+        "directory": "core/store",
+        "file": "StoreFlush.js",
+        "export": "StoreFlush"
+    },
+    "StorePipeline": {
+        "directory": "core/store",
+        "file": "StorePipeline.js",
+        "export": "StorePipeline"
+    },
+    "StoreDeclareShield": {
+        "directory": "core/store",
+        "file": "StoreDeclareShield.js",
+        "export": "StoreDeclareShield"
+    }
+}

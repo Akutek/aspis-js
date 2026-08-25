@@ -1,0 +1,15 @@
+---
+description: BaseManager — Registry-Dienste für Phasen-Manager
+globs: src/managers/**/*.js
+alwaysApply: false
+---
+
+# Manager
+
+Phasen-Manager `extends BaseManager`, bleiben zustandslos (`static`). **Kein `new` auf Managern.** Routing und schrittweiser Dirigent; weitere Steps am Manager, nicht durch Umbenennen. Keine Klassenvariablen (`static x =`, `#x =`, `x =` am Rumpf). Locals in Methoden sind erlaubt. Ausbau (`*ManagerExtension`) liegt unter `src/extensions/<phase>/`. Eine Frage pro Kapitel: Scan = Was existiert? Plan = Was soll existieren? Compare = Was hat sich verändert? Observer = Wann neu bewerten? Compose = Welche Fähigkeiten? Controller = Wie verhält sich die Instanz? Splice = Wie kombinieren? Factory = Welche Instanz?
+
+`BaseManager` holt zentrale Instanzen aus der Registry: `cache`, `store`, `importer`, `debug`, `error`. `debug(registry)` / `error(registry)` sind die Agenten, nicht Log-Methoden. Logs: `log` / `info` / `warn` / `capture` — Prefix `[ScanManager.scan()]` kommt aus `origin()` / `tag()`, Kindklassen schreiben den nicht selbst. `locate(registry)`: Klasse, Methode, welche Host-Keys stehen. Die meisten Phasen-Methoden nehmen nur `registry`; Factory nimmt zusätzlich die Returns der Unterphasen.
+
+Scan: `ScanManager.extension` plus Host `Scanner`. Plan: Trigger-Katalog, kein Host. Compare: Plan-Items, Listen über `PriorityQueueManager`. Splice: `SplicerManager.extension` plus Host `Splicer` (Tailor über Factory-Extension). Factory: Loop reicht `compared` und die Returns von `observe` / `compose` / `control` / `splice` an `factory(registry, parts)`. Compose stellt Mixin- und Composition-Dienst bereit. ControllerService lädt Klassen. Splicer wählt Mixins, Tailor näht, `FactoryManager.spawn` setzt Instanzen an den DOM (`Registry` WeakMap, Store, Dispatcher, Debug/Error).
+
+Nicht von BaseManager erben: `RegistryManager` (Map-Zugang), `CacheManager` (Cache-API), `DebugErrorManager` (erzeugt die Agenten).

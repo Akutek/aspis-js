@@ -1,0 +1,102 @@
+{
+    "settings": {
+        "strictMode": true,
+        "debug": true
+    },
+    "namespaces": ["app", "features", "shared"],
+    "globalStyles": {
+        "HIDDEN": "is-hidden",
+        "ACTIVE": "is-active",
+        "DISABLED": "is-disabled"
+    },
+    "slices": {
+        "app.ui": {
+            "initialState": {
+                "globalSpinner": false,
+                "sidebarExpanded": true
+            },
+            "config": {
+                "styles": {
+                    "SPINNER_ACTIVE": "is-active"
+                },
+                "targets": {
+                    "spinner": {
+                        "selector": "#global-spinner",
+                        "bindClasses": {
+                            "globalSpinner": "SPINNER_ACTIVE"
+                        }
+                    }
+                }
+            }
+        },
+        "features.filter": {
+            "initialState": {
+                "searchQuery": ""
+            },
+            "config": {
+                "styles": {
+                    "HIGHLIGHT": "filter-active-highlight"
+                },
+                "targets": {
+                    "input": {
+                        "selector": "input",
+                        "bindClasses": {
+                            "searchQuery": "HIGHLIGHT"
+                        }
+                    }
+                }
+            }
+        },
+        "features.gildeTable": {
+            "initialState": {
+                "model": null,
+                "isLoading": false,
+                "isCompact": false
+            },
+            "config": {
+                "styles": {
+                    "LOADING": "table-body-shimmer",
+                    "COMPACT": "table-layout-compact"
+                },
+                "targets": {
+                    "host": {
+                        "selector": ":scope",
+                        "bindClasses": {
+                            "isCompact": "COMPACT"
+                        }
+                    },
+                    "body": {
+                        "selector": "[data-target='table-body']",
+                        "bindClasses": {
+                            "isLoading": "LOADING"
+                        }
+                    }
+                }
+            }
+        },
+        "features.mainForm": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.accordionFeature": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.dropdownFeature": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.modal": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        }
+    }
+}

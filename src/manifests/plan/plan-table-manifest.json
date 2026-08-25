@@ -1,0 +1,11 @@
+{
+    "trigger": {
+        "type": "table"
+    },
+    "needs": ["store", "watcher"],
+    "specifiers": ["controllers.ControllerTable"],
+    "watchers": [
+        "watchers.MutationWatcher",
+        "watchers.ResizeWatcher"
+    ]
+}

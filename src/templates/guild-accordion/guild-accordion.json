@@ -1,0 +1,22 @@
+{
+    "name": "guild-accordion",
+    "files": {
+        "layout": "guild-accordion_layout.html",
+        "item": "guild-accordion_item.html",
+        "header": "guild-accordion_header.html",
+        "content": "guild-accordion_content.html",
+        "character": "guild-accordion_character.html"
+    },
+    "loops": {
+        "item": {
+            "placeholder": "{{item-loop}}",
+            "from": "items",
+            "part": "item"
+        },
+        "character": {
+            "placeholder": "{{character-loop}}",
+            "from": "characters",
+            "part": "character"
+        }
+    }
+}

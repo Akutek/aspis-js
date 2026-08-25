@@ -1,0 +1,28 @@
+---
+description: Manifestgesteuerte Klassen-Imports über Importer
+globs: src/core/Importer.js,src/extensions/importer/ImporterExtension.js,src/managers/ImportManager.js,src/core/AssetPath.js,src/manifests/**/*.json
+alwaysApply: false
+---
+
+# Imports
+
+Kein `RegistryManager` für JS-Klassen. Der bleibt Map + JSON-`load`.
+
+- Instanz `Importer` in der Registry unter `importer` (Cache + Store angehängt).
+- `ImportManager.init` / `apply` / `import`.
+- Katalog: `registry-manifest.json` → `classRouting` (Gruppe → Index `{ directory, file }`).
+- Laden: `ImportManager.import(registry, "controllers.ControllerTable")` oder `"core.Scanner"`.
+- Store-Event `import:loaded`. Cache: `manifest:index:…`, `manifest:imports`.
+- Pfade: relativ zu `src/` über `AssetPath` (Legacy `/src/...` wird normalisiert). Optional `publicPaths.base` in app-config.
+
+Statische `import`-Zeilen nur im Boot bis der Importer steht. `ControllerRegistry` nicht ausbauen.
+
+```json
+{
+  "ControllerTable": {
+    "directory": "controllers",
+    "file": "ControllerTable.js",
+    "export": "ControllerTable"
+  }
+}
+```

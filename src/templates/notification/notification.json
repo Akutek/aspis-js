@@ -1,0 +1,10 @@
+{
+    "name": "notification",
+    "placeholder": {
+        "title": "{{title}}",
+        "message": "{{message}}"
+    },
+    "files": {
+        "markup": "notification.html"
+    }
+}

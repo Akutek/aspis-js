@@ -1,0 +1,20 @@
+{
+    "id": "dropdown",
+    "kind": "dropdown",
+    "defaults": {
+        "layout": "default",
+        "isOpen": false,
+        "value": "",
+        "error": null,
+        "isTouched": false,
+        "focusedIndex": 0,
+        "selectedIndex": -1,
+        "placeholder": "Bitte wählen...",
+        "options": []
+    },
+    "option": {
+        "value": "",
+        "label": "",
+        "disabled": false
+    }
+}

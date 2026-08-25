@@ -1,0 +1,12 @@
+---
+description: Keine persönlichen Angaben zur entwickelnden Person
+alwaysApply: true
+---
+
+# Privatsphäre
+
+Keine persönlichen Details zur entwickelnden Person in Code, Kommentaren, Docs, Commits, Chat-Zusammenfassungen oder Regeln: Name, Spitzname, E-Mail, Arbeitgeber, Wohnort, Accounts.
+
+Formuliere git und Kontrolle unpersönlich: „die entwickelnde Person staged und committed selbst.“
+
+**Einzige Ausnahme:** `LICENSE` / `LICENCE` und SPDX-/Copyright-Zeilen, die das Lizenzrecht verlangt.

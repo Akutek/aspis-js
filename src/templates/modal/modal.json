@@ -1,0 +1,11 @@
+{
+    "name": "modal",
+    "placeholder": {
+        "title": "{{title}}",
+        "message": "{{message}}",
+        "ariaHidden": "{{ariaHidden}}"
+    },
+    "files": {
+        "markup": "modal.html"
+    }
+}

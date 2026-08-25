@@ -1,0 +1,22 @@
+{
+    "name": "table",
+    "files": {
+        "layout": "table_layout.html",
+        "thead": "table_thead.html",
+        "tbody": "table_tbody.html",
+        "tfoot": "table_tfoot.html",
+        "row": "table_row.html"
+    },
+    "slots": {
+        "thead": "{{thead-slot}}",
+        "tbody": "{{tbody-slot}}",
+        "tfoot": "{{tfoot-slot}}"
+    },
+    "loops": {
+        "row": {
+            "placeholder": "{{row-loop}}",
+            "from": "rows",
+            "part": "row"
+        }
+    }
+}

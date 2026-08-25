@@ -1,0 +1,15 @@
+{
+    "trigger": {
+        "type": "form"
+    },
+    "needs": ["store"],
+    "specifiers": [
+        "controllers.ControllerFormView",
+        "controllers.ControllerFormFields",
+        "controllers.ControllerFormDropdownSync",
+        "controllers.ControllerFormValidation",
+        "controllers.ControllerFormSubmit",
+        "controllers.ControllerFormRender",
+        "controllers.ControllerForm"
+    ]
+}

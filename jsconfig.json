@@ -1,0 +1,41 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM"],
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "checkJs": true,
+        "allowJs": true,
+        "strict": false,
+        "noImplicitAny": false,
+        "noImplicitThis": false,
+        "strictNullChecks": false,
+        "strictFunctionTypes": false,
+        "strictBindCallApply": false,
+        "useUnknownInCatchVariables": false,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "noUncheckedIndexedAccess": false,
+        "exactOptionalPropertyTypes": false,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "maxNodeModuleJsDepth": 0,
+        "forceConsistentCasingInFileNames": true
+    },
+    "include": ["src/**/*.js"],
+    "exclude": [
+        "src/controllers/ControllerAccordion.js",
+        "src/controllers/ControllerDropdown.js",
+        "src/controllers/ControllerTable.js",
+        "src/controllers/ControllerForm.js",
+        "src/controllers/ControllerFormFields.js",
+        "src/controllers/ControllerFormView.js",
+        "src/controllers/ControllerFormSubmit.js",
+        "src/controllers/ControllerFormValidation.js",
+        "src/controllers/ControllerFormRender.js",
+        "src/controllers/ControllerFormDropdownSync.js",
+        "src/controllers/ControllerModal.js",
+        "src/controllers/ControllerModalHost.js",
+        "src/controllers/ControllerModalContent.js"
+    ]
+}

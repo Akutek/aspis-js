@@ -1,0 +1,11 @@
+{
+    "trigger": {
+        "type": "modal"
+    },
+    "needs": ["store"],
+    "specifiers": [
+        "controllers.ControllerModalHost",
+        "controllers.ControllerModalContent",
+        "controllers.ControllerModal"
+    ]
+}

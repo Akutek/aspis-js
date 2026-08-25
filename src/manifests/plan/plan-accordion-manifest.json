@@ -1,0 +1,7 @@
+{
+    "trigger": {
+        "type": "accordion"
+    },
+    "needs": ["store"],
+    "specifiers": ["controllers.ControllerAccordion"]
+}

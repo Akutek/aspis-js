@@ -1,0 +1,16 @@
+{
+    "id": "accordion",
+    "kind": "accordion",
+    "defaults": {
+        "layout": "default",
+        "singleOpen": false,
+        "items": []
+    },
+    "item": {
+        "id": "",
+        "title": "",
+        "content": "",
+        "isOpen": false,
+        "disabled": false
+    }
+}

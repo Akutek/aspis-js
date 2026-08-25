@@ -1,0 +1,25 @@
+---
+description: Git-Kontrolle und Commit-Nachrichtenformat
+alwaysApply: true
+---
+
+# Git
+
+Der Agent committed und pusht nicht. Auch nicht hilfsweise, auch nicht nach „schreib mir einen Commit“.
+
+Erlaubt: Diff lesen, Commit-Nachricht als Entwurf.
+
+Verboten: `git commit`, `git push`, amend, reset auf geteilte History, `--no-verify`.
+
+Die entwickelnde Person staged, committed und pusht selbst.
+
+Nachricht: Leerzeile nach der Überschrift, dann Bindestrich-Punkte (Komponente: was/warum), Schluss Satz zum Ziel. Präfix `refactor(…)`, `feat(…)`, `fix(…)`. Deutsch, wie die Code-Kommentare.
+
+```
+feat(import): Importer für manifestgesteuerte Klassen
+
+- ImportManager: init/apply/import; RegistryManager bleibt Map plus JSON
+- Boot: nach Registry den Importer anlegen und classRouting anwenden
+
+Hält Datei-Imports auf den Boot-Anfang begrenzt.
+```

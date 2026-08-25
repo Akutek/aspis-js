@@ -1,0 +1,14 @@
+{
+    "id": "modal",
+    "kind": "modal",
+    "defaults": {
+        "layout": "default",
+        "isOpen": false,
+        "title": "",
+        "message": "",
+        "contentKind": "loader",
+        "variant": "spinner",
+        "progress": null,
+        "closeOnBackdrop": true
+    }
+}

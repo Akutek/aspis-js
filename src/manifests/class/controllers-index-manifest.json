@@ -1,0 +1,72 @@
+﻿{
+    "ControllerTable": {
+        "directory": "controllers",
+        "file": "ControllerTable.js",
+        "export": "ControllerTable"
+    },
+    "ControllerAccordion": {
+        "directory": "controllers",
+        "file": "ControllerAccordion.js",
+        "export": "ControllerAccordion"
+    },
+    "ControllerForm": {
+        "directory": "controllers",
+        "file": "ControllerForm.js",
+        "export": "ControllerForm"
+    },
+    "ControllerFormView": {
+        "directory": "controllers",
+        "file": "ControllerFormView.js",
+        "export": "ControllerFormView"
+    },
+    "ControllerFormFields": {
+        "directory": "controllers",
+        "file": "ControllerFormFields.js",
+        "export": "ControllerFormFields"
+    },
+    "ControllerFormDropdownSync": {
+        "directory": "controllers",
+        "file": "ControllerFormDropdownSync.js",
+        "export": "ControllerFormDropdownSync"
+    },
+    "ControllerFormValidation": {
+        "directory": "controllers",
+        "file": "ControllerFormValidation.js",
+        "export": "ControllerFormValidation"
+    },
+    "ControllerFormSubmit": {
+        "directory": "controllers",
+        "file": "ControllerFormSubmit.js",
+        "export": "ControllerFormSubmit"
+    },
+    "ControllerFormRender": {
+        "directory": "controllers",
+        "file": "ControllerFormRender.js",
+        "export": "ControllerFormRender"
+    },
+    "ControllerDropdown": {
+        "directory": "controllers",
+        "file": "ControllerDropdown.js",
+        "export": "ControllerDropdown"
+    },
+    "ControllerModal": {
+        "directory": "controllers",
+        "file": "ControllerModal.js",
+        "export": "ControllerModal"
+    },
+    "ControllerModalHost": {
+        "directory": "controllers",
+        "file": "ControllerModalHost.js",
+        "export": "ControllerModalHost"
+    },
+    "ControllerModalContent": {
+        "directory": "controllers",
+        "file": "ControllerModalContent.js",
+        "export": "ControllerModalContent"
+    },
+    "BaseController": {
+        "directory": "controllers",
+        "file": "BaseController.js",
+        "export": "BaseController"
+    }
+}

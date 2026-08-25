@@ -1,0 +1,21 @@
+---
+description: Plan-Phase, Manifest-Trigger, Specifier ohne Fachwissen
+globs: src/managers/PlanManager.js,src/extensions/plan/PlanManagerExtension.js,src/hydrators/PlanManifestHydrator.js,src/manifests/plan/plan-*-manifest.json
+alwaysApply: false
+---
+
+# Plan
+
+Frage: Was soll existieren?
+
+Kein `new PlanManager()`. Nach dem Scan: `PlanManager.plan(registry)`. Compare startet Plan nicht.
+
+PlanManager ist Dirigent. Arbeit: `PlanManagerExtension`. Kein Host. Katalog: `manifestRouting.plan` → `plan-index-manifest.json` (faul, Cache `manifest:index:plan`). Portionen Cache `manifest:plan:{type}`. Snapshot `plan:current`.
+
+Scan-`type` (`data-controller`) ist der **kurze** Trigger-Schlüssel (`accordion`, `table`, `form`, `dropdown`, `modal`). Mapping nur in `ControllerTrigger.normalize` (Klassenname → Key, Alias `custom-dropdown` → `dropdown`). Layout: Index-Keys `type.layout` und `type-layout` vor `type` (z. B. `form.simple`). Treffer laden die Portion (`trigger`, `needs`, `specifiers`, optional `watchers`, `mixins`, `compositions`). Plan weiß nicht, was ein Controller ist — Specifier bleiben Katalogstrings (`controllers.ControllerTable`). `needs` nur `store`, `watcher`, `observer` (`PLAN_NEEDS` in `src/types/managers.js`); unbekannt wirft der Hydrator. `observer` gilt in der Observer-Phase noch als Watcher-Bedarf. `mixins` sind zusätzliche Klassen-Specifier; fehlen sie, sind die `specifiers` die Mixin-Quellen.
+
+Ohne Plan-Treffer spawnt Compare **keine** nackten Scan-Items (leere Specifiers).
+
+Keine Klasse importieren in dieser Phase. Factory liest Specifier später.
+
+Neuer DOM-Typ: Index-Eintrag plus Portion-Manifest, `controllers-index` nur wenn ein Specifier dorthin zeigt.

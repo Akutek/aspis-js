@@ -1,0 +1,50 @@
+﻿{
+    "modal": {
+        "directory": "templates/modal",
+        "file": "modal.json"
+    },
+    "loader-spinner": {
+        "directory": "templates/loader-spinner",
+        "file": "loader-spinner.json"
+    },
+    "defaultSpinner": {
+        "directory": "templates/loader-spinner",
+        "file": "loader-spinner.json"
+    },
+    "loader-bar": {
+        "directory": "templates/loader-bar",
+        "file": "loader-bar.json"
+    },
+    "notification": {
+        "directory": "templates/notification",
+        "file": "notification.json"
+    },
+    "table": {
+        "directory": "templates/table",
+        "file": "table.json"
+    },
+    "guild-table": {
+        "directory": "templates/guild-table",
+        "file": "guild-table.json"
+    },
+    "accordion": {
+        "directory": "templates/accordion",
+        "file": "accordion.json"
+    },
+    "accordion-component": {
+        "directory": "templates/accordion",
+        "file": "accordion.json"
+    },
+    "guild-accordion": {
+        "directory": "templates/guild-accordion",
+        "file": "guild-accordion.json"
+    },
+    "dropdown": {
+        "directory": "templates/dropdown",
+        "file": "dropdown.json"
+    },
+    "custom-dropdown": {
+        "directory": "templates/dropdown",
+        "file": "dropdown.json"
+    }
+}

@@ -1,0 +1,22 @@
+---
+description: Zentrale Debug- und Error-Agenten, Manifest-Filter, Envelope
+globs: src/agents/**/*.js,src/extensions/debug-agent/**/*.js,src/extensions/error-agent/**/*.js,src/managers/DebugErrorManager.js,src/manifests/debug/debug-index-manifest.json,src/manifests/error/error-index-manifest.json
+alwaysApply: false
+---
+
+# Agenten
+
+Eine `DebugAgent`-Instanz (`shared()`), eine `ErrorAgent`-Instanz (`shared()`), beide in der Registry. Arbeitsklassen instanziieren keine Logger.
+
+Dirigenten: `DebugAgentExtension` / `ErrorAgentExtension`. Umschlag und Filter: `AgentEnvelope` (nur `static`).
+
+Aufruf: `DebugAgent.info("[StoreExtension.apply()] …")` oder `{ area, message }`. Area aus dem Klammer-Prefix (`Store…` → `store`) oder explizit.
+
+Manifest (`settings`):
+
+- Debug: `debug`, `namespace`, `levels` (`debug`/`info`/`warn`/`error`), `areas` (leer = alle), `context` (`store.keys`, `cache.metrics`)
+- Error: `capture` (false = nur Konsole), `namespace`, optional `areas` / `context`
+- Areas zusätzlich: `events`, `render`, `hydrate`, `fetch`, `app`
+- `pipelines`: Katalog (console an, remote aus). Einträge ohne `handle` bleiben Platzhalter; Konsole kommt aus `AgentEnvelope.print`.
+
+Checks vor Store/Cache: Flag, Level, Area. `error` am DebugAgent ignoriert `debug: false`. Kein App-EventBus. Pipeline = Channel. Hosts über `runtime.registry` nach `bind`.

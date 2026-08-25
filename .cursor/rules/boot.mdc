@@ -1,0 +1,16 @@
+---
+description: Boot-Reihenfolge und Registry-Zugang
+globs: src/managers/BootManager.js,src/managers/RegistryManager.js,src/managers/DebugErrorManager.js,src/managers/CacheManager.js,src/managers/ImportManager.js,src/config/app-config.json
+alwaysApply: false
+---
+
+# Boot
+
+1. DebugAgent + ErrorAgent (basic) — loggen/fangen können.
+2. Cache (eine Instanz) — Schlüssel `manifest:…`, später `template:…`.
+3. Registry + Store — Registry bleibt Map. Store teilt `store.cache`.
+4. `RegistryManager.register` (debug, error, cache). Lesen nur `RegistryManager.get`.
+5. `ImportManager.init(registry)` — ab hier Klassen über Manifest.
+6. Manifeste über `ManifestLoaderService` in Cache + Registry. Einstieg: `src/config/app-config.json` (Cardinals). `ImportManager.apply` setzt `classRouting`. Debug/Error über `errorAndDebug` → `DebugErrorManager.apply`. State über `manifestRouting.states` (Index → `state-manifest`). Events über `manifestRouting.events`. Schema-JSON über `SchemaCatalog.load`. Templates-Index über `manifestRouting.templates`.
+
+Debug/Error müssen nicht fertig sein, nur existieren. Store entsteht derweil in `RegistryManager.init`. `boot()` gibt die Registry zurück, ruft Scan nicht auf. Demo-Einstieg `src/entry.js` ruft `start()` in `src/aspis.js`: Boot → `cycle` registrieren → `runCycle`. `stop()` hält Watcher, `destroy` an Controllern, löst `cycle`.

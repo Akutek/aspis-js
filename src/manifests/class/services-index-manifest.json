@@ -1,0 +1,82 @@
+﻿{
+    "PriorityQueueService": {
+        "directory": "services",
+        "file": "PriorityQueueService.js",
+        "export": "PriorityQueueService"
+    },
+    "MixinService": {
+        "directory": "services",
+        "file": "MixinService.js",
+        "export": "MixinService"
+    },
+    "CompositionService": {
+        "directory": "services",
+        "file": "CompositionService.js",
+        "export": "CompositionService"
+    },
+    "ControllerService": {
+        "directory": "services",
+        "file": "ControllerService.js",
+        "export": "ControllerService"
+    },
+    "EventDispatcher": {
+        "directory": "services",
+        "file": "EventDispatcher.js",
+        "export": "EventDispatcher"
+    },
+    "SchemaService": {
+        "directory": "services",
+        "file": "SchemaService.js",
+        "export": "SchemaService"
+    },
+    "DataFetcher": {
+        "directory": "services",
+        "file": "DataFetcher.js",
+        "export": "DataFetcher"
+    },
+    "FormFieldService": {
+        "directory": "services",
+        "file": "FormFieldService.js",
+        "export": "FormFieldService"
+    },
+    "ValidationService": {
+        "directory": "services",
+        "file": "ValidationService.js",
+        "export": "ValidationService"
+    },
+    "RenderService": {
+        "directory": "services",
+        "file": "RenderService.js",
+        "export": "RenderService"
+    },
+    "TemplateService": {
+        "directory": "services",
+        "file": "TemplateService.js",
+        "export": "TemplateService"
+    },
+    "TemplateCatalog": {
+        "directory": "services/template",
+        "file": "TemplateCatalog.js",
+        "export": "TemplateCatalog"
+    },
+    "SchemaCatalog": {
+        "directory": "services/schema",
+        "file": "SchemaCatalog.js",
+        "export": "SchemaCatalog"
+    },
+    "ManifestLoaderService": {
+        "directory": "services",
+        "file": "ManifestLoaderService.js",
+        "export": "ManifestLoaderService"
+    },
+    "CacheSearchPatternService": {
+        "directory": "services",
+        "file": "CacheSearchPatternService.js",
+        "export": "CacheSearchPatternService"
+    },
+    "ControllerCleaner": {
+        "directory": "services",
+        "file": "ControllerCleaner.js",
+        "export": "ControllerCleaner"
+    }
+}

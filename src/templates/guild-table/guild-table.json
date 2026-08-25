@@ -1,0 +1,35 @@
+{
+    "name": "guild-table",
+    "files": {
+        "layout": "guild-table_layout.html",
+        "thead": "guild-table_thead.html",
+        "tbody": "guild-table_tbody.html",
+        "tfoot": "guild-table_tfoot.html",
+        "row": "guild-table_row.html",
+        "player": "guild-table_player.html",
+        "character": "guild-table_character.html",
+        "profession": "guild-table_profession.html"
+    },
+    "slots": {
+        "thead": "{{thead-slot}}",
+        "tbody": "{{tbody-slot}}",
+        "tfoot": "{{tfoot-slot}}"
+    },
+    "loops": {
+        "row": {
+            "placeholder": "{{row-loop}}",
+            "from": "rows",
+            "part": "row"
+        },
+        "character": {
+            "placeholder": "{{character-loop}}",
+            "from": "characters",
+            "part": "character"
+        },
+        "profession": {
+            "placeholder": "{{profession-loop}}",
+            "from": "professions",
+            "part": "profession"
+        }
+    }
+}

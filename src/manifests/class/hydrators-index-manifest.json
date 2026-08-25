@@ -1,0 +1,52 @@
+﻿{
+    "RegistryManifestHydrator": {
+        "directory": "hydrators",
+        "file": "RegistryManifestHydrator.js",
+        "export": "RegistryManifestHydrator"
+    },
+    "DebugManifestHydrator": {
+        "directory": "hydrators",
+        "file": "DebugManifestHydrator.js",
+        "export": "DebugManifestHydrator"
+    },
+    "ErrorManifestHydrator": {
+        "directory": "hydrators",
+        "file": "ErrorManifestHydrator.js",
+        "export": "ErrorManifestHydrator"
+    },
+    "StateManifestHydrator": {
+        "directory": "hydrators",
+        "file": "StateManifestHydrator.js",
+        "export": "StateManifestHydrator"
+    },
+    "AppConfigHydrator": {
+        "directory": "hydrators",
+        "file": "AppConfigHydrator.js",
+        "export": "AppConfigHydrator"
+    },
+    "PlanManifestHydrator": {
+        "directory": "hydrators",
+        "file": "PlanManifestHydrator.js",
+        "export": "PlanManifestHydrator"
+    },
+    "SchemaManifestHydrator": {
+        "directory": "hydrators",
+        "file": "SchemaManifestHydrator.js",
+        "export": "SchemaManifestHydrator"
+    },
+    "RouteIndexHydrator": {
+        "directory": "hydrators",
+        "file": "RouteIndexHydrator.js",
+        "export": "RouteIndexHydrator"
+    },
+    "EventManifestHydrator": {
+        "directory": "hydrators",
+        "file": "EventManifestHydrator.js",
+        "export": "EventManifestHydrator"
+    },
+    "TemplateManifestHydrator": {
+        "directory": "hydrators",
+        "file": "TemplateManifestHydrator.js",
+        "export": "TemplateManifestHydrator"
+    }
+}

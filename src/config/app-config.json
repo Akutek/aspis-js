@@ -1,0 +1,20 @@
+﻿{
+    "version": "1",
+    "settings": {
+        "strictMode": true,
+        "debug": true
+    },
+    "publicPaths": {
+        "base": null
+    },
+    "cardinals": {
+        "registry-manifest": {
+            "directory": "manifests",
+            "file": "registry-manifest.json"
+        },
+        "RegistryManifestHydrator": {
+            "directory": "hydrators",
+            "file": "RegistryManifestHydrator.js"
+        }
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "trigger": {
+        "type": "dropdown"
+    },
+    "needs": ["store"],
+    "specifiers": ["controllers.ControllerDropdown"]
+}

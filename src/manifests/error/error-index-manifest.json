@@ -1,0 +1,43 @@
+{
+    "settings": {
+        "capture": true,
+        "namespace": "aspis",
+        "areas": [
+            "boot",
+            "scan",
+            "plan",
+            "compare",
+            "queue",
+            "cycle",
+            "factory",
+            "watcher",
+            "compose",
+            "tailor",
+            "splicer",
+            "schema",
+            "controller",
+            "events",
+            "render",
+            "hydrate",
+            "fetch",
+            "store",
+            "registry",
+            "import",
+            "cache",
+            "debug",
+            "error",
+            "app"
+        ],
+        "context": ["store.keys"]
+    },
+    "pipelines": {
+        "console": {
+            "id": "console",
+            "enabled": true
+        },
+        "remote": {
+            "id": "remote",
+            "enabled": false
+        }
+    }
+}

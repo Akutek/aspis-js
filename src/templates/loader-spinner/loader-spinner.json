@@ -1,0 +1,9 @@
+{
+    "name": "loader-spinner",
+    "placeholder": {
+        "message": "{{message}}"
+    },
+    "files": {
+        "markup": "loader-spinner.html"
+    }
+}

@@ -1,0 +1,82 @@
+﻿{
+    "BaseManager": {
+        "directory": "managers",
+        "file": "BaseManager.js",
+        "export": "BaseManager"
+    },
+    "BootManager": {
+        "directory": "managers",
+        "file": "BootManager.js",
+        "export": "BootManager"
+    },
+    "CacheManager": {
+        "directory": "managers",
+        "file": "CacheManager.js",
+        "export": "CacheManager"
+    },
+    "CompareManager": {
+        "directory": "managers",
+        "file": "CompareManager.js",
+        "export": "CompareManager"
+    },
+    "ComposeManager": {
+        "directory": "managers",
+        "file": "ComposeManager.js",
+        "export": "ComposeManager"
+    },
+    "ControllerManager": {
+        "directory": "managers",
+        "file": "ControllerManager.js",
+        "export": "ControllerManager"
+    },
+    "DebugErrorManager": {
+        "directory": "managers",
+        "file": "DebugErrorManager.js",
+        "export": "DebugErrorManager"
+    },
+    "FactoryManager": {
+        "directory": "managers",
+        "file": "FactoryManager.js",
+        "export": "FactoryManager"
+    },
+    "ImportManager": {
+        "directory": "managers",
+        "file": "ImportManager.js",
+        "export": "ImportManager"
+    },
+    "ObserverManager": {
+        "directory": "managers",
+        "file": "ObserverManager.js",
+        "export": "ObserverManager"
+    },
+    "PlanManager": {
+        "directory": "managers",
+        "file": "PlanManager.js",
+        "export": "PlanManager"
+    },
+    "PriorityQueueManager": {
+        "directory": "managers",
+        "file": "PriorityQueueManager.js",
+        "export": "PriorityQueueManager"
+    },
+    "RegistryManager": {
+        "directory": "managers",
+        "file": "RegistryManager.js",
+        "export": "RegistryManager"
+    },
+    "ScanManager": {
+        "directory": "managers",
+        "file": "ScanManager.js",
+        "export": "ScanManager"
+    },
+    "SplicerManager": {
+        "directory": "managers",
+        "file": "SplicerManager.js",
+        "export": "SplicerManager"
+    },
+    "StoreExpandManager": {
+        "directory": "managers",
+        "file": "StoreExpandManager.js",
+        "export": "StoreExpandManager"
+    }
+}

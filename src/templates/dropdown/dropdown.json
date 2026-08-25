@@ -1,0 +1,14 @@
+{
+    "name": "dropdown",
+    "files": {
+        "layout": "dropdown_layout.html",
+        "option": "dropdown_option.html"
+    },
+    "loops": {
+        "option": {
+            "placeholder": "{{option-loop}}",
+            "from": "options",
+            "part": "option"
+        }
+    }
+}

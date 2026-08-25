@@ -1,0 +1,22 @@
+---
+description: Importer faul und sparsam nutzen, keine unnötigen Ladungen
+alwaysApply: true
+---
+
+# Importer und Performance
+
+Nach `ImportManager.init` keine weiteren statischen `import`-Zeilen für Fachklassen. Laden nur über `ImportManager.import(registry, "gruppe.Name")`, und **erst wenn die Klasse gebraucht wird**.
+
+- Eine Klasse, nicht die ganze Gruppe. Index-JSON (`classRouting`) ist der Katalog, kein Vorladen aller Dateien.
+- denselben Specifier nicht extra fetchen: Module liegen in `runtime.modules`, Indices in Cache `manifest:index:…`.
+- Hosts (Scanner, Tailor, Splicer, Watcher, Controller, …) einmal erzeugen und in der Registry halten, nicht jeden Loop-Tick neu importieren. Factory-Band `far` lädt keine Controller-Klasse.
+- Boot darf Kern (Agenten, Cache, Registry, Store, Importer, Hydratoren) statisch ziehen; Scan/Plan/Factory/Controller nicht.
+
+```js
+// falsch
+import { Scanner } from "../core/Scanner.js";
+import { ControllerTable } from "../controllers/ControllerTable.js";
+
+// richtig
+const ScannerClass = await ImportManager.import(registry, "core.Scanner");
+```

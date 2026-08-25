@@ -1,0 +1,26 @@
+﻿{
+    "table": {
+        "directory": "manifests/schemas",
+        "file": "schema-table-manifest.json"
+    },
+    "form": {
+        "directory": "manifests/schemas",
+        "file": "schema-form-manifest.json"
+    },
+    "accordion": {
+        "directory": "manifests/schemas",
+        "file": "schema-accordion-manifest.json"
+    },
+    "dropdown": {
+        "directory": "manifests/schemas",
+        "file": "schema-dropdown-manifest.json"
+    },
+    "loader": {
+        "directory": "manifests/schemas",
+        "file": "schema-loader-manifest.json"
+    },
+    "modal": {
+        "directory": "manifests/schemas",
+        "file": "schema-modal-manifest.json"
+    }
+}

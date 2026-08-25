@@ -1,0 +1,20 @@
+{
+    "id": "loader",
+    "kind": "loader",
+    "defaults": {
+        "layout": "spinner",
+        "message": "Lade...",
+        "progress": null
+    },
+    "variants": {
+        "spinner": {
+            "layout": "spinner",
+            "message": "Lade Daten..."
+        },
+        "bar": {
+            "layout": "bar",
+            "message": "Lade...",
+            "progress": 0
+        }
+    }
+}

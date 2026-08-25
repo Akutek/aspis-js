@@ -1,0 +1,25 @@
+---
+description: Schlanker Store, Store*-Helfer, Erweitern über Extension
+globs: src/core/Store.js,src/core/store/**/*.js,src/extensions/store/StoreExtension.js,src/managers/StoreExpandManager.js
+alwaysApply: false
+---
+
+# Store
+
+Instanz hält `manifest`, `cache`, `runtime`, öffentliche API. Importiert nur `StoreExtension` und `DebugAgent`. `this.extension === StoreExtension` (die Klasse).
+
+`Store*`-Helfer: nur `static`, kein Konstruktor, kein Instanzzustand. Zustand am Store (`runtime`) und in der Registry.
+
+| Klasse | Rolle |
+| --- | --- |
+| `StoreExtension` | `prepare`, `apply`, `graft`; `pipelineKey = "setPipeline"` |
+| `StoreSchema` | hydratisiertes State-Manifest auswerten |
+| `StoreProxy` | Deep-Proxy |
+| `StoreEffects` / `StoreReactiveEffect` | Reaktivität |
+| `StoreDependencies` | Kaskaden + DOM |
+| `StoreFlush` | rAF-Batch |
+| `StorePipeline` / `StoreDeclareShield` | Set-Middleware |
+
+`use` eager, `load`/`install` dynamisch, `expand` pfropft Schema ohne Live-State zu verwerfen. `store.expand` reicht nur durch. `StoreExpandManager.expand` spricht nur `StoreExtension.expand` an.
+
+Power bleibt im System: Helfer + Pipeline, nicht neue Unterklassen.

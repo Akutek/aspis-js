@@ -1,9 +1,4 @@
 ﻿{
-    "BaseObserver": {
-        "directory": "utils",
-        "file": "BaseObserver.js",
-        "export": "BaseObserver"
-    },
     "CachePipelineHelper": {
         "directory": "utils",
         "file": "CachePipelineHelper.js",
@@ -38,11 +33,6 @@
         "directory": "utils",
         "file": "ModifierDOM.js",
         "export": "ModifierDOM"
-    },
-    "MutationObserverDOM": {
-        "directory": "utils",
-        "file": "MutationObserverDOM.js",
-        "export": "MutationObserverDOM"
     },
     "MutationWatcherDOM": {
         "directory": "utils",

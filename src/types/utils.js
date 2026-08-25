@@ -1,12 +1,6 @@
-/** Typen für Utils (Observer, Binder, Delegator, Cache-Pipeline). */
+/** Typen für Utils (Binder, Delegator, Cache-Pipeline). */
 
 /** @typedef {import("./store.js").TargetConfig} TargetConfig */
-
-/**
- * @typedef {object} ObserverRegistry
- * @property {(key: string | HTMLElement) => unknown} get
- * @property {(key: string | HTMLElement) => boolean} [has]
- */
 
 /**
  * @typedef {object} FetcherLike
@@ -39,8 +33,6 @@
  * @property {boolean} isLoading
  * @property {object | null} [view]
  */
-
-/** @typedef {Node} ObserverTarget */
 
 /** @typedef {Map<string, HTMLElement>} ResolvedTargetsMap */
 

@@ -12,6 +12,6 @@ Native Web-APIs heißen Observer. Unsere Hosts heißen **Watcher**, damit nichts
 
 **Hosts:** `MutationWatcher`, `IntersectionWatcher`, `ResizeWatcher`, `PerformanceWatcher`, `ReportingWatcher`. Native API nur in der jeweiligen `*WatcherExtension`. DOM-Helfer: `MutationWatcherDOM`, `IntersectionWatcherDOM`, `ResizeWatcherDOM`.
 
-**Mutation:** Entfernte Knoten: `ControllerCleaner.cleanTree`. Neue Knoten: `ScanManager.scan`. Altstand `BaseObserver` / `MutationObserverDOM`: Referenz, nicht nachbauen. Kein `MutationManager`.
+**Mutation:** Entfernte Knoten: `ControllerCleaner.cleanTree`. Neue Knoten: `ScanManager.scan`. Kein `MutationManager`, kein `BaseObserver`.
 
 Dirigent: `ObserverManager` (Manager bleibt `static`). Plan+Compare → Lade-Warteschlange (`view` / `near` / `far` / `history`). `hosts()` legt die Watcher einmal in die Registry (`mutationWatcher`, …) und ruft `bind`/`start`. IntersectionWatcher darf die Bänder später korrigieren; bis dahin Viewport-Rechteck.

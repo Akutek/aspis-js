@@ -61,8 +61,6 @@
 
 /** @typedef {new (...args: unknown[]) => unknown} ControllerConstructor */
 
-/** @typedef {Map<string, ControllerConstructor>} ControllerRegistryCache */
-
 /** Haken in der Registry unter `cycle`. Optionaler Root = nur betroffener DOM plus Merge. */
 
 export {};

@@ -21,4 +21,4 @@ Langlebig: `Store`, `Registry`, `DebugAgent` (`shared()`), `ErrorAgent` (`shared
 
 Logging: `DebugAgent` (`debug` / `info` / `warn` / `error`) zentral, Filter aus Debug-Manifest (`debug`, `levels`, `areas`). `error()` ignoriert das Debug-Flag. `ErrorAgent` (`shared()`) für `capture` / `throw`. `LoggerService` ist tot.
 
-`src/core/Main.js`, aufgeblähte Hydratoren, Logik in Managern, `ControllerRegistry`: Referenz, nicht nachbauen. Roadmap: `docs/architecture/roadmap.md`.
+Aufgeblähte Hydratoren und Logik in Managern nicht nachbauen. Altstand (`Main`, `ControllerRegistry`, `BaseObserver`) ist raus. Roadmap: `docs/architecture/roadmap.md`.

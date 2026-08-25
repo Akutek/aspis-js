@@ -15,7 +15,7 @@ Kein `RegistryManager` für JS-Klassen. Der bleibt Map + JSON-`load`.
 - Store-Event `import:loaded`. Cache: `manifest:index:…`, `manifest:imports`.
 - Pfade: relativ zu `src/` über `AssetPath` (Legacy `/src/...` wird normalisiert). Optional `publicPaths.base` in app-config.
 
-Statische `import`-Zeilen nur im Boot bis der Importer steht. `ControllerRegistry` nicht ausbauen.
+Statische `import`-Zeilen nur im Boot bis der Importer steht.
 
 ```json
 {

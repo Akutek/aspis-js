@@ -69,7 +69,7 @@ Erfolg: Demo über PHP-Server, Upload-fähig.
 
 Kein Umbau der Namen.
 
-- `RuntimeEnv` (`src/core/RuntimeEnv.js`, Katalog `core.RuntimeEnv`): Origin, Viewport, `body`, `documentElement`, fremdes `DOMPurify` **lesen**. Kein Schreiben auf `window`. `createElement` / Listener bleiben am Dokument. `Main.js` / Default-Parameter an `document.body` in `ScannerDOM` und `MutationObserverDOM` unverändert (Referenz bzw. DOM-API).
+- `RuntimeEnv` (`src/core/RuntimeEnv.js`, Katalog `core.RuntimeEnv`): Origin, Viewport, `body`, `documentElement`, fremdes `DOMPurify` **lesen**. Kein Schreiben auf `window`. `createElement` / Listener bleiben am Dokument. Default-Parameter an `document.body` in `ScannerDOM` bleibt DOM-API.
 - Eine Frage pro Pipeline-Stufe in `architecture.mdc` und den Phasen-Rules; Manager plus Extension beantworten sie.
 - Registry: `destroy()` ist die Semantik. `BaseController.destroy` ist idempotent (`_destroyed`). `delete`: Finalizer abmelden, dann `destroy`, dann WeakMap. Der Finalizer ruft `destroy` nur, wenn die Instanz noch nicht zerstört ist.
 

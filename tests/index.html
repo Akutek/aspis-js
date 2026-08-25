@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Aspis Tests</title>
+    <style>
+        :root { --ink: #1a1a1a; --muted: #5c5c5c; --line: #d6d6d6; --bg: #f7f5f1; --accent: #0f6b5c; --fail: #8b1e1e; }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.45; }
+        main { max-width: 52rem; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+        h1 { font-size: 1.75rem; margin: 0 0 0.35rem; }
+        .lede { color: var(--muted); margin: 0 0 1.5rem; }
+        button { font: inherit; padding: 0.45rem 0.6rem; background: var(--accent); color: #fff; border: 0; cursor: pointer; }
+        #log { list-style: none; margin: 0; padding: 0; }
+        #log li { padding: 0.45rem 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+        #log li[data-tone="fail"] { color: var(--fail); }
+        #stage.pressure { position: relative; height: 2.5rem; }
+        #stage.pressure [data-controller="accordion"] { position: absolute; inset: 0; overflow: hidden; margin: 0; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Lifecycle &amp; Druck</h1>
+    <p class="lede">
+        Browser-ESM, kein Bundler. Compare: add / keep / update / remove.
+        start() einmal, danach runCycle. n=1000 manuell.
+    </p>
+    <p><button type="button" id="pressure-1000">Druck n=1000</button></p>
+    <ul id="log"></ul>
+    <div id="stage"></div>
+</main>
+<script type="module" src="./run.js"></script>
+</body>
+</html>

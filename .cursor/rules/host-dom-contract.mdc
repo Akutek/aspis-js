@@ -1,0 +1,27 @@
+---
+description: Host-DOM-Vertrag — data-controller Accordion/Form/Modal
+alwaysApply: true
+---
+
+# Host-DOM-Vertrag
+
+PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Trigger (`accordion`, `form`, `modal`, …). Aspis-Controller ≠ PHP-HTTP-Controller.
+
+## Accordion
+
+- Root: `data-controller="accordion"`, oft `data-single-open="true"`, `data-slice-key="features.accordionFeature"`
+- Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
+- Trigger: `data-target="trigger"`; Panel: `data-target="panel"` (z. B. `is-hidden` bis geöffnet)
+
+## Form
+
+- Leerer Host: `data-controller="form"`, `data-template="form-…"`
+- Typisch: `data-method`, `data-action` oder `data-url`, `data-csrf`, `data-submit-label`
+- Zusatzdaten nur als dokumentierte `data-*` (z. B. `data-characters` JSON) — keine erfundenen Keys
+
+## Modal
+
+- `data-controller="modal"`; Inhalt oft `data-content="form"` + **`data-form-template`** (nicht `data-template`)
+- Dazu: Titel, Action/Method, CSRF, Next, Submit-Label — wie Login im Parent-Layout
+
+Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

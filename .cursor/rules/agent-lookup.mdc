@@ -1,0 +1,17 @@
+---
+description: Agent-Suchreihenfolge — nicht den ganzen src-Tree greppen
+alwaysApply: true
+---
+
+# Lookup-Reihenfolge
+
+Bevor `src/**` rekursiv gescannt wird:
+
+1. Diese Rules (`host-dom-contract`, `accordion-lazy`, `known-templates`, `architecture`, Phase-Rules)
+2. Parent-Views / Demo-`index.html` mit gleichem `data-controller`
+3. `docs/architecture/roadmap.md` / `templates.md` bei Konzeptfragen
+4. Gezielt eine Datei (z. B. Plan-Portion, Template-Index) — nicht Factory/Scan-Gesamttree
+
+Öffentliche API für Hosts: `start` / `stop` / `runCycle` aus `src/aspis.js` bzw. Boot über `src/entry.js`. Manager/Extension/Tailor/Splicer nicht aus dem Host-Einstieg exportieren oder importieren.
+
+Logging nur über Debug-/Error-Agenten (`agent-wiring.mdc`) — kein `console.*` in neuem Code.

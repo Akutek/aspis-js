@@ -1,0 +1,15 @@
+---
+description: Accordion Lazy — data-item-url und JSON-Antwort
+alwaysApply: true
+---
+
+# Accordion Lazy (`data-item-url`)
+
+- Am Item: `data-item-url` absolute oder origin-relative URL.
+- Beim **ersten** Öffnen fetch; Panel vorher Platzhalter (z. B. „wird geladen“).
+- Erwartete JSON-Antwort: `{ "ok": true, "html": "<fragment…>" }` (ggf. weitere Keys ok, `html` Pflicht bei Erfolg).
+- HTML serverseitig schon escaped; aspis setzt Fragment in Panel.
+- Auth/CSRF/IDOR sind Sache des Hosts (PHP-Route), nicht der Accordion-Klasse.
+- Neuer Lazy-Body: Host-Endpoint + Fragment — **kein** aspis-Core-Change ohne Freigabe.
+
+Demo/Parent-Beispiele: Raid-Roster, Guild-Roster-Accordion.

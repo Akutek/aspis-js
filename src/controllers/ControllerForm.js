@@ -21,6 +21,9 @@ class ControllerForm {
     this._validateOnChange = options.validateOnChange ?? dataset.validateOnChange === "true";
   }
   async onReady() {
+    if (this._container?.dataset.template && typeof this.pasteNamedForm === "function") {
+      await this.pasteNamedForm();
+    }
     if (typeof this.buildFormView === "function") {
       this.buildFormView();
     }

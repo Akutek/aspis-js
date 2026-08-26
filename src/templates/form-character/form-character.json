@@ -1,0 +1,11 @@
+{
+    "name": "form-character",
+    "placeholder": {
+        "action": "{{action}}",
+        "csrf": "{{csrf}}",
+        "submitLabel": "{{submitLabel}}"
+    },
+    "files": {
+        "markup": "form-character.html"
+    }
+}

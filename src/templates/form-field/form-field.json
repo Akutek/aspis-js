@@ -1,0 +1,14 @@
+{
+    "name": "form-field",
+    "placeholder": {
+        "label": "{{label}}",
+        "type": "{{type}}",
+        "name": "{{name}}",
+        "value": "{{value}}",
+        "error": "{{error}}",
+        "required": "{{required}}"
+    },
+    "files": {
+        "markup": "form-field.html"
+    }
+}

@@ -1,0 +1,7 @@
+<form class="aspis-form" method="{{method}}" action="{{action}}" data-form-root>
+    <p class="aspis-form__message is-hidden" data-target="form-message"></p>
+    {{field-loop}}
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="next" value="{{next}}">
+    <button type="submit">{{submitLabel}}</button>
+</form>

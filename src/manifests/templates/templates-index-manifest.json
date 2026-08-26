@@ -46,5 +46,37 @@
     "custom-dropdown": {
         "directory": "templates/dropdown",
         "file": "dropdown.json"
+    },
+    "form-component": {
+        "directory": "templates/form-component",
+        "file": "form-component.json"
+    },
+    "form-field": {
+        "directory": "templates/form-field",
+        "file": "form-field.json"
+    },
+    "form-login": {
+        "directory": "templates/form-login",
+        "file": "form-login.json"
+    },
+    "form-lage-filter": {
+        "directory": "templates/form-lage-filter",
+        "file": "form-lage-filter.json"
+    },
+    "form-character": {
+        "directory": "templates/form-character",
+        "file": "form-character.json"
+    },
+    "form-cadre-own": {
+        "directory": "templates/form-cadre-own",
+        "file": "form-cadre-own.json"
+    },
+    "form-cadre-assign": {
+        "directory": "templates/form-cadre-assign",
+        "file": "form-cadre-assign.json"
+    },
+    "form-cadre-phase": {
+        "directory": "templates/form-cadre-phase",
+        "file": "form-cadre-phase.json"
     }
 }

@@ -1,0 +1,13 @@
+{
+    "name": "form-login",
+    "placeholder": {
+        "action": "{{action}}",
+        "csrf": "{{csrf}}",
+        "next": "{{next}}",
+        "login": "{{login}}",
+        "submitLabel": "{{submitLabel}}"
+    },
+    "files": {
+        "markup": "form-login.html"
+    }
+}

@@ -29,5 +29,6 @@ Einstieg: `.cursor/README.md` und `.cursor/rules/`.
 | Priority-Queue, Muster, kein Host | `queue.mdc` |
 | Factory-Phase, Frankenstein-Dirigent | `factory.mdc` |
 | Watcher-Hosts statt Observer-API | `watchers.mdc` |
+| Templates anlegen (Katalog, JSON, HTML) | `templates.mdc`, [`templates.md`](templates.md) |
 
 Neue Architekturentscheidung: neue Rule, dieses Index nicht wieder zum Monolithen machen.

@@ -1,0 +1,14 @@
+{
+    "name": "form-lage-filter",
+    "placeholder": {
+        "action": "{{action}}",
+        "q": "{{q}}",
+        "factionAlliance": "{{factionAlliance}}",
+        "factionHorde": "{{factionHorde}}",
+        "factionNeutral": "{{factionNeutral}}",
+        "factionAll": "{{factionAll}}"
+    },
+    "files": {
+        "markup": "form-lage-filter.html"
+    }
+}

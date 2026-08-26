@@ -1,0 +1,14 @@
+{
+    "name": "form-cadre-own",
+    "files": {
+        "layout": "form-cadre-own_layout.html",
+        "option": "form-cadre-own_option.html"
+    },
+    "loops": {
+        "option": {
+            "placeholder": "{{option-loop}}",
+            "from": "characters",
+            "part": "option"
+        }
+    }
+}

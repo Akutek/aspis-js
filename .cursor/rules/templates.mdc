@@ -1,0 +1,17 @@
+---
+description: Templates anlegen — Katalog, JSON, HTML, Compile
+globs: src/templates/**/*,src/services/TemplateService.js,src/services/TemplateRenderService.js,src/services/template/**/*.js,src/manifests/templates/**/*.json
+alwaysApply: false
+---
+
+# Templates
+
+Markup liegt nicht in Controllern. Ein Template = Ordner plus JSON plus HTML-Teile, Eintrag im Katalog, Laden über `TemplateCatalog`, Compile über `TemplateService`, Einfügen über `TemplateRenderService.paste` / `append` / `loop`. Werte laufen durch den Sanitizer. Kein `innerHTML` mit Rohdaten. Menschliche Anleitung: `docs/architecture/templates.md`.
+
+**Neu oder umbenannt:** dieselbe Änderung in `src/manifests/templates/templates-index-manifest.json` (`directory` + `file`). Ohne Katalogeintrag ist das Template unsichtbar. Gelöschte Templates: Eintrag und Ordner entfernen.
+
+JSON: `name`, `files.markup` (ein Stück) oder `files.layout` plus Teile. Platzhalter `{{key}}`. Schleifen: `loops.<teil>.placeholder` / `from` / `part` — `from` muss ein Array in den Compile-Daten sein. Controller: `data-template` oder Default-Name in der Klasse (`form-component`, `modal`).
+
+```js
+await renderService.paste(host, "form-login", { action: "/anmelden", csrf: token });
+```

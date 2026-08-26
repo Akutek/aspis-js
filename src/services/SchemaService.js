@@ -53,6 +53,17 @@ class SchemaService {
       return {
         layout: view.layout,
         fields,
+        fieldList: Object.keys(source).map((name) => {
+          const field = source[name] || {};
+          return {
+            name,
+            label: field.label || name,
+            type: field.type || "text",
+            value: field.value ?? "",
+            error: field.error || "",
+            required: field.rules && field.rules.required ? "required" : ""
+          };
+        }),
         isSubmitting: view.isSubmitting,
         submitError: view.submitError,
         submitSuccess: view.submitSuccess,

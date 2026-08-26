@@ -1,0 +1,12 @@
+{
+    "name": "form-cadre-assign",
+    "placeholder": {
+        "action": "{{action}}",
+        "csrf": "{{csrf}}",
+        "signupId": "{{signupId}}",
+        "submitLabel": "{{submitLabel}}"
+    },
+    "files": {
+        "markup": "form-cadre-assign.html"
+    }
+}

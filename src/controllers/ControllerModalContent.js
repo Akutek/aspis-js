@@ -17,10 +17,37 @@ class ControllerModalContent {
       return;
     }
     const templateName = this.modalContentTemplate?.(kind) || "loader-spinner";
-    const data = SchemaService.toRenderData(this._view);
+    const data = this.formRenderPayload();
     if (body instanceof HTMLElement) {
-      await renderService.paste(body, templateName, data);
+      const pasted = await renderService.paste(body, templateName, data);
+      if (pasted instanceof HTMLFormElement) {
+        pasted.dataset.controller = "form";
+        if (data.action) {
+          pasted.dataset.url = String(data.action);
+        }
+        if (data.method) {
+          pasted.dataset.method = String(data.method);
+        }
+      }
     }
+  }
+  formRenderPayload() {
+    const dataset = this._container?.dataset || {};
+    const viewData = this._view ? SchemaService.toRenderData(this._view) : {};
+    const csrf = dataset.csrf
+      || (typeof document !== "undefined"
+        ? document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
+        : "")
+      || "";
+    return {
+      ...viewData,
+      action: dataset.action || dataset.url || viewData.action || "",
+      method: dataset.method || "post",
+      csrf,
+      next: dataset.next || "/",
+      submitLabel: dataset.submitLabel || "Senden",
+      login: dataset.login || ""
+    };
   }
   modalContentTemplate(kind) {
     const dataset = this._container?.dataset || {};

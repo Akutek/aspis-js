@@ -1,0 +1,14 @@
+{
+    "name": "form-component",
+    "files": {
+        "layout": "form-component_layout.html",
+        "field": "form-component_field.html"
+    },
+    "loops": {
+        "field": {
+            "placeholder": "{{field-loop}}",
+            "from": "fieldList",
+            "part": "field"
+        }
+    }
+}

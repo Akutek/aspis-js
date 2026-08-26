@@ -1,0 +1,13 @@
+{
+    "name": "form-cadre-phase",
+    "placeholder": {
+        "action": "{{action}}",
+        "csrf": "{{csrf}}",
+        "nextPhase": "{{nextPhase}}",
+        "nextLabel": "{{nextLabel}}",
+        "submitLabel": "{{submitLabel}}"
+    },
+    "files": {
+        "markup": "form-cadre-phase.html"
+    }
+}

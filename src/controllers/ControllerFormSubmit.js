@@ -2,6 +2,69 @@
 import { SchemaService } from "../services/SchemaService.js";
 import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorMessage, errorName } from "./BaseController.js";
+
+function csrfFromDocument() {
+  if (typeof document === "undefined") {
+    return "";
+  }
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+}
+
+function assignGet(url, payload) {
+  const params = new URLSearchParams();
+  Object.keys(payload).forEach((key) => {
+    if (key === "_csrf") {
+      return;
+    }
+    const value = payload[key];
+    if (value === undefined || value === null || value === "") {
+      return;
+    }
+    params.set(key, String(value));
+  });
+  const query = params.toString();
+  const join = url.includes("?") ? "&" : "?";
+  window.location.assign(query === "" ? url : `${url}${join}${query}`);
+}
+
+/**
+ * @param {string} url
+ * @param {string} method
+ * @param {Record<string, unknown>} payload
+ * @param {Record<string, string>} headers
+ * @param {AbortSignal} signal
+ */
+async function jsonRequest(url, method, payload, headers, signal) {
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: JSON.stringify(payload),
+    signal
+  });
+  const text = await res.text();
+  let parsed = null;
+  if (text !== "") {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = null;
+    }
+  }
+  if (parsed && typeof parsed === "object" && parsed.ok === false) {
+    const fail = typeof parsed.error === "string" && parsed.error !== ""
+      ? parsed.error
+      : "Absenden fehlgeschlagen.";
+    throw new Error(fail);
+  }
+  if (!res.ok) {
+    const fail = parsed && typeof parsed.error === "string" && parsed.error !== ""
+      ? parsed.error
+      : `HTTP Fehler ${res.status}`;
+    throw new Error(fail);
+  }
+  return parsed;
+}
+
 /** @extends {FormHost} */
 class ControllerFormSubmit {
   async submit() {
@@ -25,29 +88,44 @@ class ControllerFormSubmit {
     const url = this._dataUrl || form?.action || this._container.dataset.url;
     const method = (form?.method || this._container.dataset.method || "POST").toUpperCase();
     const submitSignal = this.getSignal("formSubmit");
+    const token = csrfFromDocument();
+    if (token && (payload._csrf === undefined || payload._csrf === "")) {
+      payload._csrf = token;
+    }
     try {
+      if (method === "GET" && url) {
+        assignGet(url, payload);
+        return;
+      }
       let response;
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      };
+      if (token) {
+        headers["X-CSRF-Token"] = token;
+      }
+      if (this._apiToken) {
+        headers.Authorization = `Bearer ${this._apiToken}`;
+      }
       if (typeof this.fetcher?.request === "function" && url) {
-        response = await this.fetcher.request(url, { method, body: payload, signal: submitSignal });
+        response = await this.fetcher.request(url, { method, body: payload, signal: submitSignal, headers });
       } else if (method === "POST" && typeof this.fetcher?.post === "function" && url) {
-        response = await this.fetcher.post(url, payload, { signal: submitSignal });
+        response = await this.fetcher.post(url, payload, { signal: submitSignal, headers });
       } else if (url) {
-        const headers = { "Content-Type": "application/json" };
-        if (this._apiToken) {
-          headers.Authorization = `Bearer ${this._apiToken}`;
-        }
-        const res = await fetch(url, {
-          method,
-          headers,
-          body: JSON.stringify(payload),
-          signal: submitSignal
-        });
-        if (!res.ok) {
-          throw new Error(`HTTP Fehler ${res.status}`);
-        }
-        response = await res.json();
+        response = await jsonRequest(url, method, payload, headers, submitSignal);
       }
       if (submitSignal.aborted || this.signal.aborted) {
+        return;
+      }
+      if (response && response.ok === false) {
+        const fail = typeof response.error === "string" && response.error !== ""
+          ? response.error
+          : "Absenden fehlgeschlagen.";
+        throw new Error(fail);
+      }
+      if (response && typeof response.next === "string" && response.next.startsWith("/") && !response.next.startsWith("//")) {
+        window.location.assign(response.next);
         return;
       }
       SchemaService.setSubmitResult(this._view, true);

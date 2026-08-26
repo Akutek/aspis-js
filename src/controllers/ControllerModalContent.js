@@ -28,8 +28,42 @@ class ControllerModalContent {
         if (data.method) {
           pasted.dataset.method = String(data.method);
         }
+        this.hydratePastedForm(pasted);
       }
     }
+  }
+  /**
+   * Formular ist nach paste noch nicht im letzten Scan. Cycle nicht
+   * awaiten: fillModalContent läuft in der Factory desselben Cycles.
+   * @param {HTMLFormElement} form
+   * @returns {void}
+   */
+  hydratePastedForm(form) {
+    const registry = this._registry;
+    if (!registry || typeof registry.has !== "function" || !registry.has("cycle")) {
+      this._warn("hydratePastedForm", "Kein cycle in der Registry.");
+      return;
+    }
+    const cycle = registry.get("cycle");
+    if (typeof cycle !== "function") {
+      return;
+    }
+    form.addEventListener("submit", (event) => {
+      if (registry.has(form)) {
+        return;
+      }
+      event.preventDefault();
+      void cycle(form).then(() => {
+        if (this.signal.aborted) {
+          return;
+        }
+        const instance = registry.has(form) ? registry.get(form) : null;
+        if (instance && typeof instance.submit === "function") {
+          void instance.submit();
+        }
+      });
+    });
+    void cycle(form);
   }
   formRenderPayload() {
     const dataset = this._container?.dataset || {};

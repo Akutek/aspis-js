@@ -18,13 +18,16 @@ import { ControllerCleaner } from "./services/ControllerCleaner.js";
 import { DebugAgent } from "./agents/DebugAgent.js";
 import { RuntimeEnv } from "./core/RuntimeEnv.js";
 let inflight = /** @type {Promise<void> | null} */ (null);
+let queued = false;
 let active = /** @type {import("./types/registry.js").Registry | null} */ (null);
 
 /**
  * Einstieg: einmal Boot, danach wiederholbarer Zyklus
  * Scan → Plan → Compare → Observer → Compose → Controller → Splice → Factory.
  * Registry ist die Landkarte der Hosts. Phasen-Ergebnisse sind Return-Werte.
- * Überlappende Aufrufe teilen dieselbe Promise.
+ * Überlappende Aufrufe warten auf denselben Cycle und planen danach einen
+ * weiteren vollen Durchlauf — sonst bleiben Knoten unsichtbar, die während
+ * Factory/Paste entstanden (z. B. Modal-Formular).
  * Optionaler `root`: Scan nur dort, restliche Treffer kommen aus dem letzten Scan (Merge).
  *
  * @param {import("./types/registry.js").Registry} registry
@@ -33,7 +36,14 @@ let active = /** @type {import("./types/registry.js").Registry | null} */ (null)
  */
 function runCycle(registry, root) {
   if (inflight) {
-    return inflight;
+    queued = true;
+    return inflight.then(() => {
+      if (!queued) {
+        return undefined;
+      }
+      queued = false;
+      return runCycle(registry);
+    });
   }
   inflight = (async () => {
     const started = now();

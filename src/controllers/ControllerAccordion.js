@@ -14,6 +14,7 @@ class ControllerAccordion {
       this._sliceKey = typeof options.sliceKey === "string" ? options.sliceKey : "features.accordionFeature";
     }
     this._view = null;
+    this._itemLoadState = /* @__PURE__ */ new Map();
   }
   async onReady() {
     if (!this._container) {
@@ -85,6 +86,9 @@ class ControllerAccordion {
     } else {
       this.updateItemUI(toggledItem);
     }
+    if (toggledItem.isOpen) {
+      void this.ensureItemContent(toggledItem);
+    }
     this._dispatcher?.emit?.("accordion:toggle", {
       id: toggledItem.id,
       isOpen: toggledItem.isOpen,
@@ -135,6 +139,16 @@ class ControllerAccordion {
     this.delegate("keydown", '[data-target="trigger"]', (event) => {
       this.handleAccordionKeyDown(event);
     });
+    this.delegate("click", '[data-target="retry"]', (event, target) => {
+      event.preventDefault();
+      const itemEl = target.closest("[data-accordion-item]");
+      const itemId = itemEl instanceof HTMLElement ? itemEl.dataset.id || itemEl.id : "";
+      const item = itemId && this._view ? SchemaService.accordionItem(this._view, itemId) : null;
+      if (item) {
+        this._itemLoadState?.delete(item.id);
+        void this.ensureItemContent(item, true);
+      }
+    });
   }
   handleAccordionKeyDown(event) {
     if (!this._container) {
@@ -173,11 +187,71 @@ class ControllerAccordion {
         break;
     }
   }
+  async ensureItemContent(item, force = false) {
+    if (!item?.id || !this._container) {
+      return;
+    }
+    const itemEl = this.itemElement(item.id);
+    const url = itemEl instanceof HTMLElement ? itemEl.dataset.itemUrl : "";
+    if (!url) {
+      return;
+    }
+    const state = this._itemLoadState instanceof Map ? this._itemLoadState : new Map();
+    this._itemLoadState = state;
+    const current = state.get(item.id) || "idle";
+    if (!force && (current === "loaded" || current === "loading")) {
+      return;
+    }
+    const panelEl = itemEl?.querySelector('[data-target="panel"]');
+    state.set(item.id, "loading");
+    this.writePanel(panelEl, item, '<p class="accordion_loading">Wird geladen\u2026</p>');
+    const signal = this.getSignal(`item:${item.id}`);
+    try {
+      const payload = this.fetcher.get ? await this.fetcher.get(url, {}, { signal }) : null;
+      if (signal.aborted) {
+        return;
+      }
+      const html = payload && typeof payload === "object" && typeof payload.html === "string"
+        ? payload.html
+        : "";
+      if (!payload || payload.ok === false || html === "") {
+        throw new Error("Nachladen lieferte keinen Inhalt.");
+      }
+      state.set(item.id, "loaded");
+      this.writePanel(panelEl, item, html);
+    } catch (error) {
+      if (errorName(error) === "AbortError" || signal.aborted) {
+        return;
+      }
+      state.set(item.id, "error");
+      this.writePanel(
+        panelEl,
+        item,
+        '<p class="accordion_load_error">Laden fehlgeschlagen.</p><button type="button" data-target="retry">Erneut versuchen</button>'
+      );
+      this._capture("ensureItemContent", error);
+    } finally {
+      this.clearTask(`item:${item.id}`);
+    }
+  }
+  itemElement(itemId) {
+    if (!this._container || !itemId) {
+      return null;
+    }
+    return this._container.querySelector(`[data-accordion-item][data-id="${CSS.escape(itemId)}"]`)
+      || this._container.querySelector(`#${CSS.escape(itemId)}`);
+  }
+  writePanel(panelEl, item, html) {
+    item.content = html;
+    if (panelEl instanceof HTMLElement) {
+      panelEl.innerHTML = html;
+    }
+  }
   updateItemUI(item) {
     if (!this._container || !item?.id) {
       return;
     }
-    const itemEl = this._container.querySelector(`[data-accordion-item][data-id="${CSS.escape(item.id)}"]`) || this._container.querySelector(`#${CSS.escape(item.id)}`);
+    const itemEl = this.itemElement(item.id);
     if (!itemEl) {
       return;
     }

@@ -40,6 +40,10 @@ class ControllerModalContent {
    */
   hydratePastedForm(form) {
     const registry = this._registry;
+    const modalHost = this._container;
+    if (modalHost?.dataset?.successTarget && !form.dataset.successTarget) {
+      form.dataset.successTarget = modalHost.dataset.successTarget;
+    }
     if (!registry || typeof registry.has !== "function" || !registry.has("cycle")) {
       this._warn("hydratePastedForm", "Kein cycle in der Registry.");
       return;

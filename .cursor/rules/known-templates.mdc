@@ -11,7 +11,7 @@ View setzt nur den Namen; Markup liegt im Template-Katalog (`src/manifests/templ
 | --- | --- |
 | `form-login` | Modal Login (Parent-Layout) |
 | `form-character` | Charakter anlegen (Dashboard) |
-| `form-lage-filter` | Gildenverzeichnis-Filter |
+| `form-lage-filter` | Gildenverzeichnis-Suche (ohne Fraktion) |
 | `form-cadre-own` | Raid: eigene Anmeldung |
 | `form-cadre-phase` | Raid: Phasenwechsel |
 | `form-cadre-assign` | Raid: Signup zuweisen |

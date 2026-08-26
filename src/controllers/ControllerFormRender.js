@@ -22,7 +22,6 @@ class ControllerFormRender {
         ? document.querySelector('meta[name="csrf-token"]')?.getAttribute("content")
         : "")
       || "";
-    const faction = dataset.faction || "";
     let characters = [];
     if (dataset.characters) {
       try {
@@ -42,10 +41,6 @@ class ControllerFormRender {
       submitLabel: dataset.submitLabel || "Senden",
       login: dataset.login || "",
       q: dataset.q || "",
-      factionAll: faction === "" ? "selected" : "",
-      factionAlliance: faction === "alliance" ? "selected" : "",
-      factionHorde: faction === "horde" ? "selected" : "",
-      factionNeutral: faction === "neutral" ? "selected" : "",
       signupId: dataset.signupId || "",
       nextPhase: dataset.nextPhase || "",
       nextLabel: dataset.nextLabel || "",

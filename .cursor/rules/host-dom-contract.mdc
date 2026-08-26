@@ -23,5 +23,6 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 
 - `data-controller="modal"`; Inhalt oft `data-content="form"` + **`data-form-template`** (nicht `data-template`)
 - Dazu: Titel, Action/Method, CSRF, Next, Submit-Label — wie Login im Parent-Layout
+- Optional `data-success-target="#selector"`: bei JSON `{ ok, html }` (ohne `next`) HTML in den Target pasten und Modal schließen
 
 Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

@@ -128,6 +128,24 @@ class ControllerFormSubmit {
         window.location.assign(response.next);
         return;
       }
+      if (response && typeof response.html === "string") {
+        const targetSel = this._container?.dataset?.successTarget
+          || this._container?.closest?.('[data-controller="modal"]')?.dataset?.successTarget
+          || "";
+        if (targetSel) {
+          const target = typeof document !== "undefined" ? document.querySelector(targetSel) : null;
+          if (target instanceof HTMLElement) {
+            target.outerHTML = response.html;
+          }
+        }
+        const modalHost = this._container?.closest?.('[data-controller="modal"]');
+        if (modalHost) {
+          const closer = modalHost.querySelector('[data-target="close"]');
+          if (closer instanceof HTMLElement) {
+            closer.click();
+          }
+        }
+      }
       SchemaService.setSubmitResult(this._view, true);
       if (typeof this.showFormMessage === "function") {
         this.showFormMessage("Formular erfolgreich abgesendet!", "success");

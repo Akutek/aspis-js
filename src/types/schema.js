@@ -40,6 +40,7 @@
  * @property {string} content
  * @property {boolean} isOpen
  * @property {boolean} disabled
+ * @property {string} [itemUrl]
  */
 
 /**

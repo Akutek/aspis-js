@@ -6,6 +6,7 @@ alwaysApply: true
 # Accordion Lazy (`data-item-url`)
 
 - Am Item: `data-item-url` absolute oder origin-relative URL.
+- Die URL liegt zusätzlich im View-Model (`itemUrl`, roh, nicht HTML-escaped), damit ein Full-Render Lazy-Load nicht verliert.
 - Beim **ersten** Öffnen fetch; Panel vorher Platzhalter (z. B. „wird geladen“).
 - Erwartete JSON-Antwort: `{ "ok": true, "html": "<fragment…>" }` (ggf. weitere Keys ok, `html` Pflicht bei Erfolg).
 - HTML serverseitig schon escaped; aspis setzt Fragment in Panel.

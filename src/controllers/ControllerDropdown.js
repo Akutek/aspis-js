@@ -218,6 +218,9 @@ class ControllerDropdown {
     }
   }
   onStateChange(slice) {
+    if (this.isRowActionHost()) {
+      return;
+    }
     if (slice?.view && this._view !== slice.view) {
       this._view = slice.view;
       void this.renderDropdown();

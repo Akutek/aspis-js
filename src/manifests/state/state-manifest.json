@@ -87,6 +87,30 @@
                 "isLoading": false
             }
         },
+        "features.accordionRoster": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.accordionCadre": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.accordionRaid": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
+        "features.accordionDemo": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
         "features.charList": {
             "initialState": {
                 "isLoading": false

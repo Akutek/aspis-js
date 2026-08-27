@@ -320,13 +320,15 @@ class SchemaService {
       }
       const clean = asRecord(this.#clean(entry)) || {};
       const source = asRecord(entry) || {};
+      const itemUrl = typeof source.itemUrl === "string" ? source.itemUrl : "";
       items.push({
         ...clean,
         id: String(clean.id || `acc-item-${i}`),
         title: String(clean.title || clean.dataPlayername || ""),
         content: String(clean.content || ""),
         isOpen: Boolean(source.isOpen),
-        disabled: Boolean(source.disabled)
+        disabled: Boolean(source.disabled),
+        itemUrl
       });
     }
     return {

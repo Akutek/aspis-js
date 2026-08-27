@@ -9,8 +9,14 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 
 ## Accordion
 
-- Root: `data-controller="accordion"`, oft `data-single-open="true"`, `data-slice-key="features.accordionFeature"`
+- Root: `data-controller="accordion"`, oft `data-single-open="true"`; Slice **pro Instanz** (nicht alle denselben `view`):
+  - Default/Fallback: `features.accordionFeature`
+  - Roster: `features.accordionRoster`
+  - Season-Kader: `features.accordionCadre`
+  - Raid-Kader: `features.accordionRaid`
+  - Demo: `features.accordionDemo`
 - Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
+- Assign-Forms nicht als Geschwister im Accordion-Root — in das jeweilige Item oder außerhalb des Hosts
 - Trigger: `data-target="trigger"`; Panel: `data-target="panel"` (z. B. `is-hidden` bis geöffnet)
 - Plan `needs` enthält `watcher`, damit nach Lazy-Paste verschachtelte Hosts (Dropdown, …) neu gescannt werden
 

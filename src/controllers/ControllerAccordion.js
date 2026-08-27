@@ -35,7 +35,11 @@ class ControllerAccordion {
   onStateChange(slice) {
     if (slice?.view && this._view !== slice.view) {
       this._view = slice.view;
-      void this.renderAccordion();
+      if (this._container?.dataset.url) {
+        void this.renderAccordion();
+      } else {
+        this.syncAccordionUI();
+      }
     }
   }
   async loadData(url) {
@@ -114,7 +118,8 @@ class ControllerAccordion {
         title: triggerEl?.textContent?.trim() || "",
         content: panelEl ? panelEl.innerHTML : "",
         isOpen: el.classList.contains("is-open") || triggerEl?.getAttribute("aria-expanded") === "true",
-        disabled: el.hasAttribute("data-disabled")
+        disabled: el.hasAttribute("data-disabled"),
+        itemUrl: el.dataset.itemUrl || ""
       });
     });
     const singleOpen = this._container.dataset.singleOpen === "true";
@@ -192,7 +197,9 @@ class ControllerAccordion {
       return;
     }
     const itemEl = this.itemElement(item.id);
-    const url = itemEl instanceof HTMLElement ? itemEl.dataset.itemUrl : "";
+    const fromView = typeof item.itemUrl === "string" ? item.itemUrl : "";
+    const fromDom = itemEl instanceof HTMLElement ? itemEl.dataset.itemUrl : "";
+    const url = fromView || fromDom || "";
     if (!url) {
       return;
     }

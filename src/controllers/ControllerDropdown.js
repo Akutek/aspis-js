@@ -6,7 +6,59 @@
 import { SchemaService } from "../services/SchemaService.js";
 import { FormFieldService } from "../services/FormFieldService.js";
 import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
-import { errorName } from "./BaseController.js";
+import { errorMessage, errorName } from "./BaseController.js";
+
+function csrfFromHost(host) {
+  const fromHost = host instanceof HTMLElement ? host.dataset.csrf || "" : "";
+  if (fromHost) {
+    return fromHost;
+  }
+  if (typeof document === "undefined") {
+    return "";
+  }
+  return document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+}
+
+function isSafeNext(next) {
+  return typeof next === "string" && next.startsWith("/") && !next.startsWith("//");
+}
+
+/**
+ * @param {string} url
+ * @param {Record<string, unknown>} payload
+ * @param {Record<string, string>} headers
+ * @param {AbortSignal} signal
+ */
+async function jsonPost(url, payload, headers, signal) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(payload),
+    signal
+  });
+  const text = await res.text();
+  let parsed = null;
+  if (text !== "") {
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      parsed = null;
+    }
+  }
+  if (parsed && typeof parsed === "object" && parsed.ok === false) {
+    const fail = typeof parsed.error === "string" && parsed.error !== ""
+      ? parsed.error
+      : "Aktion fehlgeschlagen.";
+    throw new Error(fail);
+  }
+  if (!res.ok) {
+    const fail = parsed && typeof parsed.error === "string" && parsed.error !== ""
+      ? parsed.error
+      : `HTTP Fehler ${res.status}`;
+    throw new Error(fail);
+  }
+  return parsed;
+}
 /** @extends {DropdownHost} */
 class ControllerDropdown {
   prepare(options = {}) {
@@ -32,10 +84,12 @@ class ControllerDropdown {
       }
     }
     const layout = this._layout || this._container.dataset.layout || "default";
+    const placeholder = this._container.dataset.placeholder || "";
     this._view = SchemaService.dropdown([], {
       layout,
       value: initialVal,
-      rules
+      rules,
+      placeholder
     });
     this.scanDomOptions();
     this.bindDropdownEvents();
@@ -43,6 +97,93 @@ class ControllerDropdown {
     const url = this._container.dataset.url;
     if (url) {
       await this.loadOptions(url);
+    } else if (this.seedRowActionOptions()) {
+      await this.renderDropdown();
+    }
+  }
+  isRowActionHost() {
+    const host = this._container;
+    if (!(host instanceof HTMLElement)) {
+      return false;
+    }
+    return Boolean(host.dataset.editUrl || host.dataset.deleteUrl);
+  }
+  seedRowActionOptions() {
+    if (!this._container || !this._view || SchemaService.isLoader(this._view) || !this.isRowActionHost()) {
+      return false;
+    }
+    const options = [];
+    if (this._container.dataset.editUrl) {
+      options.push({ value: "edit", label: "Bearbeiten" });
+    }
+    if (this._container.dataset.deleteUrl) {
+      options.push({ value: "delete", label: "Entfernen" });
+    }
+    if (options.length === 0) {
+      return false;
+    }
+    SchemaService.setDropdownOptions(this._view, options);
+    return true;
+  }
+  resetRowActionSelection() {
+    if (!this._container || !this._view || SchemaService.isLoader(this._view)) {
+      return;
+    }
+    SchemaService.selectDropdownValue(this._view, "", false);
+    const labelEl = this._container.querySelector('[data-target="label"]');
+    if (labelEl) {
+      labelEl.textContent = this._view.placeholder || "Optionen";
+    }
+  }
+  async runRowAction(value) {
+    const host = this._container;
+    if (!(host instanceof HTMLElement) || !value) {
+      return;
+    }
+    if (value === "edit") {
+      const url = host.dataset.editUrl || "";
+      if (url) {
+        window.location.assign(url);
+      }
+      return;
+    }
+    if (value !== "delete") {
+      return;
+    }
+    const url = host.dataset.deleteUrl || "";
+    if (!url) {
+      return;
+    }
+    const token = csrfFromHost(host);
+    const payload = { _csrf: token };
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    };
+    if (token) {
+      headers["X-CSRF-Token"] = token;
+    }
+    const signal = this.getSignal("rowAction");
+    try {
+      let response = null;
+      if (typeof this.fetcher?.post === "function") {
+        response = await this.fetcher.post(url, payload, { headers, signal });
+      } else {
+        response = await jsonPost(url, payload, headers, signal);
+      }
+      if (signal.aborted || this.signal.aborted) {
+        return;
+      }
+      if (response && isSafeNext(response.next)) {
+        window.location.assign(response.next);
+      }
+    } catch (error) {
+      if (errorName(error) !== "AbortError" && !signal.aborted && !this.signal.aborted) {
+        this._capture("runRowAction", error);
+        this._warn("runRowAction", errorMessage(error) || "Aktion fehlgeschlagen.");
+      }
+    } finally {
+      this.clearTask("rowAction");
     }
   }
   scanDomOptions() {
@@ -218,6 +359,13 @@ class ControllerDropdown {
     if (!this._container || !this._view || SchemaService.isLoader(this._view)) {
       return;
     }
+    if (this.isRowActionHost()) {
+      const action = String(value ?? "");
+      this.close();
+      this.resetRowActionSelection();
+      void this.runRowAction(action);
+      return;
+    }
     const changed = SchemaService.selectDropdownValue(this._view, value);
     if (changed) {
       this.syncWithNativeInput();
@@ -297,6 +445,10 @@ class ControllerDropdown {
         await renderService.paste(this._container, templateName, SchemaService.toRenderData(this._view));
       } else {
         this._warn("renderDropdown", "TemplateRenderService fehlt.");
+      }
+      const listEl = this._container.querySelector('[data-target="list"]');
+      if (listEl && this._view && !SchemaService.isLoader(this._view) && !this._view.isOpen) {
+        ControllerModifierDOM.hide(listEl);
       }
     } catch (error) {
       if (!this.signal.aborted) {

@@ -15,5 +15,6 @@ View setzt nur den Namen; Markup liegt im Template-Katalog (`src/manifests/templ
 | `form-cadre-own` | Raid: eigene Anmeldung |
 | `form-cadre-phase` | Raid: Phasenwechsel |
 | `form-cadre-assign` | Raid: Signup zuweisen |
+| `dropdown-row-actions` | Zeilen-Menü Bearbeiten/Entfernen (Kader-Char-Tabelle) |
 
 Neu/umbenannt: Katalog + Ordner (`templates.mdc` / `manifest-sync.mdc`). Host soll bestehende Namen wiederverwenden, bevor ein neues Template verlangt wird.

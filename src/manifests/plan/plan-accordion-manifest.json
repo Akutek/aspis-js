@@ -2,6 +2,6 @@
     "trigger": {
         "type": "accordion"
     },
-    "needs": ["store"],
+    "needs": ["store", "watcher"],
     "specifiers": ["controllers.ControllerAccordion"]
 }

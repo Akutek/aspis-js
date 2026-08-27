@@ -47,6 +47,10 @@
         "directory": "templates/dropdown",
         "file": "dropdown.json"
     },
+    "dropdown-row-actions": {
+        "directory": "templates/dropdown-row-actions",
+        "file": "dropdown-row-actions.json"
+    },
     "form-component": {
         "directory": "templates/form-component",
         "file": "form-component.json"

@@ -10,6 +10,6 @@ alwaysApply: true
 - Erwartete JSON-Antwort: `{ "ok": true, "html": "<fragment…>" }` (ggf. weitere Keys ok, `html` Pflicht bei Erfolg).
 - HTML serverseitig schon escaped; aspis setzt Fragment in Panel.
 - Auth/CSRF/IDOR sind Sache des Hosts (PHP-Route), nicht der Accordion-Klasse.
-- Neuer Lazy-Body: Host-Endpoint + Fragment — **kein** aspis-Core-Change ohne Freigabe.
+- Verschachtelte `data-controller`-Hosts im Fragment (z. B. Dropdown) werden nach dem Paste gescannt, wenn der Accordion-Plan `needs` den `watcher` enthält.
 
 Demo/Parent-Beispiele: Raid-Roster, Guild-Roster-Accordion.

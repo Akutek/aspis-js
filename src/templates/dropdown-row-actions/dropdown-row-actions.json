@@ -1,0 +1,14 @@
+{
+    "name": "dropdown-row-actions",
+    "files": {
+        "layout": "dropdown-row-actions_layout.html",
+        "option": "dropdown-row-actions_option.html"
+    },
+    "loops": {
+        "option": {
+            "placeholder": "{{option-loop}}",
+            "from": "options",
+            "part": "option"
+        }
+    }
+}

@@ -12,6 +12,7 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 - Root: `data-controller="accordion"`, oft `data-single-open="true"`, `data-slice-key="features.accordionFeature"`
 - Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
 - Trigger: `data-target="trigger"`; Panel: `data-target="panel"` (z. B. `is-hidden` bis geöffnet)
+- Plan `needs` enthält `watcher`, damit nach Lazy-Paste verschachtelte Hosts (Dropdown, …) neu gescannt werden
 
 ## Form
 
@@ -31,5 +32,12 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 - Seite: `[data-target="page"]` mit dem ersten Chunk per SSR
 - Pager: Links mit `href` (noscript Full-Page `?page=`) und `data-page`; Klick mit JS: `preventDefault`, JSON-Chunk laden
 - JSON: `{ "ok": true, "html": "<fragment…>", "page", "total", "totalPages", "perPage" }` — `html` in `[data-target="page"]`; Auth/CSRF/IDOR sind Sache des Hosts
+
+## Dropdown
+
+- Leerer Host: `data-controller="dropdown"`, `data-template="dropdown"` oder `dropdown-row-actions`
+- Optional `data-url` lädt Optionen remote; sonst DOM `[data-option-value]` oder dokumentierte `data-*`
+- Zeilen-Aktionen: `data-template="dropdown-row-actions"`, `data-placeholder="Optionen"`, `data-edit-url`, `data-delete-url`, `data-csrf`
+- Bearbeiten: Navigation zu `data-edit-url`. Entfernen: POST JSON (`Accept: application/json`) an `data-delete-url`; Host antwortet `{ ok, next }` oder `{ ok: false, error }`
 
 Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

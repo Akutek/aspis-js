@@ -80,11 +80,32 @@
  */
 
 /**
+ * @typedef {object} PaginationChunk
+ * @property {boolean} ok
+ * @property {string} html
+ * @property {number} page
+ * @property {number} total
+ * @property {number} totalPages
+ * @property {number} perPage
+ */
+
+/**
+ * @typedef {BaseController & {
+ *   _pageChunks?: Record<string, PaginationChunk> | null,
+ *   _pagerBound?: boolean,
+ *   bindPager: () => void,
+ *   goToPage: (page: string | number) => Promise<void>,
+ *   loadChunk: (url: string) => Promise<void>
+ * }} PaginationHost
+ */
+
+/**
  * @typedef {BaseController & {
  *   _view: TableView | LoaderLike | null,
  *   loadData: (url: string) => Promise<void>,
  *   reload: (filterPayload?: Record<string, string | number | boolean | null | undefined>) => void,
- *   renderTable: () => Promise<void>
+ *   renderTable: () => Promise<void>,
+ *   bindPager?: () => void
  * }} TableHost
  */
 

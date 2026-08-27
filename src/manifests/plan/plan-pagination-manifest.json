@@ -1,0 +1,7 @@
+{
+    "trigger": {
+        "type": "pagination"
+    },
+    "needs": ["store", "watcher"],
+    "specifiers": ["controllers.ControllerPagination"]
+}

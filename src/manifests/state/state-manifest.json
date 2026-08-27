@@ -87,6 +87,26 @@
                 "isLoading": false
             }
         },
+        "features.charList": {
+            "initialState": {
+                "isLoading": false
+            }
+        },
+        "features.rosterList": {
+            "initialState": {
+                "isLoading": false
+            }
+        },
+        "features.directoryList": {
+            "initialState": {
+                "isLoading": false
+            }
+        },
+        "features.cadreList": {
+            "initialState": {
+                "isLoading": false
+            }
+        },
         "features.dropdownFeature": {
             "initialState": {
                 "view": null,

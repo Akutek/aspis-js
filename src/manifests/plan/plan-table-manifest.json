@@ -3,7 +3,10 @@
         "type": "table"
     },
     "needs": ["store", "watcher"],
-    "specifiers": ["controllers.ControllerTable"],
+    "specifiers": [
+        "controllers.ControllerPagination",
+        "controllers.ControllerTable"
+    ],
     "watchers": [
         "watchers.MutationWatcher",
         "watchers.IntersectionWatcher",

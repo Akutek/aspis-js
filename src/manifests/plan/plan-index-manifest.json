@@ -3,6 +3,10 @@
         "directory": "manifests/plan",
         "file": "plan-table-manifest.json"
     },
+    "pagination": {
+        "directory": "manifests/plan",
+        "file": "plan-pagination-manifest.json"
+    },
     "form": {
         "directory": "manifests/plan",
         "file": "plan-form-manifest.json"

@@ -1,5 +1,5 @@
 ---
-description: Host-DOM-Vertrag — data-controller Accordion/Form/Modal
+description: Host-DOM-Vertrag — data-controller Accordion/Form/Modal/Pagination
 alwaysApply: true
 ---
 
@@ -24,5 +24,12 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 - `data-controller="modal"`; Inhalt oft `data-content="form"` + **`data-form-template`** (nicht `data-template`)
 - Dazu: Titel, Action/Method, CSRF, Next, Submit-Label — wie Login im Parent-Layout
 - Optional `data-success-target="#selector"`: bei JSON `{ ok, html }` (ohne `next`) HTML in den Target pasten und Modal schließen
+
+## Pagination
+
+- Root: `data-controller="pagination"`, `data-url` (GET-Basis, gleiche Route wie die Seite), oft `data-slice-key="features.charList"`
+- Seite: `[data-target="page"]` mit dem ersten Chunk per SSR
+- Pager: Links mit `href` (noscript Full-Page `?page=`) und `data-page`; Klick mit JS: `preventDefault`, JSON-Chunk laden
+- JSON: `{ "ok": true, "html": "<fragment…>", "page", "total", "totalPages", "perPage" }` — `html` in `[data-target="page"]`; Auth/CSRF/IDOR sind Sache des Hosts
 
 Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

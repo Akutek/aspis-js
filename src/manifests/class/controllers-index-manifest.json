@@ -4,6 +4,11 @@
         "file": "ControllerTable.js",
         "export": "ControllerTable"
     },
+    "ControllerPagination": {
+        "directory": "controllers",
+        "file": "ControllerPagination.js",
+        "export": "ControllerPagination"
+    },
     "ControllerAccordion": {
         "directory": "controllers",
         "file": "ControllerAccordion.js",

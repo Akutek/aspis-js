@@ -32,12 +32,9 @@ class ControllerTable {
         this._dispatcher?.emit?.(`table:${action}`, { id: rowId, action, target });
       }
     });
-    this.delegate("click", "[data-page]", (_event, target) => {
-      const page = target.dataset.page;
-      if (page) {
-        this.reload({ page });
-      }
-    });
+    if (typeof this.bindPager === "function") {
+      this.bindPager();
+    }
     const url = this._container.dataset.url;
     if (!url) {
       throw new Error(`${this._tag("onReady")} data-url fehlt an <${this._container.tagName.toLowerCase()}>.`);
@@ -85,6 +82,11 @@ class ControllerTable {
       return;
     }
     try {
+      const Mixed = this.constructor;
+      if (typeof Mixed.withQuery === "function") {
+        void this.loadData(Mixed.withQuery(baseUrl, filterPayload));
+        return;
+      }
       const urlObj = new URL(baseUrl, RuntimeEnv.origin());
       const keys = Object.keys(filterPayload);
       for (let i = 0; i < keys.length; i += 1) {

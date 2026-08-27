@@ -43,7 +43,8 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 
 - Leerer Host: `data-controller="dropdown"`, `data-template="dropdown"` oder `dropdown-row-actions`
 - Optional `data-url` lädt Optionen remote; sonst DOM `[data-option-value]` oder dokumentierte `data-*`
-- Zeilen-Aktionen: `data-template="dropdown-row-actions"`, `data-placeholder="Optionen"`, `data-edit-url`, `data-delete-url`, `data-csrf`
+- Demo-Einzel: `data-slice-key="features.dropdownFeature"`
+- Zeilen-Aktionen: `data-template="dropdown-row-actions"`, `data-placeholder="Optionen"`, `data-edit-url`, `data-delete-url`, `data-csrf`, `data-id` pro Zeile, Slice `features.dropdownCadre`. View lebt auf der Instanz (`this._view`); Hosts mit Edit/Delete-URL schreiben nicht in den Store — kein geteilter Slice-View.
 - Bearbeiten: Navigation zu `data-edit-url`. Entfernen: POST JSON (`Accept: application/json`) an `data-delete-url`; Host antwortet `{ ok, next }` oder `{ ok: false, error }`
 
 Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

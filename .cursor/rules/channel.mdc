@@ -1,6 +1,6 @@
 ---
-description: Channel-Host, Message-Shapes, Pipeline-Worker, stop()-Reihenfolge
-globs: src/core/Channel.js,src/extensions/channel/**/*.js,src/workers/**/*.js,src/aspis.js,src/managers/BootManager.js
+description: Channel-Host, Boot-Hydrate, Timeout, Fanout, Pipeline-Worker
+globs: src/core/Channel.js,src/extensions/channel/**/*.js,src/workers/**/*.js,src/aspis.js,src/managers/BootManager.js,src/services/ManifestLoaderService.js
 alwaysApply: false
 ---
 
@@ -10,36 +10,43 @@ Eine geplante Registry-Instanz: Klasse **`Channel`**, Specifier `core.Channel`, 
 
 Öffentliche API bleibt `start` / `stop` / `runCycle`. Channel startet **keine** zweite Pipeline; `runCycle` bleibt der einzige Cycle-Einstieg (`queued` / `inflight`).
 
-## API
+## Boot-Hydrate
 
-- `post(type, payload)` — fire-and-forget, spiegelt an `subscribe` und `EventDispatcher`
-- `request(type, payload) → Promise` — Loopback oder ein ESM-Worker
-- `subscribe(type, cb)` — Unsubscribe-Funktion
-- `holdPipeline(true|false)` — während `inflight` warten `cmd:plan-prep` / `cmd:compare-prep`
-- `destroy()` — Pending ablehnen, Worker `terminate`, Listener lösen (idempotent)
+Nach Cardinals (`app-config` + `registry-manifest`, `AssetPath` steht) entsteht der Host, `bind`, Worker-URL merken. Spawn **lazy** beim ersten `request` — nicht idle am Ende der Services.
 
-`EventDispatcher` bleibt der Bus. Channel transportiert Kommandos und kann Bus-Events spiegeln; keine zweite Bus-Klasse.
+[`ManifestLoaderService.load`](../../src/services/ManifestLoaderService.js): mit Channel `fetch` → Text → `channel.request("cmd:hydrate", text)` → Hydrator auf **Main**. Ohne Channel: `response.json()`. Apply/Register bleiben auf Main (`CacheManager.set`, `RegistryManager.register`, `StoreExtension.apply`). Cardinals laden ohne Channel (Host existiert noch nicht). Indexes, Schemas, volle State-/Event-Manifeste nutzen Hydrate.
+
+Debug: `[Channel.request()] type ms transport` (`worker` | `loopback`), Area `channel`.
+
+## `post` vs `request`
+
+- `request(type, payload) → Promise` — Cmd mit Antwort (`cmd:hydrate`, optional `cmd:plan-prep`). Timeout aus `settings.channel.timeoutMs` (Default 8000, Clamp 250–60000). Reject löscht `#pending`. Worker-`onerror` / `destroy` / `terminate`: alle Pending rejecten.
+- `post(type, payload)` — fire-and-forget. `subscribe` ist Channel-lokal. `EventDispatcher` nur für `evt:*`. Lifecycle `channel:ready` / `channel:error` geht direkt an den Dispatcher, nicht über jedes `post(cmd:…)`.
+
+`EventDispatcher` bleibt der Bus. Channel ist cmd/res/evt-Transport, keine zweite Bus-Klasse.
+
+`holdPipeline(true|false)`: während `inflight` warten `cmd:plan-prep` / `cmd:compare-prep`. Semantik unverändert.
 
 ## Messages (`v: 1`)
 
 | type | Richtung |
 | --- | --- |
-| `cmd:hydrate` / `res:hydrate` | JSON parsen, Keys sortieren |
-| `cmd:plan-prep` / `res:plan-prep` | Items nach `type`/`id` sortieren |
-| `cmd:compare-prep` / `res:compare-prep` | Placeholder, Payload durchreichen |
+| `cmd:hydrate` / `res:hydrate` | JSON parsen, Keys sortieren (Boot) |
+| `cmd:plan-prep` / `res:plan-prep` | Items nach `type`/`id` sortieren — nur serialisierbare Fingerprints, keine Elements |
+| `cmd:compare-prep` / `res:compare-prep` | **No-Op**: Payload durchreichen. Compare braucht Live-DOM (`element`) und bleibt auf Main |
 | `evt:progress` | `{ phase, done, total }` |
 | `evt:prefetch` | `{ specifiers: string[] }` |
 | `boot:phase` `boot:done` `cycle:phase` `cycle:done` `factory:band` `channel:ready` `channel:error` | Dispatcher-Lifecycle (Main) |
 
 ## Worker
 
-Genau **eine** Datei: `src/workers/pipeline.worker.js` (Modul, gleicher Origin). Pure Arbeit in `PipelineWork` — kein DOM, keine Registry, keine Controller. Spawn im Boot (`Channel.attachWorker`), `terminate` in `Channel.destroy()`. Fehlt `Worker` (Tests/jsdom): Loopback, `channel:error`, Host bleibt nutzbar.
+Genau **eine** Datei: `src/workers/pipeline.worker.js` (Modul, gleicher Origin). Pure Arbeit in `PipelineWork` — kein DOM, keine Registry, keine Controller. URL in `attachWorker`, Spawn beim ersten `request`, `terminate` in `Channel.destroy()`. Fehlt `Worker` (jsdom): Loopback inkl. Timeout-Cap, `channel:error`, Host bleibt nutzbar.
 
-Kein zweiter Worker ohne Messung (Phase 0).
+Kein zweiter Worker ohne Messung.
 
 ## `stop()`
 
 1. `cycle` lösen, Watcher `stop`, Inflight abwarten
 2. Live/DOM `destroy`
-3. **Channel `destroy`** (Worker terminate)
+3. **Channel `destroy`** (Pending reject, Worker terminate)
 4. **EventDispatcher `destroy`**

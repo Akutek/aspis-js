@@ -74,6 +74,8 @@ class PipelineWork {
     };
   }
   /**
+   * Compare-Diff braucht Live-DOM (`element`) und bleibt auf Main.
+   * Worker-Cmd ist No-Op: Payload unverändert durchreichen.
    * @param {unknown} payload
    * @returns {unknown}
    */

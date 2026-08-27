@@ -137,6 +137,12 @@
                 "isLoading": false
             }
         },
+        "features.dropdownCadre": {
+            "initialState": {
+                "view": null,
+                "isLoading": false
+            }
+        },
         "features.modal": {
             "initialState": {
                 "view": null,

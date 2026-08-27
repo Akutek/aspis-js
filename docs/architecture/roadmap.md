@@ -120,10 +120,10 @@ Ergänzung **neben** den nummerierten Phasen 7–9 — bestehende Nummern bleibe
 
 - Host `Channel` (`src/core/Channel.js`), Registry-Key `channel`, Specifier `core.Channel`. Ausbau: `ChannelExtension`.
 - Lifecycle-Events am bestehenden `EventDispatcher`: `boot:phase`, `boot:done`, `cycle:phase`, `cycle:done`, `factory:band`, `channel:ready` / `channel:error`.
-- Boot parallel in Promise-Gruppen nach `app-config` + `registry-manifest`; `StoreExtension.apply` und Services danach seriell. Ein Pipeline-Worker (`src/workers/pipeline.worker.js`) nur für pure JSON-/Sort-Arbeit.
-- Factory: Importer parallel; view-Band begrenzte Concurrency, Barrier vor near, history nach Idle — weiter innerhalb von `factory()` / `inflight`.
-- `stop()`: Channel `destroy` (Worker `terminate`) vor Dispatcher `destroy`.
-- Rule: [`channel.mdc`](../../.cursor/rules/channel.mdc). Plan: [`.cursor/plans/boot-channel-workers.md`](../../.cursor/plans/boot-channel-workers.md).
+- Boot: Channel **nach Cardinals**, Worker lazy beim ersten `request`. Indexes und volle State-/Event-Manifeste über `cmd:hydrate` (Text → Worker/Loopback → Hydrator Main). Factory-Concurrency aus `settings.factory` in `app-config.json`.
+- `comparePrep` bleibt No-Op: Compare braucht Live-DOM und bleibt auf Main.
+- `stop()`: Channel `destroy` (Pending reject, Worker `terminate`) vor Dispatcher `destroy`.
+- Rule: [`channel.mdc`](../../.cursor/rules/channel.mdc). Plan (Idle-Host): [`.cursor/plans/boot-channel-workers.md`](../../.cursor/plans/boot-channel-workers.md). Plan (produktiv): [`.cursor/plans/channel-productive-boot.md`](../../.cursor/plans/channel-productive-boot.md).
 
 ---
 

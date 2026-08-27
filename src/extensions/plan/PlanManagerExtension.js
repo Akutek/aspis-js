@@ -115,7 +115,7 @@ class PlanManagerExtension {
       throw new Error("Aspis [PlanManagerExtension]: manifestRouting.plan fehlt oder ist unvollst\xE4ndig.");
     }
     const hydrator = await this.#hydrator(registry);
-    const loaded = await RegistryManager.load(path, hydrator);
+    const loaded = await RegistryManager.load(path, hydrator, registry);
     const catalog = this.#asIndex(isPlanBag(loaded) ? loaded : {});
     this.#cacheSet(registry, this.indexCacheKey, catalog);
     return catalog;
@@ -134,7 +134,7 @@ class PlanManagerExtension {
       throw new Error(`Aspis [PlanManagerExtension]: Kein Pfad f\xFCr Plan-Portion '${type}'.`);
     }
     const hydrator = await this.#hydrator(registry);
-    const loaded = await RegistryManager.load(path, hydrator);
+    const loaded = await RegistryManager.load(path, hydrator, registry);
     const portion = this.#asPortion(loaded, type);
     this.#cacheSet(registry, cacheKey, portion);
     return portion;

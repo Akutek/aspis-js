@@ -30,6 +30,8 @@
  * @typedef {object} AppConfigSettings
  * @property {boolean} [strictMode]
  * @property {boolean} [debug]
+ * @property {{ view?: number, near?: number, history?: number }} [factory]
+ * @property {{ timeoutMs?: number }} [channel]
  */
 
 /**

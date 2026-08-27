@@ -66,6 +66,9 @@ class ControllerDropdown {
     if (!this._sliceKey) {
       this._sliceKey = options.sliceKey || "features.dropdownFeature";
     }
+    if (this.isRowActionHost()) {
+      this._sliceKey = "";
+    }
     this._view = null;
     this._clickOutsideUnsub = null;
   }
@@ -227,7 +230,8 @@ class ControllerDropdown {
     }
   }
   async loadOptions(url) {
-    const slice = this._store?.getSlice(this._sliceKey || "");
+    const useStore = Boolean(this._sliceKey) && !this.isRowActionHost();
+    const slice = useStore ? this._store?.getSlice(this._sliceKey || "") : null;
     const stateProxy = slice && typeof slice === "object" ? slice : null;
     try {
       if (stateProxy) {

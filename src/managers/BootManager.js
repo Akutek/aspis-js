@@ -63,6 +63,10 @@ class BootManager extends BaseManager {
       registry.expand({ manifest: registryManifest });
       ImportManager.apply(registry, registryManifest);
       this.#bootPhase(registry, "cardinals", "done", cardinalsAt);
+      const channel = new Channel();
+      channel.bind(registry);
+      RegistryManager.register(registry, "channel", channel);
+      channel.attachWorker(AssetPath.resolve("workers/pipeline.worker.js"));
       const debugCardinal = registryManifest.errorAndDebug?.debug;
       const debugManifestPath = debugCardinal ? AssetPath.join(debugCardinal.directory, debugCardinal.file) : AssetPath.resolve("manifests/debug/debug-index-manifest.json");
       const errorCardinal = registryManifest.errorAndDebug?.error;
@@ -79,12 +83,12 @@ class BootManager extends BaseManager {
       this.#bootPhase(registry, "indexes", "start");
       const indexesAt = this.#now();
       const [debugPart, errorPart, stateIndexPart, schemasPart, templatesPart, eventsIndexPart] = await Promise.all([
-        this.#measure(() => RegistryManager.load(debugManifestPath, DebugManifestHydrator)),
-        this.#measure(() => RegistryManager.load(errorManifestPath, ErrorManifestHydrator)),
-        this.#measure(() => this.#indexFile(registryManifest.manifestRouting?.states, "manifestRouting.states", "state")),
-        this.#measure(() => SchemaCatalog.load(AssetPath.join(schemaRoute.directory, schemaRoute.file))),
-        this.#measure(() => TemplateCatalog.load(templateIndexPath)),
-        this.#measure(() => this.#indexFile(registryManifest.manifestRouting?.events, "manifestRouting.events", "events"))
+        this.#measure(() => RegistryManager.load(debugManifestPath, DebugManifestHydrator, registry)),
+        this.#measure(() => RegistryManager.load(errorManifestPath, ErrorManifestHydrator, registry)),
+        this.#measure(() => this.#indexFile(registry, registryManifest.manifestRouting?.states, "manifestRouting.states", "state")),
+        this.#measure(() => SchemaCatalog.load(AssetPath.join(schemaRoute.directory, schemaRoute.file), registry)),
+        this.#measure(() => TemplateCatalog.load(templateIndexPath, registry)),
+        this.#measure(() => this.#indexFile(registry, registryManifest.manifestRouting?.events, "manifestRouting.events", "events"))
       ]);
       const debugManifest = debugPart.value;
       const errorManifest = errorPart.value;
@@ -97,6 +101,7 @@ class BootManager extends BaseManager {
       CacheManager.set(cache, "manifest:error", errorManifest);
       RegistryManager.register(registry, "errorManifest", errorManifest);
       DebugErrorManager.apply(debugError, debugManifest, errorManifest, registry);
+      channel.bind(registry);
       CacheManager.set(cache, "manifest:index:schemas", schemas);
       RegistryManager.register(registry, "schemaManifest", schemas);
       CacheManager.set(cache, "manifest:index:templates", templateIndex);
@@ -105,8 +110,8 @@ class BootManager extends BaseManager {
       this.#bootPhase(registry, "manifests", "start");
       const manifestsAt = this.#now();
       const [statePart, eventPart] = await Promise.all([
-        this.#measure(() => RegistryManager.load(AssetPath.join(stateRoute.directory, stateRoute.file), StateManifestHydrator)),
-        this.#measure(() => RegistryManager.load(AssetPath.join(eventRoute.directory, eventRoute.file), EventManifestHydrator))
+        this.#measure(() => RegistryManager.load(AssetPath.join(stateRoute.directory, stateRoute.file), StateManifestHydrator, registry)),
+        this.#measure(() => RegistryManager.load(AssetPath.join(eventRoute.directory, eventRoute.file), EventManifestHydrator, registry))
       ]);
       const stateManifest = statePart.value;
       const eventManifest = eventPart.value;
@@ -129,17 +134,13 @@ class BootManager extends BaseManager {
         catalog: templateIndex
       });
       const renderService = new TemplateRenderService(templates, cleaner);
-      const channel = new Channel();
-      channel.bind(registry);
       RegistryManager.register(registry, {
         fetcher: new ControllerDataFetcher(),
         cleaner,
         templates,
         renderService,
-        assetPath: AssetPath,
-        channel
+        assetPath: AssetPath
       });
-      channel.attachWorker(AssetPath.resolve("workers/pipeline.worker.js"));
       this.#bootPhase(registry, "services", "done", servicesAt);
       const totalMs = this.#elapsed(bootAt);
       this.#emit(registry, "boot:done", { totalMs });
@@ -164,13 +165,14 @@ class BootManager extends BaseManager {
     const value = await work();
     return { value, ms: this.#elapsed(at) };
   }
-  static async #indexFile(routing, label, entryName) {
+  static async #indexFile(registry, routing, label, entryName) {
     if (!routing?.directory || !routing?.file) {
       throw new Error(`Aspis [BootManager.boot()]: ${label} fehlt.`);
     }
     const index = await RegistryManager.load(
       AssetPath.join(routing.directory, routing.file),
-      RouteIndexHydrator
+      RouteIndexHydrator,
+      registry
     );
     const entry = index[entryName];
     if (!entry?.directory || !entry?.file) {

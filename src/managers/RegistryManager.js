@@ -41,8 +41,12 @@ class RegistryManager {
     }
     return registry.delete(element);
   }
-  static async load(path, hydrator = null) {
-    return ManifestLoaderService.load(path, hydrator);
+  static async load(path, hydrator = null, registry = null) {
+    const channel = registry && typeof registry.has === "function" && registry.has("channel")
+      ? registry.get("channel")
+      : null;
+    const transport = channel && typeof channel.request === "function" ? channel : null;
+    return ManifestLoaderService.load(path, hydrator, transport);
   }
 }
 export {

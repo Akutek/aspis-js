@@ -7,8 +7,12 @@ import { RouteIndexHydrator } from "../../hydrators/RouteIndexHydrator.js";
 import { TemplateManifestHydrator } from "../../hydrators/TemplateManifestHydrator.js";
 import { AssetPath } from "../../core/AssetPath.js";
 class TemplateCatalog {
-  static async load(indexPath) {
-    const loaded = await ManifestLoaderService.load(indexPath, RouteIndexHydrator);
+  static async load(indexPath, registry = null) {
+    const channel = registry && typeof registry.has === "function" && registry.has("channel")
+      ? registry.get("channel")
+      : null;
+    const transport = channel && typeof channel.request === "function" ? channel : null;
+    const loaded = await ManifestLoaderService.load(indexPath, RouteIndexHydrator, transport);
     return loaded && typeof loaded === "object" ? loaded : {};
   }
   static entryFor(catalog, name) {

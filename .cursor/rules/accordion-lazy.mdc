@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Accordion Lazy (`data-item-url`)
 
-- Am Item: `data-item-url` absolute oder origin-relative URL.
+- Am Item: `data-item-url` absolute oder origin-relative URL. Auch `guild-accordion_item.html` setzt das Attribut (`{{itemUrl}}`). Leeres Attribut ist keine URL (`ensureItemContent`).
 - Die URL liegt zusätzlich im View-Model (`itemUrl`, roh, nicht HTML-escaped), damit ein Full-Render Lazy-Load nicht verliert.
 - Beim **ersten** Öffnen fetch; Panel vorher Platzhalter (z. B. „wird geladen“).
 - Erwartete JSON-Antwort: `{ "ok": true, "html": "<fragment…>" }` (ggf. weitere Keys ok, `html` Pflicht bei Erfolg).

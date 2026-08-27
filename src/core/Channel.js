@@ -7,6 +7,7 @@ import { PipelineWork } from "../workers/PipelineWork.js";
 import { DebugAgent } from "../agents/DebugAgent.js";
 import { ErrorAgent } from "../agents/ErrorAgent.js";
 const PIPELINE_COMMANDS = new Set(["cmd:plan-prep", "cmd:compare-prep"]);
+const DEFAULT_TIMEOUT_MS = 8000;
 class Channel {
   /** Die ChannelExtension-Klasse (statisch). Kein zweites Objekt. */
   extension;
@@ -15,7 +16,9 @@ class Channel {
   runtime;
   /** @type {Worker | null} */
   #worker = null;
-  /** @type {Map<number, { resolve: (value: unknown) => void, reject: (reason?: unknown) => void }>} */
+  #workerUrl = "";
+  #attachAttempted = false;
+  /** @type {Map<number, { resolve: (value: unknown) => void, reject: (reason?: unknown) => void, timer: ReturnType<typeof setTimeout> | null }>} */
   #pending = new Map();
   /** @type {Map<string, Set<ChannelSubscriber>>} */
   #subs = new Map();
@@ -55,37 +58,18 @@ class Channel {
     }
   }
   /**
+   * Merkt die Worker-URL. Spawn erst beim ersten `request` (lazy).
    * @param {string} url
    */
   attachWorker(url) {
-    if (this.#destroyed || this.#worker) {
-      return;
-    }
-    if (typeof Worker !== "function") {
-      this.#fail("Worker API fehlt, Loopback bleibt.");
-      this.#ready();
+    if (this.#destroyed) {
       return;
     }
     const href = typeof url === "string" ? url.trim() : "";
     if (!href) {
-      this.#fail("Worker-URL fehlt, Loopback bleibt.");
-      this.#ready();
       return;
     }
-    try {
-      const worker = new Worker(href, { type: "module" });
-      worker.onmessage = (event) => this.#onWorkerMessage(event.data);
-      worker.onerror = (event) => {
-        this.#fail(event && event.message ? event.message : "Pipeline-Worker-Fehler.");
-        this.#dropWorker();
-      };
-      this.#worker = worker;
-      this.#ready();
-    } catch (error) {
-      this.#fail(error instanceof Error ? error.message : String(error));
-      this.#worker = null;
-      this.#ready();
-    }
+    this.#workerUrl = href;
   }
   /**
    * @param {string} type
@@ -113,20 +97,18 @@ class Channel {
     if (this.#destroyed) {
       throw new Error("Aspis [Channel.request()] Channel ist zerstört.");
     }
-    if (!this.#worker) {
-      return PipelineWork.handle(type, payload);
+    this.#ensureWorker();
+    const started = this.#now();
+    try {
+      const result = this.#worker
+        ? await this.#workerRequest(type, payload)
+        : await this.#loopbackRequest(type, payload);
+      this.#logTiming(type, started);
+      return result;
+    } catch (error) {
+      this.#logTiming(type, started);
+      throw error;
     }
-    const id = this.#seq += 1;
-    const envelope = this.#envelope(type, payload, id);
-    return new Promise((resolve, reject) => {
-      this.#pending.set(id, { resolve, reject });
-      try {
-        this.#worker?.postMessage(envelope);
-      } catch (error) {
-        this.#pending.delete(id);
-        reject(error);
-      }
-    });
   }
   /**
    * @param {string} type
@@ -163,13 +145,34 @@ class Channel {
     for (let i = 0; i < waiters.length; i += 1) {
       waiters[i]();
     }
-    const pending = [...this.#pending.entries()];
-    this.#pending.clear();
-    for (let i = 0; i < pending.length; i += 1) {
-      pending[i][1].reject(new Error("Aspis [Channel.destroy()] Channel wurde zerstört."));
-    }
+    this.#rejectPending("Aspis [Channel.destroy()] Channel wurde zerstört.");
     this.#subs.clear();
     this.#dropWorker();
+  }
+  /**
+   * @param {string} type
+   * @param {unknown} payload
+   * @returns {Promise<unknown>}
+   */
+  #workerRequest(type, payload) {
+    const id = this.#seq += 1;
+    const envelope = this.#envelope(type, payload, id);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (!this.#pending.has(id)) {
+          return;
+        }
+        this.#pending.delete(id);
+        reject(new Error("Aspis [Channel.request()] Timeout."));
+      }, this.#timeoutMs());
+      this.#pending.set(id, { resolve, reject, timer });
+      try {
+        this.#worker?.postMessage(envelope);
+      } catch (error) {
+        this.#clearPending(id);
+        reject(error);
+      }
+    });
   }
   /**
    * @param {string} type
@@ -186,6 +189,7 @@ class Channel {
     return envelope;
   }
   /**
+   * Subs immer. Dispatcher nur für `evt:*` — Lifecycle (`channel:ready` / `channel:error`) geht direkt.
    * @param {ChannelEnvelope} envelope
    */
   #fanout(envelope) {
@@ -199,6 +203,9 @@ class Channel {
           this.#error().capture(error, `[Channel.fanout()] '${envelope.type}'`);
         }
       }
+    }
+    if (typeof envelope.type !== "string" || !envelope.type.startsWith("evt:")) {
+      return;
     }
     const dispatcher = this.runtime?.dispatcher;
     if (dispatcher && typeof dispatcher.emit === "function") {
@@ -215,7 +222,7 @@ class Channel {
     const message = /** @type {ChannelEnvelope} */ (data);
     if (typeof message.id === "number" && this.#pending.has(message.id)) {
       const pending = this.#pending.get(message.id);
-      this.#pending.delete(message.id);
+      this.#clearPending(message.id);
       if (!pending) {
         return;
       }
@@ -238,7 +245,62 @@ class Channel {
       this.#holdWaiters.push(resolve);
     });
   }
+  #ensureWorker() {
+    if (this.#destroyed || this.#worker || this.#attachAttempted) {
+      return;
+    }
+    this.#attachAttempted = true;
+    if (typeof Worker !== "function") {
+      this.#fail("Worker API fehlt, Loopback bleibt.");
+      this.#ready();
+      return;
+    }
+    if (!this.#workerUrl) {
+      this.#fail("Worker-URL fehlt, Loopback bleibt.");
+      this.#ready();
+      return;
+    }
+    try {
+      const worker = new Worker(this.#workerUrl, { type: "module" });
+      worker.onmessage = (event) => this.#onWorkerMessage(event.data);
+      worker.onerror = (event) => {
+        this.#fail(event && event.message ? event.message : "Pipeline-Worker-Fehler.");
+        this.#rejectPending("Aspis [Channel.request()] Pipeline-Worker-Fehler.");
+        this.#dropWorker();
+      };
+      this.#worker = worker;
+      this.#ready();
+    } catch (error) {
+      this.#fail(error instanceof Error ? error.message : String(error));
+      this.#worker = null;
+      this.#ready();
+    }
+  }
+  /**
+   * Loopback mit demselben Timeout-Cap wie der Worker (sync-Arbeit bricht nur bei Hänger).
+   * @param {string} type
+   * @param {unknown} payload
+   * @returns {Promise<unknown>}
+   */
+  #loopbackRequest(type, payload) {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Aspis [Channel.request()] Timeout."));
+      }, this.#timeoutMs());
+      try {
+        const result = PipelineWork.handle(type, payload);
+        clearTimeout(timer);
+        resolve(result);
+      } catch (error) {
+        clearTimeout(timer);
+        reject(error);
+      }
+    });
+  }
   #dropWorker() {
+    if (this.#pending.size) {
+      this.#rejectPending("Aspis [Channel.request()] Pipeline-Worker-Fehler.");
+    }
     const worker = this.#worker;
     this.#worker = null;
     if (!worker) {
@@ -251,6 +313,51 @@ class Channel {
     } catch (error) {
       this.#error().capture(error, "[Channel.destroy()] Worker terminate.");
     }
+  }
+  #clearPending(id) {
+    const pending = this.#pending.get(id);
+    this.#pending.delete(id);
+    if (pending?.timer) {
+      clearTimeout(pending.timer);
+    }
+    return pending;
+  }
+  /**
+   * @param {string} message
+   */
+  #rejectPending(message) {
+    const pending = [...this.#pending.entries()];
+    this.#pending.clear();
+    for (let i = 0; i < pending.length; i += 1) {
+      const entry = pending[i][1];
+      if (entry.timer) {
+        clearTimeout(entry.timer);
+      }
+      entry.reject(new Error(message));
+    }
+  }
+  #timeoutMs() {
+    const registry = this.runtime?.registry;
+    const config = registry && typeof registry.has === "function" && registry.has("config")
+      ? registry.get("config")
+      : null;
+    const raw = config && config.settings && typeof config.settings === "object"
+      ? config.settings.channel && typeof config.settings.channel === "object"
+        ? config.settings.channel.timeoutMs
+        : null
+      : null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) {
+      return DEFAULT_TIMEOUT_MS;
+    }
+    return Math.max(250, Math.min(60000, Math.floor(n)));
+  }
+  #logTiming(type, started) {
+    const ms = Math.max(0, Math.round(this.#now() - started));
+    this.#debug().info(`[Channel.request()] ${type} ${ms}ms ${this.transport}`);
+  }
+  #now() {
+    return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
   }
   #ready() {
     const dispatcher = this.runtime?.dispatcher;

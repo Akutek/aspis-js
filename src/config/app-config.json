@@ -2,7 +2,15 @@
     "version": "1",
     "settings": {
         "strictMode": true,
-        "debug": true
+        "debug": true,
+        "factory": {
+            "view": 3,
+            "near": 2,
+            "history": 1
+        },
+        "channel": {
+            "timeoutMs": 8000
+        }
     },
     "publicPaths": {
         "base": null

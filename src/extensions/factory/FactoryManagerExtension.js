@@ -123,11 +123,11 @@ class FactoryManagerExtension {
     const tools = this.#tools(registry);
     const queue = parts.watchers && parts.watchers.queue ? parts.watchers.queue : ObserverManagerExtension.emptyQueue();
     let mounted = 0;
-    mounted += await this.#mountBand(registry, parts, queue.view, tools, "view", VIEW_CONCURRENCY);
-    mounted += await this.#mountBand(registry, parts, queue.near, tools, "near", NEAR_CONCURRENCY);
+    mounted += await this.#mountBand(registry, parts, queue.view, tools, "view", this.#bandLimit(registry, "view", VIEW_CONCURRENCY));
+    mounted += await this.#mountBand(registry, parts, queue.near, tools, "near", this.#bandLimit(registry, "near", NEAR_CONCURRENCY));
     if (Array.isArray(queue.history) && queue.history.length > 0) {
       await this.#idle();
-      mounted += await this.#mountBand(registry, parts, queue.history, tools, "history", HISTORY_CONCURRENCY);
+      mounted += await this.#mountBand(registry, parts, queue.history, tools, "history", this.#bandLimit(registry, "history", HISTORY_CONCURRENCY));
     } else {
       this.#emitBand(tools.dispatcher, "history", 0);
     }
@@ -222,6 +222,20 @@ class FactoryManagerExtension {
     if (dispatcher && typeof dispatcher.emit === "function") {
       dispatcher.emit("factory:band", { band, mounted });
     }
+  }
+  static #bandLimit(registry, band, fallback) {
+    const config = registry && typeof registry.has === "function" && registry.has("config")
+      ? RegistryManager.get(registry, "config")
+      : null;
+    const factory = config && config.settings && typeof config.settings === "object"
+      ? config.settings.factory
+      : null;
+    const raw = factory && typeof factory === "object" ? factory[band] : null;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 1) {
+      return fallback;
+    }
+    return Math.min(16, Math.floor(n));
   }
   static async #mountTask(registry, parts, task, tools) {
     const element = task && task.item && task.item.element;

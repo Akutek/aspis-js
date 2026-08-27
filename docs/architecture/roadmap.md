@@ -114,6 +114,19 @@ Einstieg `src/aspis.js`: `start()`, `stop(registry?)`, `runCycle(registry)`. Kei
 
 ---
 
+## Channel / Worker / Boot
+
+Ergänzung **neben** den nummerierten Phasen 7–9 — bestehende Nummern bleiben.
+
+- Host `Channel` (`src/core/Channel.js`), Registry-Key `channel`, Specifier `core.Channel`. Ausbau: `ChannelExtension`.
+- Lifecycle-Events am bestehenden `EventDispatcher`: `boot:phase`, `boot:done`, `cycle:phase`, `cycle:done`, `factory:band`, `channel:ready` / `channel:error`.
+- Boot parallel in Promise-Gruppen nach `app-config` + `registry-manifest`; `StoreExtension.apply` und Services danach seriell. Ein Pipeline-Worker (`src/workers/pipeline.worker.js`) nur für pure JSON-/Sort-Arbeit.
+- Factory: Importer parallel; view-Band begrenzte Concurrency, Barrier vor near, history nach Idle — weiter innerhalb von `factory()` / `inflight`.
+- `stop()`: Channel `destroy` (Worker `terminate`) vor Dispatcher `destroy`.
+- Rule: [`channel.mdc`](../../.cursor/rules/channel.mdc). Plan: [`.cursor/plans/boot-channel-workers.md`](../../.cursor/plans/boot-channel-workers.md).
+
+---
+
 ## Phase 7 — Mutation Pressure (P2)
 
 `runCycle` loggt Phasendauern und Compare-Zähler (`[runCycle]`, Area `cycle`). Optionaler Scan-Root: MutationWatcher gibt den betroffenen DOM, `ScanManagerExtension.mergeOutside` hält Treffer außerhalb. Suite: Phase 9.

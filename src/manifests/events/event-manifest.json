@@ -1,1 +1,6 @@
-{}
+{
+    "version": "1",
+    "lifecycle": {
+        "events": "boot:phase boot:done cycle:phase cycle:done factory:band channel:ready channel:error"
+    }
+}

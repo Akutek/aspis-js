@@ -16,6 +16,12 @@ class EventDispatcher {
   get manifest() {
     return this.#eventManifest;
   }
+  /** Tauscht das Event-Manifest aus, ohne Listener oder den Click-Tracker neu aufzusetzen. */
+  useManifest(eventManifest = {}) {
+    this.#eventManifest = eventManifest && typeof eventManifest === "object" && !Array.isArray(eventManifest)
+      ? eventManifest
+      : {};
+  }
   on(eventName, callback) {
     if (typeof callback !== "function") return () => {
     };

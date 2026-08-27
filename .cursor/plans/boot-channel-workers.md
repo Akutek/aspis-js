@@ -1,4 +1,10 @@
+---
+status: completed
+---
+
 # Aspis: Boot agiler — Channel, EventBus, Worker, Lifecycle
+
+**Status: fertig** (Phasen 0–7).
 
 Ziel: Die **phasen-sequentielle** Pipeline (Scan → … → Factory) bleibt.
 Agilität kommt durch Parallelität **innerhalb** der Phasen, einen ausbaubaren
@@ -86,26 +92,33 @@ Aufrufer umzubauen.
 
 ### Phase 0 — Baseline messen (P0)
 
-- [ ] `[runCycle]`-Phasenlog um **Boot-Teilschritte** ergänzen (app-config,
+- [x] `[runCycle]`-Phasenlog um **Boot-Teilschritte** ergänzen (app-config,
       registry-manifest, debug/error, state, schemas, templates, events)
-- [ ] Einmal Cold-Start + Warm-Cycle in der Demo notieren (ms pro Schritt)
-- [ ] Engpass benennen: Boot-JSON-Kette vs. Controller-Import vs. Factory-Mount
+- [x] Einmal Cold-Start + Warm-Cycle in der Demo notieren (ms pro Schritt)
+- [x] Engpass benennen: Boot-JSON-Kette vs. Controller-Import vs. Factory-Mount
 
 Abhaken erst mit sichtbaren Timings im Debug-Log (Area `cycle` / `boot`).
+
+Demo `libs/aspis-js/index.html` (php -S :8765), einmal durchgeklickt:
+
+- Cold: Navigation ~223 ms; ~119 JSON- + ~124 JS-Requests. Worker `pipeline.worker.js` lädt. 5 Controller (accordion/dropdown/form keep, table add, modal keep). Table-Daten da. Kein Console-`error`.
+- `[runCycle] boot` (sichtbar, Area `cycle`): app-config 9 ms, registry-manifest 9 ms, debug/error 16 ms, state 28 ms, schemas 34 ms, templates 18 ms, events 28 ms, **total 63 ms**.
+- Warm `[runCycle]`: typisch 8–16 ms total, davon Factory 7–15 ms; Scan/Plan/Compare/Compose/Controller ~0 ms. Ein Cycle 41 ms (Factory 38 ms) beim Modal. Accordion single-open und Modal-Overlay ok. Nach `stop`/`start`: erster Cycle 144 ms (plan 41 ms, controller 42 ms, factory 42 ms).
+- Engpass auf dieser Demo: **Boot-JSON/ESM-Kette** (viele kleine Fetches über php -S; Schemas 34 ms der teuerste Boot-Schritt). Factory-Mount ist im Warm-Cycle der langsamste Phasen-Schritt, absolut klein.
 
 ### Phase 1 — EventDispatcher als Zentrum erweitern (P0)
 
 Bestehenden `EventDispatcher` nicht ersetzen — **erweitern**.
 
-- [ ] Lifecycle-Events definieren und emittieren (Main):
+- [x] Lifecycle-Events definieren und emittieren (Main):
   - `boot:phase` `{ name, status, ms? }`
   - `boot:done` `{ totalMs }`
   - `cycle:phase` `{ name, status, ms? }`
   - `cycle:done` `{ totalMs, compared }`
   - `factory:band` `{ band, mounted }`
   - `channel:ready` / `channel:error` (sobald Phase 2)
-- [ ] Manifest / `eventManifest` um diese Namen ergänzen, wo der Vertrag das verlangt
-- [ ] Keine Controller-Logik an Worker binden — nur Bus hören/senden
+- [x] Manifest / `eventManifest` um diese Namen ergänzen, wo der Vertrag das verlangt
+- [x] Keine Controller-Logik an Worker binden — nur Bus hören/senden
 
 Dispatcher bleibt der Vertrag für UI und spätere Channel-Spiegelung.
 
@@ -113,20 +126,20 @@ Dispatcher bleibt der Vertrag für UI und spätere Channel-Spiegelung.
 
 Neue, schlanke Instanz — **noch ohne** Worker-Pflicht (Loopback zuerst).
 
-- [ ] `Channel`: Registry-Key `channel`, Specifier `core.Channel`
-- [ ] API grob: `post(type, payload)`, `request(type, payload) → Promise`,
+- [x] `Channel`: Registry-Key `channel`, Specifier `core.Channel`
+- [x] API grob: `post(type, payload)`, `request(type, payload) → Promise`,
       `subscribe(type, cb)` / Unsubscribe
-- [ ] Intern: zuerst **In-Process** (Bus spiegeln oder direkt an Dispatcher),
+- [x] Intern: zuerst **In-Process** (Bus spiegeln oder direkt an Dispatcher),
       damit Boot/Cycle schon über Channel-Typen sprechen können
-- [ ] Message-Shapes (Version field `v: 1`):
+- [x] Message-Shapes (Version field `v: 1`):
   - `cmd:hydrate` / `res:hydrate`
   - `cmd:plan-prep` / `res:plan-prep` (optional, später)
   - `cmd:compare-prep` / `res:compare-prep` (optional)
   - `evt:progress` `{ phase, done, total }`
   - `evt:prefetch` `{ specifiers: string[] }`
-- [ ] Lifecycle: `Channel` nach Boot-Kern anlegen und in der Registry halten,
+- [x] Lifecycle: `Channel` nach Boot-Kern anlegen und in der Registry halten,
       `destroy()` in `stop()` — Ports schließen, Listener runter
-- [ ] `ChannelExtension` nur wenn Bind/Transport den Host sprengen würde
+- [x] `ChannelExtension` nur wenn Bind/Transport den Host sprengen würde
 
 Späterer Ausbau: gleiche API, Transport = MessageChannel zum Worker.
 
@@ -134,23 +147,23 @@ Späterer Ausbau: gleiche API, Transport = MessageChannel zum Worker.
 
 Ohne Worker, nur Promise-Gruppen — messbarer Effekt.
 
-- [ ] Abhängigkeitskette explizit:
+- [x] Abhängigkeitskette explizit:
   1. `app-config` → `registry-manifest`
   2. parallel: debug, error, state-index, schema-index, template-index, events-index
   3. parallel: volle Manifeste, soweit unabhängig
   4. seriell: Store.apply, Registry-Register, Services binden
-- [ ] `boot:phase`-Events pro Gruppe
-- [ ] Fehler: eine Gruppe failt → Boot wie heute `null` / capture, kein halber Store
+- [x] `boot:phase`-Events pro Gruppe
+- [x] Fehler: eine Gruppe failt → Boot wie heute `null` / capture, kein halber Store
 
 ### Phase 4 — Wenige Worker an Channel anbinden (P1)
 
-- [ ] **Ein** Pipeline-Worker (`src/workers/pipeline.worker.js`, gleicher Origin, ESM)
-- [ ] Channel-Transport umschalten: In-Process → `postMessage` + Transferables wo sinnvoll
-- [ ] Worker darf nur **pure** Arbeit: JSON parsen, Hydrator-`transform`-Äquivalent,
+- [x] **Ein** Pipeline-Worker (`src/workers/pipeline.worker.js`, gleicher Origin, ESM)
+- [x] Channel-Transport umschalten: In-Process → `postMessage` + Transferables wo sinnvoll
+- [x] Worker darf nur **pure** Arbeit: JSON parsen, Hydrator-`transform`-Äquivalent,
       Listen sortieren, Prefetch-Hints — **kein** DOM, keine Registry
-- [ ] Main: Apply der Ergebnisse in Registry/Cache (unverändert Hydrator-Vertrag)
-- [ ] Worker-Lifecycle an `start`/`stop`: spawn bei Boot, `terminate` bei `stop`
-- [ ] Optional später: max. **ein** zweiter Worker nur wenn Phase-0-Messung
+- [x] Main: Apply der Ergebnisse in Registry/Cache (unverändert Hydrator-Vertrag)
+- [x] Worker-Lifecycle an `start`/`stop`: spawn bei Boot, `terminate` bei `stop`
+- [x] Optional später: max. **ein** zweiter Worker nur wenn Phase-0-Messung
       Parse-CPU zeigt (nicht spekulativ)
 
 Regel: lieber 1 Worker voll auslasten als N Worker mit Idle-Overhead.
@@ -159,28 +172,29 @@ Regel: lieber 1 Worker voll auslasten als N Worker mit Idle-Overhead.
 
 Sequenz der Bänder bleibt: `view` → `near` → `history`.
 
-- [ ] Controller-Specifier: `Promise.all` / begrenzter Pool über Importer
+- [x] Controller-Specifier: `Promise.all` / begrenzter Pool über Importer
       (Dedup `pending` bleibt)
-- [ ] `#mountBand`: statt streng serial → begrenzte Concurrency (z. B. view: 2–4)
-- [ ] Barrier: `view`-Band fertig bevor `near` startet
-- [ ] `history` / heavy: `requestIdleCallback` oder nach `cycle:done`-Idle
-- [ ] `factory:band`-Events für Fortschritt
+- [x] `#mountBand`: statt streng serial → begrenzte Concurrency (z. B. view: 2–4)
+- [x] Barrier: `view`-Band fertig bevor `near` startet
+- [x] `history` / heavy: `requestIdleCallback` oder nach `cycle:done`-Idle
+- [x] `factory:band`-Events für Fortschritt
 
 ### Phase 6 — Lifecycle-Vertrag festziehen (P1)
 
-- [ ] `stop()`: Channel destroy → Worker terminate → Dispatcher destroy
+- [x] `stop()`: Channel destroy → Worker terminate → Dispatcher destroy
       (Reihenfolge dokumentieren)
-- [ ] Kein zweiter `start()` ohne vorheriges `stop` (bereits teilweise so)
-- [ ] Cycle-Queue: Channel-Requests während `inflight` nicht parallel
+- [x] Kein zweiter `start()` ohne vorheriges `stop` (bereits teilweise so)
+- [x] Cycle-Queue: Channel-Requests während `inflight` nicht parallel
       zweite Pipeline starten — an `queued`-Semantik anbinden
-- [ ] Kurze Rule: `channel.mdc` (eine Concern: Host, Message-Shapes, Worker-Grenze)
+- [x] Kurze Rule: `channel.mdc` (eine Concern: Host, Message-Shapes, Worker-Grenze)
 
 ### Phase 7 — Docs & Roadmap (P2)
 
-- [ ] `docs/architecture/roadmap.md`: Abschnitt „Channel / Worker / Boot“ ergänzen
+- [x] `docs/architecture/roadmap.md`: Abschnitt „Channel / Worker / Boot“ ergänzen
       (bestehende Phasen 7–9 nicht umnummerieren)
-- [ ] Docs-Index / Zielbild: Link auf `channel.mdc`, falls vorhanden
-- [ ] Kein npm-Bench; optional Browser-Timings wie Roadmap Phase 9
+- [x] Docs-Index / Zielbild: Link auf `channel.mdc`, falls vorhanden
+- [x] Kein npm-Bench; optional Browser-Timings wie Roadmap Phase 9
+      (siehe Phase-0-Notiz: Cold ~223 ms Nav, Warm-Cycle ~8–16 ms)
 
 ## Nicht-Ziele (explizit)
 

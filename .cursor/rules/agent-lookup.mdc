@@ -7,7 +7,7 @@ alwaysApply: true
 
 Bevor `src/**` rekursiv gescannt wird:
 
-1. Diese Rules (`host-dom-contract`, `accordion-lazy`, `known-templates`, `architecture`, Phase-Rules)
+1. Diese Rules (`host-dom-contract`, `accordion-lazy`, `known-templates`, `architecture`, `channel.mdc`, Phase-Rules)
 2. Parent-Views / Demo-`index.html` mit gleichem `data-controller`
 3. `docs/architecture/roadmap.md` / `templates.md` bei Konzeptfragen
 4. Gezielt eine Datei (z. B. Plan-Portion, Template-Index) — nicht Factory/Scan-Gesamttree

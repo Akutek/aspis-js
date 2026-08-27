@@ -64,6 +64,7 @@ const AREA_FROM_PREFIX = [
   ["import", "import"],
   ["boot", "boot"],
   ["cache", "cache"],
+  ["channel", "channel"],
   ["debug", "debug"],
   ["error", "error"],
   ["controller", "controller"],

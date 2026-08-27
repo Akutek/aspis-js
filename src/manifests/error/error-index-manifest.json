@@ -10,6 +10,7 @@
             "queue",
             "cycle",
             "factory",
+            "channel",
             "watcher",
             "compose",
             "tailor",

@@ -16,13 +16,14 @@ class ControllerService {
     }
     const classes = {};
     const keys = [...unique];
+    const loaded = await Promise.all(keys.map((specifier) => ImportManager.import(registry, specifier)));
     for (let i = 0; i < keys.length; i += 1) {
       const specifier = keys[i];
-      const loaded = await ImportManager.import(registry, specifier);
-      if (typeof loaded !== "function") {
+      const Class = loaded[i];
+      if (typeof Class !== "function") {
         return ErrorAgent.shared().throw(`Unbekanntes Mixin oder keine Klasse: '${specifier}'.`);
       }
-      classes[specifier] = loaded;
+      classes[specifier] = Class;
     }
     return { specifiers: keys, classes };
   }

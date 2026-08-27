@@ -15,6 +15,6 @@ Fast immer anfassen:
 
 Nur bei Bedarf: `src/config/app-config.json` (Cardinals), State-/Event-Manifeste, Hydrator-Index.
 
-Wird eine Datei unübersichtlich oder die Struktur spricht dafür: **Sub-Manifeste** und vom Parent nur `{ directory, file }` zeigen. Laden faul über Importer / `ManifestLoaderService`, nicht alles im Boot. Beispiel: `classRouting` bleibt der Index. Plan: `src/manifests/plan/plan-index-manifest.json` zeigt auf Portionen; Trigger `type` = Scan-`data-controller`, ohne die Klasse zu laden. Watcher-Hosts: `watchers-index-manifest.json` plus `classRouting.watchers`. Tailor: `core.Tailor`. Splicer: `core.Splicer`. SplicerManager: `manager.SplicerManager`. Dienste: `services-index-manifest.json`.
+Wird eine Datei unübersichtlich oder die Struktur spricht dafür: **Sub-Manifeste** und vom Parent nur `{ directory, file }` zeigen. Laden faul über Importer / `ManifestLoaderService`, nicht alles im Boot. Beispiel: `classRouting` bleibt der Index. Plan: `src/manifests/plan/plan-index-manifest.json` zeigt auf Portionen; Trigger `type` = Scan-`data-controller`, ohne die Klasse zu laden. Watcher-Hosts: `watchers-index-manifest.json` plus `classRouting.watchers`. Tailor: `core.Tailor`. Splicer: `core.Splicer`. Channel: `core.Channel`. SplicerManager: `manager.SplicerManager`. Dienste: `services-index-manifest.json`.
 
 Gelöschte Klassen: Einträge entfernen, keine toten Pfade.

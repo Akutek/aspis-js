@@ -10,7 +10,7 @@ Neue Manager, Hosts, Extensions, Hydratoren: immer die zentralen Agenten nutzen.
 - **Phasen-Manager:** `this.info` / `this.warn` / `this.log` / `this.capture(registry, …)` — Agenten aus der Registry, Prefix `[Class.method()]` kommt aus `BaseManager.tag()`.
 - **Log (sonst):** `DebugAgent` (`shared()` oder Registry `debug`) mit Prefix `[Class.method()]`, damit die Area greift.
 - **Fehler:** `ErrorAgent.capture` / `throw` (oder `this.capture` / `DebugErrorManager.capture`). Nicht nur `DebugAgent.error`.
-- **Hosts** (Scanner, Store, Tailor, Splicer, …): `bind` legt `runtime.debug` / `runtime.error` an. Fallback `shared()`.
+- **Hosts** (Scanner, Store, Tailor, Splicer, Channel, …): `bind` legt `runtime.debug` / `runtime.error` an. Fallback `shared()`.
 
 Neue Area oder Phase: Eintrag in `debug-index-manifest.json` und `error-index-manifest.json` (`settings.areas`, wenn die Liste nicht leer bleiben soll). Prefix in `AgentEnvelope` (`AREA_FROM_PREFIX`), falls der Klassenname nicht schon auf eine Area zeigt.
 

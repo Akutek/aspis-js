@@ -34,6 +34,7 @@ Phasen-Manager bleiben in `src/managers/` (nur das Kapitel). Ihr Ausbau liegt im
 | `extensions/debug-agent/` | `DebugAgentExtension` | DebugAgent |
 | `extensions/error-agent/` | `ErrorAgentExtension` | ErrorAgent |
 | `extensions/store/` | `StoreExtension` | Store |
+| `extensions/channel/` | `ChannelExtension` | Channel |
 | `extensions/priority-queue/` | `PriorityQueueExtension` | PriorityQueue |
 
 Aufruf: `HostExtension.expand(host, { manifest, middleware, plugin, load })` oder `host.expand(…)`. Agent-`hydrate()` geht an `apply`.

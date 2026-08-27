@@ -19,6 +19,9 @@ import { ComposeCompositionService } from "../../services/ComposeCompositionServ
 import { DebugAgent } from "../../agents/DebugAgent.js";
 import { ErrorAgent } from "../../agents/ErrorAgent.js";
 import { ObserverManagerExtension } from "../observer/ObserverManagerExtension.js";
+const VIEW_CONCURRENCY = 3;
+const NEAR_CONCURRENCY = 2;
+const HISTORY_CONCURRENCY = 1;
 class FactoryManagerExtension {
   static get cacheKey() {
     return "factory:current";
@@ -120,9 +123,14 @@ class FactoryManagerExtension {
     const tools = this.#tools(registry);
     const queue = parts.watchers && parts.watchers.queue ? parts.watchers.queue : ObserverManagerExtension.emptyQueue();
     let mounted = 0;
-    mounted += await this.#mountBand(registry, parts, queue.view, tools);
-    mounted += await this.#mountBand(registry, parts, queue.near, tools);
-    mounted += await this.#mountBand(registry, parts, queue.history, tools);
+    mounted += await this.#mountBand(registry, parts, queue.view, tools, "view", VIEW_CONCURRENCY);
+    mounted += await this.#mountBand(registry, parts, queue.near, tools, "near", NEAR_CONCURRENCY);
+    if (Array.isArray(queue.history) && queue.history.length > 0) {
+      await this.#idle();
+      mounted += await this.#mountBand(registry, parts, queue.history, tools, "history", HISTORY_CONCURRENCY);
+    } else {
+      this.#emitBand(tools.dispatcher, "history", 0);
+    }
     this.#syncLive(registry, compared);
     return mounted;
   }
@@ -166,18 +174,54 @@ class FactoryManagerExtension {
       error: registry.has("error") ? RegistryManager.get(registry, "error") : ErrorAgent.shared()
     };
   }
-  static async #mountBand(registry, parts, tasks, tools) {
-    if (!Array.isArray(tasks)) {
+  static async #mountBand(registry, parts, tasks, tools, band, limit) {
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      this.#emitBand(tools.dispatcher, band, 0);
       return 0;
     }
+    const results = await this.#mapLimit(tasks, limit, (task) => this.#mountTask(registry, parts, task, tools));
     let count = 0;
-    for (let i = 0; i < tasks.length; i += 1) {
-      const ok = await this.#mountTask(registry, parts, tasks[i], tools);
-      if (ok) {
+    for (let i = 0; i < results.length; i += 1) {
+      if (results[i]) {
         count += 1;
       }
     }
+    this.#emitBand(tools.dispatcher, band, count);
     return count;
+  }
+  static async #mapLimit(items, limit, mapper) {
+    const cap = Math.max(1, limit);
+    const results = new Array(items.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < items.length) {
+        const index = next;
+        next += 1;
+        results[index] = await mapper(items[index], index);
+      }
+    };
+    const runners = Math.min(cap, items.length);
+    const jobs = [];
+    for (let i = 0; i < runners; i += 1) {
+      jobs.push(worker());
+    }
+    await Promise.all(jobs);
+    return results;
+  }
+  static #idle() {
+    return new Promise((resolve) => {
+      const ric = globalThis.requestIdleCallback;
+      if (typeof ric === "function") {
+        ric(() => resolve(), { timeout: 200 });
+        return;
+      }
+      setTimeout(resolve, 0);
+    });
+  }
+  static #emitBand(dispatcher, band, mounted) {
+    if (dispatcher && typeof dispatcher.emit === "function") {
+      dispatcher.emit("factory:band", { band, mounted });
+    }
   }
   static async #mountTask(registry, parts, task, tools) {
     const element = task && task.item && task.item.element;

@@ -1,0 +1,45 @@
+---
+description: Channel-Host, Message-Shapes, Pipeline-Worker, stop()-Reihenfolge
+globs: src/core/Channel.js,src/extensions/channel/**/*.js,src/workers/**/*.js,src/aspis.js,src/managers/BootManager.js
+alwaysApply: false
+---
+
+# Channel
+
+Eine geplante Registry-Instanz: Klasse **`Channel`**, Specifier `core.Channel`, Key **`channel`**. Kein `ChannelHost`, kein `ChannelManager`. Felder am Host erlaubt (`class-fields.mdc`).
+
+Öffentliche API bleibt `start` / `stop` / `runCycle`. Channel startet **keine** zweite Pipeline; `runCycle` bleibt der einzige Cycle-Einstieg (`queued` / `inflight`).
+
+## API
+
+- `post(type, payload)` — fire-and-forget, spiegelt an `subscribe` und `EventDispatcher`
+- `request(type, payload) → Promise` — Loopback oder ein ESM-Worker
+- `subscribe(type, cb)` — Unsubscribe-Funktion
+- `holdPipeline(true|false)` — während `inflight` warten `cmd:plan-prep` / `cmd:compare-prep`
+- `destroy()` — Pending ablehnen, Worker `terminate`, Listener lösen (idempotent)
+
+`EventDispatcher` bleibt der Bus. Channel transportiert Kommandos und kann Bus-Events spiegeln; keine zweite Bus-Klasse.
+
+## Messages (`v: 1`)
+
+| type | Richtung |
+| --- | --- |
+| `cmd:hydrate` / `res:hydrate` | JSON parsen, Keys sortieren |
+| `cmd:plan-prep` / `res:plan-prep` | Items nach `type`/`id` sortieren |
+| `cmd:compare-prep` / `res:compare-prep` | Placeholder, Payload durchreichen |
+| `evt:progress` | `{ phase, done, total }` |
+| `evt:prefetch` | `{ specifiers: string[] }` |
+| `boot:phase` `boot:done` `cycle:phase` `cycle:done` `factory:band` `channel:ready` `channel:error` | Dispatcher-Lifecycle (Main) |
+
+## Worker
+
+Genau **eine** Datei: `src/workers/pipeline.worker.js` (Modul, gleicher Origin). Pure Arbeit in `PipelineWork` — kein DOM, keine Registry, keine Controller. Spawn im Boot (`Channel.attachWorker`), `terminate` in `Channel.destroy()`. Fehlt `Worker` (Tests/jsdom): Loopback, `channel:error`, Host bleibt nutzbar.
+
+Kein zweiter Worker ohne Messung (Phase 0).
+
+## `stop()`
+
+1. `cycle` lösen, Watcher `stop`, Inflight abwarten
+2. Live/DOM `destroy`
+3. **Channel `destroy`** (Worker terminate)
+4. **EventDispatcher `destroy`**

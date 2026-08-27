@@ -28,5 +28,10 @@
         "directory": "core",
         "file": "Splicer.js",
         "export": "Splicer"
+    },
+    "Channel": {
+        "directory": "core",
+        "file": "Channel.js",
+        "export": "Channel"
     }
 }

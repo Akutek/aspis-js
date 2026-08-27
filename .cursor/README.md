@@ -20,7 +20,7 @@ Arbeitsanweisung für den Agenten. Kurze Rules — eine Concern pro Datei. **Zue
 
 | Rule | Thema |
 | --- | --- |
-| `boot.mdc`, `scan.mdc`, `plan.mdc`, `compare.mdc`, `factory.mdc` | Phasen |
+| `boot.mdc`, `scan.mdc`, `plan.mdc`, `compare.mdc`, `factory.mdc`, `channel.mdc` | Phasen / Channel |
 | `managers.mdc`, `extensions.mdc`, `store.mdc`, `watchers.mdc` | Struktur |
 | `manifests.mdc`, `templates.mdc` | Kataloge |
 | `queue.mdc` | Cycle-Überlappung |

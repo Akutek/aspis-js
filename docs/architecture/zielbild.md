@@ -12,6 +12,7 @@ Einstieg: `.cursor/README.md` und `.cursor/rules/`.
 | Phasen-Manager, BaseManager | `managers.mdc` |
 | Store | `store.mdc` |
 | Extensions | `extensions.mdc` |
+| Channel, Worker, Boot-Events | `channel.mdc` |
 | Klassen-Imports | `imports.mdc` |
 | Importer sparsam, faul laden | `importer-performance.mdc` |
 | Manifeste, Hydratoren, Pipelines | `manifests.mdc` |

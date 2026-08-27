@@ -46,27 +46,54 @@ function runCycle(registry, root) {
     });
   }
   inflight = (async () => {
-    const started = now();
-    const scanAt = now();
-    await (root ? ScanManager.scan(registry, root) : ScanManager.scan(registry));
-    const planAt = now();
-    await PlanManager.plan(registry);
-    const compareAt = now();
-    const compared = await CompareManager.compare(registry);
-    const observeAt = now();
-    const watchers = await ObserverManager.observe(registry, compared);
-    const composeAt = now();
-    const compose = await ComposeManager.compose(registry, compared);
-    const controlAt = now();
-    const controllers = await ControllerManager.control(registry, compared, watchers);
-    const spliceAt = now();
-    const spliced = await SplicerManager.splice(registry, { compared, watchers, compose, controllers });
-    const factoryAt = now();
-    await FactoryManager.factory(registry, spliced);
-    const done = now();
-    DebugAgent.info(
-      `[runCycle] scan ${ms(scanAt, planAt)}, plan ${ms(planAt, compareAt)}, compare ${ms(compareAt, observeAt)} (add ${compared.add.length} keep ${compared.keep.length} update ${compared.update.length} remove ${compared.remove.length}), observe ${ms(observeAt, composeAt)}, compose ${ms(composeAt, controlAt)}, controller ${ms(controlAt, spliceAt)}, splice ${ms(spliceAt, factoryAt)}, factory ${ms(factoryAt, done)}, total ${ms(started, done)}.`
-    );
+    const channel = registry.has("channel") ? registry.get("channel") : null;
+    if (channel && typeof channel.holdPipeline === "function") {
+      channel.holdPipeline(true);
+    }
+    try {
+      const started = now();
+      emitPhase(registry, "scan", "start");
+      const scanAt = now();
+      await (root ? ScanManager.scan(registry, root) : ScanManager.scan(registry));
+      emitPhase(registry, "scan", "done", scanAt);
+      emitPhase(registry, "plan", "start");
+      const planAt = now();
+      await PlanManager.plan(registry);
+      emitPhase(registry, "plan", "done", planAt);
+      emitPhase(registry, "compare", "start");
+      const compareAt = now();
+      const compared = await CompareManager.compare(registry);
+      emitPhase(registry, "compare", "done", compareAt);
+      emitPhase(registry, "observe", "start");
+      const observeAt = now();
+      const watchers = await ObserverManager.observe(registry, compared);
+      emitPhase(registry, "observe", "done", observeAt);
+      emitPhase(registry, "compose", "start");
+      const composeAt = now();
+      const compose = await ComposeManager.compose(registry, compared);
+      emitPhase(registry, "compose", "done", composeAt);
+      emitPhase(registry, "controller", "start");
+      const controlAt = now();
+      const controllers = await ControllerManager.control(registry, compared, watchers);
+      emitPhase(registry, "controller", "done", controlAt);
+      emitPhase(registry, "splice", "start");
+      const spliceAt = now();
+      const spliced = await SplicerManager.splice(registry, { compared, watchers, compose, controllers });
+      emitPhase(registry, "splice", "done", spliceAt);
+      emitPhase(registry, "factory", "start");
+      const factoryAt = now();
+      await FactoryManager.factory(registry, spliced);
+      emitPhase(registry, "factory", "done", factoryAt);
+      const done = now();
+      emit(registry, "cycle:done", { totalMs: elapsed(started), compared });
+      DebugAgent.info(
+        `[runCycle] scan ${ms(scanAt, planAt)}, plan ${ms(planAt, compareAt)}, compare ${ms(compareAt, observeAt)} (add ${compared.add.length} keep ${compared.keep.length} update ${compared.update.length} remove ${compared.remove.length}), observe ${ms(observeAt, composeAt)}, compose ${ms(composeAt, controlAt)}, controller ${ms(controlAt, spliceAt)}, splice ${ms(spliceAt, factoryAt)}, factory ${ms(factoryAt, done)}, total ${ms(started, done)}.`
+      );
+    } finally {
+      if (channel && typeof channel.holdPipeline === "function") {
+        channel.holdPipeline(false);
+      }
+    }
   })().finally(() => {
     inflight = null;
   });
@@ -93,6 +120,7 @@ async function start() {
 }
 /**
  * Watcher aus, Controller destroy, Cycle-Haken lösen. Wartet auf einen laufenden Cycle.
+ * Danach Channel (Worker terminate) und erst dann EventDispatcher.destroy.
  *
  * @param {import("./types/registry.js").Registry|null} [registry]
  * @returns {Promise<void>}
@@ -129,6 +157,12 @@ async function stop(registry) {
   }
   releaseLive(host);
   ControllerCleaner.cleanTree(host, RuntimeEnv.documentElement());
+  if (host.has("channel")) {
+    const channel = host.get("channel");
+    if (channel && typeof channel.destroy === "function") {
+      channel.destroy();
+    }
+  }
   if (host.has("dispatcher")) {
     const dispatcher = host.get("dispatcher");
     if (dispatcher && typeof dispatcher.destroy === "function") {
@@ -160,8 +194,28 @@ function releaseLive(host) {
   }
   cache.delete(CompareManagerExtension.liveKey);
 }
+function emit(registry, name, data) {
+  if (!registry || typeof registry.has !== "function" || !registry.has("dispatcher")) {
+    return;
+  }
+  const dispatcher = registry.get("dispatcher");
+  if (dispatcher && typeof dispatcher.emit === "function") {
+    dispatcher.emit(name, data);
+  }
+}
+function emitPhase(registry, name, status, from) {
+  /** @type {{ name: string, status: string, ms?: number }} */
+  const payload = { name, status };
+  if (typeof from === "number") {
+    payload.ms = elapsed(from);
+  }
+  emit(registry, "cycle:phase", payload);
+}
 function now() {
   return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+}
+function elapsed(from) {
+  return Math.max(0, Math.round(now() - from));
 }
 function ms(from, to) {
   return `${Math.max(0, Math.round(to - from))}ms`;

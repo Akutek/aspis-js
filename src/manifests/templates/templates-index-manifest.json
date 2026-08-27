@@ -82,5 +82,9 @@
     "form-cadre-phase": {
         "directory": "templates/form-cadre-phase",
         "file": "form-cadre-phase.json"
+    },
+    "form-raid": {
+        "directory": "templates/form-raid",
+        "file": "form-raid.json"
     }
 }

@@ -1,0 +1,13 @@
+<form class="aspis-form" method="post" action="{{action}}" data-form-root>
+    <p class="aspis-form__message is-hidden" data-target="form-message"></p>
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <label class="aspis-form__field">
+        Titel
+        <input type="text" name="title" required maxlength="128">
+    </label>
+    <label class="aspis-form__field">
+        Termin
+        <input type="datetime-local" name="scheduled_at">
+    </label>
+    <button type="submit">{{submitLabel}}</button>
+</form>

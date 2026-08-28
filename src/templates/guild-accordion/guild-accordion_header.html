@@ -6,8 +6,10 @@
     <p class="aspis-accordion__count">{{dataCharCounter}}</p>
     <div class="aspis-accordion__mainchar">
         <img src="{{imgPathOverviewMainCharClassIcon}}" alt="">
-        <p>{{dataCharname}}</p>
-        <span>{{dataMainTag}}</span>
+        <div class="aspis-accordion__character-info" style="color: {{dataClassColor}}">
+            <span>{{dataCharname}}</span>
+            <span>{{dataMainSpec}}</span>
+        </div>
     </div>
     <p class="aspis-accordion__role">{{dataMainRole}}</p>
     <span class="aspis-accordion__indicator">{{dataAccordionIndicator}}</span>

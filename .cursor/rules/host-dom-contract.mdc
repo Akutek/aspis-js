@@ -17,6 +17,7 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 - Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
 - Assign-Forms nicht als Geschwister im Accordion-Root — in das jeweilige Item oder außerhalb des Hosts
 - Trigger: `data-target="trigger"`; Panel: `data-target="panel"` (z. B. `is-hidden` bis geöffnet)
+- Full-Render `data-template="guild-accordion"`: Header-Mainchar wie `guild-accordion_character` — Icon links, `aspis-accordion__character-info` mit Name und Spec, optional `dataClassColor`
 - Plan `needs` enthält `watcher`, damit nach Lazy-Paste verschachtelte Hosts (Dropdown, …) neu gescannt werden
 
 ## Form

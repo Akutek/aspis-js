@@ -13,5 +13,6 @@ View setzt nur den Namen; Markup liegt im Template-Katalog (`src/manifests/templ
 | `form-character` | Charakter anlegen (Dashboard) |
 | `form-lage-filter` | Gildenverzeichnis-Suche (ohne Fraktion) |
 | `dropdown-row-actions` | Zeilen-Menü Bearbeiten/Entfernen (Kader-Char-Tabelle) |
+| `guild-accordion` | Gilden-Roster/Kader: Header Mainchar = Icon + gestapelte `character-info` (Name, Spec) |
 
 Neu/umbenannt: Katalog + Ordner (`templates.mdc` / `manifest-sync.mdc`). Host soll bestehende Namen wiederverwenden, bevor ein neues Template verlangt wird.

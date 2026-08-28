@@ -13,4 +13,4 @@ alwaysApply: true
 - Auth/CSRF/IDOR sind Sache des Hosts (PHP-Route), nicht der Accordion-Klasse.
 - Verschachtelte `data-controller`-Hosts im Fragment (z. B. Dropdown) werden nach dem Paste gescannt, wenn der Accordion-Plan `needs` den `watcher` enthält.
 
-Demo/Parent-Beispiele: Raid-Roster, Guild-Roster-Accordion.
+Demo/Parent-Beispiele: Season-Kader, Guild-Roster-Accordion.

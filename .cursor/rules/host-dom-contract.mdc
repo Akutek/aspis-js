@@ -13,7 +13,6 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
   - Default/Fallback: `features.accordionFeature`
   - Roster: `features.accordionRoster`
   - Season-Kader: `features.accordionCadre`
-  - Raid-Kader: `features.accordionRaid`
   - Demo: `features.accordionDemo`
 - Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
 - Assign-Forms nicht als Geschwister im Accordion-Root — in das jeweilige Item oder außerhalb des Hosts

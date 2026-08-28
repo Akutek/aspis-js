@@ -99,12 +99,6 @@
                 "isLoading": false
             }
         },
-        "features.accordionRaid": {
-            "initialState": {
-                "view": null,
-                "isLoading": false
-            }
-        },
         "features.accordionDemo": {
             "initialState": {
                 "view": null,

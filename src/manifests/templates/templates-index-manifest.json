@@ -70,21 +70,5 @@
     "form-character": {
         "directory": "templates/form-character",
         "file": "form-character.json"
-    },
-    "form-cadre-own": {
-        "directory": "templates/form-cadre-own",
-        "file": "form-cadre-own.json"
-    },
-    "form-cadre-assign": {
-        "directory": "templates/form-cadre-assign",
-        "file": "form-cadre-assign.json"
-    },
-    "form-cadre-phase": {
-        "directory": "templates/form-cadre-phase",
-        "file": "form-cadre-phase.json"
-    },
-    "form-raid": {
-        "directory": "templates/form-raid",
-        "file": "form-raid.json"
     }
 }

@@ -1,11 +1,13 @@
 /** @typedef {import("../../types/importer.js").ImportRoute} ImportRoute */
 /** @typedef {ImportRoute} TemplateRoute */
-/** @typedef {import("../../types/templates.js").TemplateConfig} TemplateConfig */
 /** @typedef {import("../../types/templates.js").TemplateSource} TemplateSource */
+/** @typedef {import("../../types/templates.js").CatalogResource} CatalogResource */
 import { ManifestLoaderService } from "../ManifestLoaderService.js";
 import { RouteIndexHydrator } from "../../hydrators/RouteIndexHydrator.js";
-import { TemplateManifestHydrator } from "../../hydrators/TemplateManifestHydrator.js";
+import { TemplateBrickHydrator } from "../../hydrators/TemplateBrickHydrator.js";
+import { BlueprintManifestHydrator } from "../../hydrators/BlueprintManifestHydrator.js";
 import { AssetPath } from "../../core/AssetPath.js";
+
 class TemplateCatalog {
   static async load(indexPath, registry = null) {
     const channel = registry && typeof registry.has === "function" && registry.has("channel")
@@ -15,6 +17,7 @@ class TemplateCatalog {
     const loaded = await ManifestLoaderService.load(indexPath, RouteIndexHydrator, transport);
     return loaded && typeof loaded === "object" ? loaded : {};
   }
+
   static entryFor(catalog, name) {
     if (!catalog || typeof catalog !== "object") {
       return null;
@@ -25,60 +28,47 @@ class TemplateCatalog {
     }
     return null;
   }
+
   static urlsFor(catalog, name, basePath) {
     const entry = this.entryFor(catalog, name);
     if (entry?.file) {
       return {
-        jsonUrl: AssetPath.join(entry.directory, entry.file),
-        dir: entry.directory || null
+        resourceUrl: AssetPath.join(entry.directory, entry.file),
+        dir: entry.directory || null,
+        file: entry.file
       };
     }
     return {
-      jsonUrl: `${basePath}${name}/${name}.json`,
-      dir: null
+      resourceUrl: `${basePath}${name}/${name}.html`,
+      dir: null,
+      file: `${name}.html`
     };
   }
-  static partUrl(directory, name, fileName, basePath) {
-    const file = String(fileName || "").trim();
-    if (!file) {
-      return `${basePath}${name}/`;
-    }
-    if (/^[a-zA-Z][a-zA-Z+\-.]*:/.test(file)) {
-      return file;
-    }
-    if (directory) {
-      return AssetPath.join(directory, file);
-    }
-    return `${basePath}${name}/${file.replace(/^\/+/, "")}`;
-  }
-  /** Manifest plus HTML-Teile. Wirft, wenn JSON oder eine Teildatei fehlt. */
+
+  /**
+   * Stein (HTML → TemplateBrickHydrator) oder Blueprint (JSON → BlueprintManifestHydrator).
+   * @param {Object<string, ImportRoute> | null} catalog
+   * @param {string} name
+   * @param {string} basePath
+   * @returns {Promise<CatalogResource>}
+   */
   static async fetch(catalog, name, basePath) {
     const urls = this.urlsFor(catalog, name, basePath);
-    const config = await ManifestLoaderService.load(urls.jsonUrl, TemplateManifestHydrator);
-    const files = config.files && typeof config.files === "object" ? config.files : {};
-    const loaded = {};
-    const keys = Object.keys(files);
-    await Promise.all(keys.map(async (key) => {
-      const fileName = files[key];
-      loaded[key] = await this.#text(
-        this.partUrl(urls.dir, name, fileName, basePath),
-        `Teil-Datei '${fileName}' f\xFCr '${name}'`
-      );
-    }));
-    const layoutHtml = loaded.layout || loaded.markup || config.html || "";
-    if (!String(layoutHtml).trim()) {
-      throw new Error(`Aspis [TemplateCatalog]: '${name}' ohne layout/markup.`);
+    const file = String(urls.file || urls.resourceUrl || "").toLowerCase();
+    if (file.endsWith(".html")) {
+      const html = await this.#text(urls.resourceUrl, `Stein '${name}'`);
+      const brick = TemplateBrickHydrator.hydrate({ html });
+      return { kind: "brick", brick };
     }
-    const parts = {};
-    for (let i = 0; i < keys.length; i += 1) {
-      const key = keys[i];
-      if (key === "layout" || key === "markup") {
-        continue;
-      }
-      parts[key] = loaded[key];
-    }
-    return { name, config, layoutHtml, parts };
+    const blueprint = await ManifestLoaderService.load(urls.resourceUrl, BlueprintManifestHydrator);
+    return { kind: "blueprint", blueprint };
   }
+
+  /**
+   * @param {string} url
+   * @param {string} label
+   * @returns {Promise<string>}
+   */
   static async #text(url, label) {
     const response = await fetch(url);
     if (!response.ok) {
@@ -87,6 +77,7 @@ class TemplateCatalog {
     return response.text();
   }
 }
+
 export {
   TemplateCatalog
 };

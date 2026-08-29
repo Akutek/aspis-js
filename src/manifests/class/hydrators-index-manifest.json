@@ -44,9 +44,14 @@
         "file": "EventManifestHydrator.js",
         "export": "EventManifestHydrator"
     },
-    "TemplateManifestHydrator": {
+    "TemplateBrickHydrator": {
         "directory": "hydrators",
-        "file": "TemplateManifestHydrator.js",
-        "export": "TemplateManifestHydrator"
+        "file": "TemplateBrickHydrator.js",
+        "export": "TemplateBrickHydrator"
+    },
+    "BlueprintManifestHydrator": {
+        "directory": "hydrators",
+        "file": "BlueprintManifestHydrator.js",
+        "export": "BlueprintManifestHydrator"
     }
 }

@@ -1,74 +1,218 @@
 ﻿{
-    "modal": {
+    "accordionListContainer": {
+        "directory": "templates/accordion",
+        "file": "accordionListContainer.html"
+    },
+    "accordionListItem": {
+        "directory": "templates/accordion",
+        "file": "accordionListItem.html"
+    },
+    "accordionSimpleHeader": {
+        "directory": "templates/accordion",
+        "file": "accordionSimpleHeader.html"
+    },
+    "guild-registry-header": {
+        "directory": "templates/accordion",
+        "file": "guild-registry-header.html"
+    },
+    "raid-cadre-header": {
+        "directory": "templates/accordion",
+        "file": "raid-cadre-header.html"
+    },
+    "accordionContent": {
+        "directory": "templates/accordion",
+        "file": "accordionContent.html"
+    },
+    "accordionLoading": {
+        "directory": "templates/accordion",
+        "file": "accordionLoading.html"
+    },
+    "accordionDemoTable": {
+        "directory": "templates/accordion",
+        "file": "accordionDemoTable.html"
+    },
+    "accordionDemoRow": {
+        "directory": "templates/accordion",
+        "file": "accordionDemoRow.html"
+    },
+    "formLogin": {
+        "directory": "templates/form-login",
+        "file": "form-login.html"
+    },
+    "formCharacter": {
+        "directory": "templates/form-character",
+        "file": "form-character.html"
+    },
+    "formLageFilter": {
+        "directory": "templates/form-lage-filter",
+        "file": "form-lage-filter.html"
+    },
+    "formLayout": {
+        "directory": "templates/form-component",
+        "file": "formLayout.html"
+    },
+    "formField": {
+        "directory": "templates/form-field",
+        "file": "form-field.html"
+    },
+    "modalShell": {
         "directory": "templates/modal",
-        "file": "modal.json"
+        "file": "modal.html"
     },
-    "loader-spinner": {
+    "loaderSpinner": {
         "directory": "templates/loader-spinner",
-        "file": "loader-spinner.json"
+        "file": "loader-spinner.html"
     },
-    "defaultSpinner": {
-        "directory": "templates/loader-spinner",
-        "file": "loader-spinner.json"
-    },
-    "loader-bar": {
+    "loaderBar": {
         "directory": "templates/loader-bar",
-        "file": "loader-bar.json"
+        "file": "loader-bar.html"
     },
-    "notification": {
+    "notificationShell": {
         "directory": "templates/notification",
-        "file": "notification.json"
+        "file": "notification.html"
     },
-    "table": {
+    "dropdownLayout": {
+        "directory": "templates/dropdown",
+        "file": "dropdownLayout.html"
+    },
+    "dropdownOption": {
+        "directory": "templates/dropdown",
+        "file": "dropdownOption.html"
+    },
+    "dropdownRowActionsLayout": {
+        "directory": "templates/dropdown-row-actions",
+        "file": "dropdownRowActionsLayout.html"
+    },
+    "tableLayout": {
         "directory": "templates/table",
-        "file": "table.json"
+        "file": "tableLayout.html"
     },
-    "guild-table": {
+    "tableThead": {
+        "directory": "templates/table",
+        "file": "tableThead.html"
+    },
+    "tableTbody": {
+        "directory": "templates/table",
+        "file": "tableTbody.html"
+    },
+    "tableTfoot": {
+        "directory": "templates/table",
+        "file": "tableTfoot.html"
+    },
+    "tableRow": {
+        "directory": "templates/table",
+        "file": "tableRow.html"
+    },
+    "guildTableLayout": {
         "directory": "templates/guild-table",
-        "file": "guild-table.json"
+        "file": "guildTableLayout.html"
+    },
+    "guildTableThead": {
+        "directory": "templates/guild-table",
+        "file": "guildTableThead.html"
+    },
+    "guildTableTbody": {
+        "directory": "templates/guild-table",
+        "file": "guildTableTbody.html"
+    },
+    "guildTableTfoot": {
+        "directory": "templates/guild-table",
+        "file": "guildTableTfoot.html"
+    },
+    "guildTableRow": {
+        "directory": "templates/guild-table",
+        "file": "guildTableRow.html"
+    },
+    "guildTablePlayer": {
+        "directory": "templates/guild-table",
+        "file": "guildTablePlayer.html"
+    },
+    "guildTableCharacter": {
+        "directory": "templates/guild-table",
+        "file": "guildTableCharacter.html"
+    },
+    "guildTableProfession": {
+        "directory": "templates/guild-table",
+        "file": "guildTableProfession.html"
+    },
+    "guild-registry-accordion": {
+        "directory": "manifests/templates/blueprints",
+        "file": "guild-registry-accordion.json"
+    },
+    "raid-cadre-accordion": {
+        "directory": "manifests/templates/blueprints",
+        "file": "raid-cadre-accordion.json"
+    },
+    "accordion-demo": {
+        "directory": "manifests/templates/blueprints",
+        "file": "accordion-demo.json"
     },
     "accordion": {
-        "directory": "templates/accordion",
+        "directory": "manifests/templates/blueprints",
         "file": "accordion.json"
     },
     "accordion-component": {
-        "directory": "templates/accordion",
+        "directory": "manifests/templates/blueprints",
         "file": "accordion.json"
     },
     "guild-accordion": {
-        "directory": "templates/guild-accordion",
-        "file": "guild-accordion.json"
+        "directory": "manifests/templates/blueprints",
+        "file": "guild-registry-accordion.json"
+    },
+    "form-login": {
+        "directory": "manifests/templates/blueprints",
+        "file": "form-login.json"
+    },
+    "form-character": {
+        "directory": "manifests/templates/blueprints",
+        "file": "form-character.json"
+    },
+    "form-lage-filter": {
+        "directory": "manifests/templates/blueprints",
+        "file": "form-lage-filter.json"
+    },
+    "form-component": {
+        "directory": "manifests/templates/blueprints",
+        "file": "form-component.json"
+    },
+    "modal": {
+        "directory": "manifests/templates/blueprints",
+        "file": "modal.json"
     },
     "dropdown": {
-        "directory": "templates/dropdown",
+        "directory": "manifests/templates/blueprints",
         "file": "dropdown.json"
     },
     "custom-dropdown": {
-        "directory": "templates/dropdown",
+        "directory": "manifests/templates/blueprints",
         "file": "dropdown.json"
     },
     "dropdown-row-actions": {
-        "directory": "templates/dropdown-row-actions",
+        "directory": "manifests/templates/blueprints",
         "file": "dropdown-row-actions.json"
     },
-    "form-component": {
-        "directory": "templates/form-component",
-        "file": "form-component.json"
+    "loader-spinner": {
+        "directory": "manifests/templates/blueprints",
+        "file": "loader-spinner.json"
     },
-    "form-field": {
-        "directory": "templates/form-field",
-        "file": "form-field.json"
+    "defaultSpinner": {
+        "directory": "manifests/templates/blueprints",
+        "file": "loader-spinner.json"
     },
-    "form-login": {
-        "directory": "templates/form-login",
-        "file": "form-login.json"
+    "loader-bar": {
+        "directory": "manifests/templates/blueprints",
+        "file": "loader-bar.json"
     },
-    "form-lage-filter": {
-        "directory": "templates/form-lage-filter",
-        "file": "form-lage-filter.json"
+    "notification": {
+        "directory": "manifests/templates/blueprints",
+        "file": "notification.json"
     },
-    "form-character": {
-        "directory": "templates/form-character",
-        "file": "form-character.json"
+    "table": {
+        "directory": "manifests/templates/blueprints",
+        "file": "table.json"
+    },
+    "guild-table": {
+        "directory": "manifests/templates/blueprints",
+        "file": "guild-table.json"
     }
 }

@@ -1,0 +1,15 @@
+{
+    "kind": "blueprint",
+    "name": "dropdown",
+    "root": "dropdownLayout",
+    "classes": {
+        "root": "dropdownBase"
+    },
+    "slots": {
+        "slotOptions": {
+            "template": "dropdownOption",
+            "loop": true,
+            "from": "options"
+        }
+    }
+}

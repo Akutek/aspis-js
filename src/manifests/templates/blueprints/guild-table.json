@@ -1,0 +1,37 @@
+{
+    "kind": "blueprint",
+    "name": "guild-table",
+    "root": "guildTableLayout",
+    "classes": {
+        "root": "tableBase tableGuild"
+    },
+    "slots": {
+        "slotThead": { "template": "guildTableThead" },
+        "slotTbody": {
+            "template": "guildTableTbody",
+            "slots": {
+                "slotRows": {
+                    "template": "guildTableRow",
+                    "loop": true,
+                    "from": "rows",
+                    "slots": {
+                        "slotPlayer": { "template": "guildTablePlayer" },
+                        "slotCharacters": {
+                            "template": "guildTableCharacter",
+                            "loop": true,
+                            "from": "characters",
+                            "slots": {
+                                "slotProfessions": {
+                                    "template": "guildTableProfession",
+                                    "loop": true,
+                                    "from": "professions"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "slotTfoot": { "template": "guildTableTfoot" }
+    }
+}

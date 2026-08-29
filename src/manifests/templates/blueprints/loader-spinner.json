@@ -1,0 +1,8 @@
+{
+    "kind": "blueprint",
+    "name": "loader-spinner",
+    "root": "loaderSpinner",
+    "classes": {
+        "root": "loaderBase loaderSpinner"
+    }
+}

@@ -3,6 +3,7 @@
 /** @typedef {import("../types/controllers.js").TableHost} TableHost */
 /** @typedef {import("../types/schema.js").TableView} TableView */
 import { SchemaService } from "../services/SchemaService.js";
+import { TemplateRenderService } from "../services/TemplateRenderService.js";
 import { RuntimeEnv } from "../core/RuntimeEnv.js";
 import { errorMessage, errorName } from "./BaseController.js";
 /** @extends {TableHost} */
@@ -118,7 +119,7 @@ class ControllerTable {
         }
         return;
       }
-      const templateName = this._container.dataset.template || "table";
+      const templateName = TemplateRenderService.nameFromHost(this._container) || "table";
       const renderService = this.renderService;
       const renderData = SchemaService.toRenderData(this._view);
       if (renderService && typeof renderService.paste === "function") {

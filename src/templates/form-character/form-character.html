@@ -1,19 +1,20 @@
-<form class="aspis-form" method="post" action="{{action}}" data-form-root>
-    <p class="aspis-form__message is-hidden" data-target="form-message"></p>
+<template id="formCharacter" data-config='{"name":"formCharacter","role":"leaf"}'>
+<form method="post" action="{{action}}" data-form-root>
+    <p class="formBase__message is-hidden" data-target="form-message"></p>
     <input type="hidden" name="_csrf" value="{{csrf}}">
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Name
         <input type="text" name="name" required maxlength="64">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Realm
         <input type="text" name="realm" maxlength="64">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Klasse
         <input type="text" name="class_key" maxlength="32">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Rolle
         <select name="role">
             <option value="dps">DPS</option>
@@ -21,21 +22,22 @@
             <option value="heal">Heal</option>
         </select>
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Main-Spec
         <input type="text" name="main_spec" maxlength="32">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Off-Spec
         <input type="text" name="off_spec" maxlength="32">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Gegenstandsstufe
         <input type="number" name="item_level" min="0" max="1000" value="0">
     </label>
-    <label class="aspis-form__check">
+    <label class="formBase__check">
         <input type="checkbox" name="is_main" value="1">
         Hauptcharakter
     </label>
     <button type="submit">{{submitLabel}}</button>
 </form>
+</template>

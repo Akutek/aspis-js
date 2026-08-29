@@ -96,7 +96,7 @@ class ControllerModalContent {
       return "notification";
     }
     if (kind === "form") {
-      return dataset.formTemplate || "form-component";
+      return dataset.formTemplate || dataset.contentTemplate || "form-component";
     }
     const variant = (this._view && "variant" in this._view ? this._view.variant : null) || dataset.loader || "spinner";
     return variant === "bar" ? "loader-bar" : "loader-spinner";

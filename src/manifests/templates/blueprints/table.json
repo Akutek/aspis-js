@@ -1,0 +1,22 @@
+{
+    "kind": "blueprint",
+    "name": "table",
+    "root": "tableLayout",
+    "classes": {
+        "root": "tableBase"
+    },
+    "slots": {
+        "slotThead": { "template": "tableThead" },
+        "slotTbody": {
+            "template": "tableTbody",
+            "slots": {
+                "slotRows": {
+                    "template": "tableRow",
+                    "loop": true,
+                    "from": "rows"
+                }
+            }
+        },
+        "slotTfoot": { "template": "tableTfoot" }
+    }
+}

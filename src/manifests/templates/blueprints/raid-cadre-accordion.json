@@ -1,0 +1,36 @@
+{
+    "kind": "blueprint",
+    "name": "raid-cadre-accordion",
+    "root": "accordionListContainer",
+    "branch": "accordionListItem",
+    "from": "items",
+    "classes": {
+        "root": "accordionBase accordionRaidCadre",
+        "branch": "accordionBase__item accordionRaidCadre__item",
+        "header": "accordionBase__header accordionRaidCadre__header",
+        "content": "accordionBase__content accordionRaidCadre__content"
+    },
+    "slots": {
+        "slotListItem": {
+            "template": "accordionListItem",
+            "loop": true,
+            "from": "items",
+            "classKey": "branch",
+            "slots": {
+                "slotAccordionHeader": {
+                    "template": "raid-cadre-header",
+                    "classKey": "header"
+                },
+                "slotAccordionContent": {
+                    "template": "accordionContent",
+                    "classKey": "content",
+                    "slots": {
+                        "slotTableChar": {
+                            "template": "accordionLoading"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

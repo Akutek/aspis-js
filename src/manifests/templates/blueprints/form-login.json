@@ -1,0 +1,8 @@
+{
+    "kind": "blueprint",
+    "name": "form-login",
+    "root": "formLogin",
+    "classes": {
+        "root": "formBase formLogin"
+    }
+}

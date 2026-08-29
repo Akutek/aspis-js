@@ -1,14 +1,16 @@
-<form class="aspis-form" method="post" action="{{action}}" data-form-root>
-    <p class="aspis-form__message is-hidden" data-target="form-message"></p>
+<template id="formLogin" data-config='{"name":"formLogin","role":"leaf"}'>
+<form method="post" action="{{action}}" data-form-root>
+    <p class="formBase__message is-hidden" data-target="form-message"></p>
     <input type="hidden" name="_csrf" value="{{csrf}}">
     <input type="hidden" name="next" value="{{next}}">
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Konto
         <input type="text" name="login" autocomplete="username" required value="{{login}}">
     </label>
-    <label class="aspis-form__field">
+    <label class="formBase__field">
         Passwort
         <input type="password" name="password" autocomplete="current-password" required>
     </label>
     <button type="submit">{{submitLabel}}</button>
 </form>
+</template>

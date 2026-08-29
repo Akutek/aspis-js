@@ -1,4 +1,6 @@
-<div class="aspis-notification" data-target="notification" role="status">
-    <strong class="aspis-notification__title">{{title}}</strong>
-    <p class="aspis-notification__message">{{message}}</p>
+<template id="notificationShell" data-config='{"name":"notificationShell","role":"leaf"}'>
+<div data-target="notification" role="status">
+    <strong class="notificationBase__title">{{title}}</strong>
+    <p class="notificationBase__message">{{message}}</p>
 </div>
+</template>

@@ -1,0 +1,36 @@
+{
+    "kind": "blueprint",
+    "name": "guild-registry-accordion",
+    "root": "accordionListContainer",
+    "branch": "accordionListItem",
+    "from": "items",
+    "classes": {
+        "root": "accordionBase accordionGuildRegistry",
+        "branch": "accordionBase__item accordionGuildRegistry__item",
+        "header": "accordionBase__header accordionGuildRegistry__header",
+        "content": "accordionBase__content accordionGuildRegistry__content"
+    },
+    "slots": {
+        "slotListItem": {
+            "template": "accordionListItem",
+            "loop": true,
+            "from": "items",
+            "classKey": "branch",
+            "slots": {
+                "slotAccordionHeader": {
+                    "template": "guild-registry-header",
+                    "classKey": "header"
+                },
+                "slotAccordionContent": {
+                    "template": "accordionContent",
+                    "classKey": "content",
+                    "slots": {
+                        "slotTableChar": {
+                            "template": "accordionLoading"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

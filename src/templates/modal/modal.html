@@ -1,8 +1,10 @@
-<div class="aspis-modal" data-modal-root role="dialog" aria-modal="true" aria-hidden="{{ariaHidden}}">
-    <div class="aspis-modal__backdrop" data-target="backdrop"></div>
-    <div class="aspis-modal__dialog" data-target="dialog">
-        <button type="button" class="aspis-modal__close" data-target="close" aria-label="Schließen">×</button>
-        <h2 class="aspis-modal__title" data-target="title">{{title}}</h2>
-        <div class="aspis-modal__body" data-target="body">{{message}}</div>
+<template id="modalShell" data-config='{"name":"modalShell","role":"leaf"}'>
+<div data-modal-root role="dialog" aria-modal="true" aria-hidden="{{ariaHidden}}">
+    <div data-target="backdrop"></div>
+    <div data-target="dialog">
+        <button type="button" data-target="close" aria-label="Schließen">×</button>
+        <h2 data-target="title">{{title}}</h2>
+        <div data-target="body">{{message}}</div>
     </div>
 </div>
+</template>

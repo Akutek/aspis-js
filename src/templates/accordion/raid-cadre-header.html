@@ -1,0 +1,18 @@
+<template id="raid-cadre-header" data-config='{"name":"raid-cadre-header","role":"leaf"}'>
+<button type="button" data-target="trigger" aria-expanded="false">
+    <div class="box_player_info flx_cen">
+        <p class="player_info_name">{{dataPlayername}}</p>
+    </div>
+    <p class="char_counter">{{dataCharCounter}}</p>
+    <div class="aspis-accordion__mainchar">
+        <img src="{{imgPathOverviewMainCharClassIcon}}" alt="" width="28" height="28">
+        <div class="aspis-accordion__character-info wow-text" data-class="{{dataClassKey}}">
+            <span>{{dataCharname}}</span>
+            <span>{{dataMainSpec}}</span>
+        </div>
+    </div>
+    <p class="overview_main_role role_{{mainRoleKey}}">{{dataMainRole}}</p>
+    <span class="player_note {{noteEmptyClass}}" title="{{noteTitle}}" aria-label="{{noteTitle}}"></span>
+    <span class="accordionBase__indicator" aria-hidden="true">{{dataAccordionIndicator}}</span>
+</button>
+</template>

@@ -1,0 +1,15 @@
+{
+    "kind": "blueprint",
+    "name": "dropdown-row-actions",
+    "root": "dropdownRowActionsLayout",
+    "classes": {
+        "root": "dropdownBase dropdownRowActions"
+    },
+    "slots": {
+        "slotOptions": {
+            "template": "dropdownOption",
+            "loop": true,
+            "from": "options"
+        }
+    }
+}

@@ -5,14 +5,18 @@ alwaysApply: true
 
 # Bekannte Templates
 
-View setzt nur den Namen; Markup liegt im Template-Katalog (`src/manifests/templates/`, Ordner unter `src/templates/`).
+View setzt `data-manifest` (Blueprint-Name). `data-template` / `data-form-template` sind Aliase. Steine liegen unter `src/templates/`, Blueprints unter `src/manifests/templates/blueprints/`.
 
-| `data-template` / `data-form-template` | Nutzung |
+| Blueprint (`data-manifest`) | Nutzung |
 | --- | --- |
-| `form-login` | Modal Login (Parent-Layout) |
+| `form-login` | Modal Login (Parent-Layout, via `data-form-template`) |
 | `form-character` | Charakter anlegen (Dashboard) |
 | `form-lage-filter` | Gildenverzeichnis-Suche (ohne Fraktion) |
 | `dropdown-row-actions` | Zeilen-Menü Bearbeiten/Entfernen (Kader-Char-Tabelle) |
-| `guild-accordion` | Gilden-Roster/Kader: Header Mainchar = Icon + gestapelte `character-info` (Name, Spec) |
+| `guild-registry-accordion` | Gilden-Roster |
+| `raid-cadre-accordion` | Season-Kader |
+| `accordion-demo` | `/aspis-demo` |
+| `modal` | Modal-Schale |
+| `guild-accordion` | Alias auf `guild-registry-accordion` |
 
-Neu/umbenannt: Katalog + Ordner (`templates.mdc` / `manifest-sync.mdc`). Host soll bestehende Namen wiederverwenden, bevor ein neues Template verlangt wird.
+Neu/umbenannt: Katalog + Stein oder Blueprint (`templates.mdc` / `manifest-sync.mdc`). Host soll bestehende Blueprint-Namen wiederverwenden.

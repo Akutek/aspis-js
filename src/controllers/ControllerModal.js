@@ -21,7 +21,7 @@ class ControllerModal {
     this._apiToken = dataset.apiToken || null;
     this._contentKind = dataset.content || dataset.kind || "loader";
     this._mountMode = dataset.mount === "self" ? "self" : "body";
-    this._templateName = dataset.template || "modal";
+    this._templateName = dataset.manifest || dataset.template || "modal";
   }
   async onReady() {
     const dataset = this._container?.dataset || {};

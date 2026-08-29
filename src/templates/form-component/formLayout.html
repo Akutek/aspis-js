@@ -1,0 +1,9 @@
+<template id="formLayout" data-config='{"name":"formLayout","role":"root","isRoot":true,"slots":{"slotFields":"{{slotFields}}"}}'>
+<form method="{{method}}" action="{{action}}" data-form-root>
+    <p class="formBase__message is-hidden" data-target="form-message"></p>
+    {{slotFields}}
+    <input type="hidden" name="_csrf" value="{{csrf}}">
+    <input type="hidden" name="next" value="{{next}}">
+    <button type="submit">{{submitLabel}}</button>
+</form>
+</template>

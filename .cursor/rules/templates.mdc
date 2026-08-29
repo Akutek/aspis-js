@@ -1,16 +1,19 @@
 ---
-description: Templates anlegen — Katalog, JSON, HTML, Compile
-globs: src/templates/**/*,src/services/TemplateService.js,src/services/TemplateRenderService.js,src/services/template/**/*.js,src/manifests/templates/**/*.json
+description: Templates anlegen — Steine, Blueprints, Hydratoren
+globs: src/templates/**/*,src/services/TemplateService.js,src/services/TemplateRenderService.js,src/services/template/**/*.js,src/manifests/templates/**/*.json,src/hydrators/TemplateBrickHydrator.js,src/hydrators/BlueprintManifestHydrator.js
 alwaysApply: false
 ---
 
 # Templates
 
-Markup liegt nicht in Controllern. Ein Template = Ordner plus JSON plus HTML-Teile, Eintrag im Katalog, Laden über `TemplateCatalog`, Compile über `TemplateService`, Einfügen über `TemplateRenderService.paste` / `append` / `loop`. Werte laufen durch den Sanitizer. Kein `innerHTML` mit Rohdaten. Menschliche Anleitung: `docs/architecture/templates.md`.
+Steine und Blueprints, nicht Markup in Controllern. Werte und Template-HTML laufen durch die Hydratoren, nicht durch den Service. Menschliche Anleitung: `docs/architecture/templates.md`.
 
-**Neu oder umbenannt:** dieselbe Änderung in `src/manifests/templates/templates-index-manifest.json` (`directory` + `file`). Ohne Katalogeintrag ist das Template unsichtbar. Gelöschte Templates: Eintrag und Ordner entfernen.
+- **Stein:** `<template id="…" data-config='…'>` unter `src/templates/`. Ein Hydrator dazwischen: `TemplateBrickHydrator` (Markup, Platzhaltertext, Attribute).
+- **Blueprint:** JSON `kind: "blueprint"` unter `src/manifests/templates/blueprints/`. Ein Hydrator dazwischen: `BlueprintManifestHydrator` (Namen, Klassen, Maps). Sagt root, branch, slots, classes.
+- **Zusammenbau:** `TemplateService.compile` interpoliert nur (Werte über den Stein-Hydrator). `TemplateRenderService.paste` folgt dem Blueprint. Kein Sanitize in den Services.
+- **Katalog:** `templates-index-manifest.json` — `.html` = Stein, `.json` = Blueprint. Ohne Eintrag unsichtbar.
 
-JSON: `name`, `files.markup` (ein Stück) oder `files.layout` plus Teile. Platzhalter `{{key}}`. Schleifen: `loops.<teil>.placeholder` / `from` / `part` — `from` muss ein Array in den Compile-Daten sein. Controller: `data-template` oder Default-Name in der Klasse (`form-component`, `modal`).
+Host: `data-manifest` = Blueprint-Name (`data-template` / `data-form-template` als Alias). Klassen am gerenderten Knoten aus `blueprint.classes`.
 
 ```js
 await renderService.paste(host, "form-login", { action: "/anmelden", csrf: token });

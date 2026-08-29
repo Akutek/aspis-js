@@ -1,42 +1,31 @@
 # Templates anlegen
 
-Aspis rendert HTML aus Katalog-Templates, nicht aus Strings im Controller. Diese Seite ist die Rezeptur für Menschen und Agenten. Die kurze Rule liegt unter [`.cursor/rules/templates.mdc`](../../.cursor/rules/templates.mdc).
+Aspis rendert HTML aus Steinen und Blueprints. Diese Seite ist die Rezeptur. Die kurze Rule liegt unter [`.cursor/rules/templates.mdc`](../../.cursor/rules/templates.mdc).
 
 ## Laufzeit
 
 | Stück | Rolle |
 | --- | --- |
-| [`templates-index-manifest.json`](../../src/manifests/templates/templates-index-manifest.json) | Name → `{ directory, file }` |
-| [`TemplateCatalog`](../../src/services/template/TemplateCatalog.js) | Index und HTML-Teile laden |
-| [`TemplateService`](../../src/services/TemplateService.js) | Cache, `get`, `compile` |
-| [`TemplateRenderService`](../../src/services/TemplateRenderService.js) | `paste` (ersetzen), `append` (anhängen), `loop` (Liste) |
+| [`templates-index-manifest.json`](../../src/manifests/templates/templates-index-manifest.json) | Name → `{ directory, file }` (`.html` Stein, `.json` Blueprint) |
+| [`TemplateBrickHydrator`](../../src/hydrators/TemplateBrickHydrator.js) | Ein Hydrator zwischen HTML-Stein und Service: `data-config` parsen, Markup/`clean`/`attr` |
+| [`BlueprintManifestHydrator`](../../src/hydrators/BlueprintManifestHydrator.js) | Ein Hydrator zwischen Blueprint-JSON und RenderService: Baum prüfen, Namen/Klassen/Maps |
+| [`TemplateCatalog`](../../src/services/template/TemplateCatalog.js) | Index laden, Datei holen, an den passenden Hydrator geben |
+| [`TemplateService`](../../src/services/TemplateService.js) | Cache, `resolve`, `get`, `compile` (ein Stein) |
+| [`TemplateRenderService`](../../src/services/TemplateRenderService.js) | Blueprint laufen, `paste` / `append` / `loop` |
 
-Platzhalterwerte gehen durch den Sanitizer. Roh-`innerHTML` mit Nutzdaten gehört nicht hierher.
+Kein Roh-`innerHTML` mit Nutzdaten. Sanitize liegt in den Hydratoren, nicht in den Services.
 
-## Rezept
+## Stein
 
-1. Ordner `src/templates/<name>/`.
-2. Datei `<name>.json` mit `"name"` und `"files"`.
-3. HTML-Teile neben dem JSON. Ein Stück: `"markup"`. Mehrere Stücke: `"layout"` plus Teile (`item`, `field`, …).
-4. Platzhalter `{{key}}` im HTML. Schleifen im JSON unter `"loops"`; im Layout denselben Placeholder (zum Beispiel `{{item-loop}}`). `from` muss ein **Array** in den Compile-Daten sein (Objekte als Map werden nicht iteriert).
-5. Eintrag im Index:
+1. Datei `src/templates/<ordner>/<name>.html` mit `<template id="…" data-config='{"name":"…","role":"root|container|leaf","slots":{…}}'>`.
+2. Platzhalter `{{key}}` im Markup. Slots `{{slot…}}` als Textknoten.
+3. Eintrag im Index auf die **HTML-Datei**. Der `name` im `data-config` ist der Katalog-Key des Steins (darf nicht derselbe Key wie ein Blueprint sein).
 
-```json
-"form-login": {
-    "directory": "templates/form-login",
-    "file": "form-login.json"
-}
-```
+## Blueprint
 
-6. Controller setzen `data-template="<name>"` oder nutzen den Default der Klasse (`ControllerFormRender` → `form-component`, `ControllerModal` → `modal`, Modal-Inhalt `form` → `form-component` oder `data-form-template`).
-
-## Zwei Muster
-
-**Ein Stück** — siehe `loader-spinner`: JSON mit `files.markup` und `placeholder`, eine HTML-Datei.
-
-**Layout plus Loop** — siehe `accordion`: `files.layout` + `files.item`, `loops.item` mit `placeholder`, `from: "items"`, `part: "item"`. Compile-Daten brauchen `items: [ { id, title, content }, … ]`.
-
-Formulare: `form-component` ist das generische Layout (`{{field-loop}}`). Fachformulare (`form-login`, `form-character`, …) sind eigene Markup-Templates mit festen Feldern.
+1. Datei `src/manifests/templates/blueprints/<variante>.json` mit `"kind": "blueprint"`, `"root"`, optional `"branch"`, `"slots"`, `"classes"`, `"map"`.
+2. Eintrag im Index auf die **JSON-Datei**. Der Katalog-Key ist der Host-Name (`data-manifest`).
+3. `classes.root` / `branch` / `header` / `content` oder `classKey` am Slot. Parent-CSS: `{familie}Base` plus Variante.
 
 ## Aufruf
 
@@ -49,4 +38,4 @@ await renderService.paste(host, "form-login", {
 });
 ```
 
-`paste` ersetzt den Inhalt von `host`. `append` hängt an (Modal an `document.body`). Daten nur über dieses Objekt, nicht per String-Konkatenation ins Markup.
+`paste` ersetzt den Inhalt von `host`. Daten nur über dieses Objekt.

@@ -9,26 +9,27 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 
 ## Accordion
 
-- Root: `data-controller="accordion"`, oft `data-single-open="true"`; Slice **pro Instanz** (nicht alle denselben `view`):
-  - Default/Fallback: `features.accordionFeature`
-  - Roster: `features.accordionRoster`
-  - Season-Kader: `features.accordionCadre`
-  - Demo: `features.accordionDemo`
-- Item: `data-accordion-item`, `data-id="…"`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
+- Root: `data-controller="accordion"`, `data-manifest` (Blueprint), oft `data-single-open="true"`; Slice **pro Instanz**:
+  - Default/Fallback: `features.accordionFeature` / Blueprint `accordion`
+  - Roster: `features.accordionRoster` / `guild-registry-accordion`
+  - Season-Kader: `features.accordionCadre` / `raid-cadre-accordion`
+  - Demo: `features.accordionDemo` / `accordion-demo`
+- Host bleibt leer: Server-Daten in `data-items` (JSON); Client baut den Baum. Klassen `accordionBase` plus Typ (`accordionGuildRegistry`, …).
+- Item: `data-accordion-item`, `data-id="…"`, `data-player-id`, optional `data-item-url` (Lazy, siehe `accordion-lazy.mdc`)
 - Assign-Forms nicht als Geschwister im Accordion-Root — in das jeweilige Item oder außerhalb des Hosts
 - Trigger: `data-target="trigger"`; Panel: `data-target="panel"` (z. B. `is-hidden` bis geöffnet)
-- Full-Render `data-template="guild-accordion"`: Header-Mainchar wie `guild-accordion_character` — Icon links, `aspis-accordion__character-info wow-text` mit `data-class="{{dataClassKey}}"` (Host-CSS `classColors.css`)
+- Header-Mainchar: Icon links, `aspis-accordion__character-info wow-text` mit `data-class` (Katalog-slug). Farbe aus Host-CSS `classColors.css`
 - Plan `needs` enthält `watcher`, damit nach Lazy-Paste verschachtelte Hosts (Dropdown, …) neu gescannt werden
 
 ## Form
 
-- Leerer Host: `data-controller="form"`, `data-template="form-…"`
+- Leerer Host: `data-controller="form"`, `data-manifest="form-…"` (`data-template` Alias)
 - Typisch: `data-method`, `data-action` oder `data-url`, `data-csrf`, `data-submit-label`
 - Zusatzdaten nur als dokumentierte `data-*` (z. B. `data-characters` JSON) — keine erfundenen Keys
 
 ## Modal
 
-- `data-controller="modal"`; Inhalt oft `data-content="form"` + **`data-form-template`** (nicht `data-template`)
+- `data-controller="modal"`; `data-manifest="modal"` für die Schale; Inhalt oft `data-content="form"` + **`data-form-template`** (Formular-Blueprint, nicht `data-manifest`)
 - Dazu: Titel, Action/Method, CSRF, Next, Submit-Label — wie Login im Parent-Layout
 - Optional `data-success-target="#selector"`: bei JSON `{ ok, html }` (ohne `next`) HTML in den Target pasten und Modal schließen
 
@@ -41,10 +42,10 @@ PHP (oder Demo-HTML) liefert Inseln. Scan liest `data-controller` als kurzen Tri
 
 ## Dropdown
 
-- Leerer Host: `data-controller="dropdown"`, `data-template="dropdown"` oder `dropdown-row-actions`
+- Leerer Host: `data-controller="dropdown"`, `data-manifest="dropdown"` oder `dropdown-row-actions` (`data-template` Alias)
 - Optional `data-url` lädt Optionen remote; sonst DOM `[data-option-value]` oder dokumentierte `data-*`
 - Demo-Einzel: `data-slice-key="features.dropdownFeature"`
-- Zeilen-Aktionen: `data-template="dropdown-row-actions"`, `data-placeholder="Optionen"`, `data-edit-url`, `data-delete-url`, `data-csrf`, `data-id` pro Zeile, Slice `features.dropdownCadre`. View lebt auf der Instanz (`this._view`); Hosts mit Edit/Delete-URL schreiben nicht in den Store — kein geteilter Slice-View.
+- Zeilen-Aktionen: `data-manifest="dropdown-row-actions"`, `data-placeholder="Optionen"`, `data-edit-url`, `data-delete-url`, `data-csrf`, `data-id` pro Zeile, Slice `features.dropdownCadre`. View lebt auf der Instanz (`this._view`); Hosts mit Edit/Delete-URL schreiben nicht in den Store — kein geteilter Slice-View.
 - Bearbeiten: Navigation zu `data-edit-url`. Entfernen: POST JSON (`Accept: application/json`) an `data-delete-url`; Host antwortet `{ ok, next }` oder `{ ok: false, error }`
 
 Neue Attribute nur, wenn Template/Schema/Controller sie erwarten. Markup für Forms kommt aus Templates, nicht aus PHP-`innerHTML`.

@@ -1,5 +1,6 @@
 /** @typedef {import("../types/controllers.js").FormHost} FormHost */
 import { SchemaService } from "../services/SchemaService.js";
+import { TemplateRenderService } from "../services/TemplateRenderService.js";
 /** @extends {FormHost} */
 class ControllerFormRender {
   async pasteNamedForm() {
@@ -7,7 +8,7 @@ class ControllerFormRender {
     if (!host) {
       return;
     }
-    const templateName = host.dataset.template;
+    const templateName = TemplateRenderService.nameFromHost(host);
     if (!templateName) {
       return;
     }
@@ -53,7 +54,7 @@ class ControllerFormRender {
       return;
     }
     try {
-      const templateName = this._container.dataset.template || "form-component";
+      const templateName = TemplateRenderService.nameFromHost(this._container) || "form-component";
       const renderService = this.renderService;
       if (renderService && typeof renderService.paste === "function") {
         const renderData = SchemaService.toRenderData(this._view);

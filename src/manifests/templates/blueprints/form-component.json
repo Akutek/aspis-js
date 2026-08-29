@@ -1,0 +1,15 @@
+{
+    "kind": "blueprint",
+    "name": "form-component",
+    "root": "formLayout",
+    "classes": {
+        "root": "formBase"
+    },
+    "slots": {
+        "slotFields": {
+            "template": "formField",
+            "loop": true,
+            "from": "fieldList"
+        }
+    }
+}

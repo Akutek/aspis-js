@@ -1,7 +1,9 @@
-<form class="aspis-form aspis-form--filter" method="get" action="{{action}}" data-form-root>
-    <label class="aspis-form__field">
+<template id="formLageFilter" data-config='{"name":"formLageFilter","role":"leaf"}'>
+<form method="get" action="{{action}}" data-form-root>
+    <label class="formBase__field">
         Suche
         <input type="search" name="q" value="{{q}}">
     </label>
-    <button type="submit">Filtern</button>
+    <button type="submit">{{submitLabel}}</button>
 </form>
+</template>

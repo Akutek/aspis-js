@@ -131,7 +131,8 @@ class BootManager extends BaseManager {
       const templates = new TemplateService({
         basePath: AssetPath.resolve("templates/"),
         indexPath: templateIndexPath,
-        catalog: templateIndex
+        catalog: templateIndex,
+        autoInit: false
       });
       const renderService = new TemplateRenderService(templates, cleaner);
       RegistryManager.register(registry, {

@@ -1,6 +1,8 @@
-<div class="aspis-loader aspis-loader--bar" data-loader="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{progress}}">
-    <p class="aspis-loader__message">{{message}}</p>
-    <div class="aspis-loader__track">
-        <div class="aspis-loader__fill" data-target="progress" style="width: {{progress}}%"></div>
+<template id="loaderBar" data-config='{"name":"loaderBar","role":"leaf"}'>
+<div data-loader="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{progress}}">
+    <p class="loaderBase__message">{{message}}</p>
+    <div class="loaderBase__track">
+        <div class="loaderBase__fill" data-target="progress" style="width: {{progress}}%"></div>
     </div>
 </div>
+</template>

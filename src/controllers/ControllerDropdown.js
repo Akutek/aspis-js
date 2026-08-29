@@ -4,6 +4,7 @@
 /** @typedef {import("../types/schema.js").DropdownOptionView} DropdownOptionView */
 /** @typedef {import("../types/schema.js").DropdownView} DropdownView */
 import { SchemaService } from "../services/SchemaService.js";
+import { TemplateRenderService } from "../services/TemplateRenderService.js";
 import { FormFieldService } from "../services/FormFieldService.js";
 import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorMessage, errorName } from "./BaseController.js";
@@ -443,7 +444,7 @@ class ControllerDropdown {
       return;
     }
     try {
-      let templateName = this._container.dataset.template || "dropdown";
+      let templateName = TemplateRenderService.nameFromHost(this._container) || "dropdown";
       if (SchemaService.isLoader(this._view)) {
         templateName = this._container.dataset.loaderTemplate || "loader-spinner";
       }

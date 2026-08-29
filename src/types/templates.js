@@ -5,7 +5,6 @@
 /**
  * @typedef {object} TemplateServiceOptions
  * @property {string} [basePath]
- * @property {SanitizerFunction | null} [sanitizer]
  * @property {boolean} [autoInit]
  * @property {string} [indexPath]
  * @property {Object<string, ImportRoute> | null} [catalog]
@@ -35,12 +34,42 @@
  */
 
 /**
- * Rohquelle aus dem Katalog: Manifest plus geladene HTML-Teile, noch nicht kompiliert.
+ * Rohquelle aus dem Katalog: hydrierter Stein, noch nicht kompiliert.
  * @typedef {object} TemplateSource
  * @property {string} name
  * @property {TemplateConfig} config
  * @property {string} layoutHtml
- * @property {Object<string, string>} parts
+ * @property {Object<string, string>} [parts]
+ */
+
+/**
+ * @typedef {object} BlueprintSlotSpec
+ * @property {string} template
+ * @property {boolean} [loop]
+ * @property {string} [from]
+ * @property {string} [classKey]
+ * @property {Object<string, string>} [map]
+ * @property {Object<string, BlueprintSlotSpec>} [slots]
+ */
+
+/**
+ * Bauplan: welche Steine in welche Slots, welche Klassen.
+ * @typedef {object} Blueprint
+ * @property {string} name
+ * @property {"blueprint"} kind
+ * @property {string} root
+ * @property {string} [branch]
+ * @property {string} [from]
+ * @property {Object<string, string>} classes
+ * @property {Object<string, string>} map
+ * @property {Object<string, BlueprintSlotSpec>} slots
+ */
+
+/**
+ * @typedef {object} CatalogResource
+ * @property {"brick" | "blueprint"} kind
+ * @property {TemplateSource} [brick]
+ * @property {Blueprint} [blueprint]
  */
 
 /**
@@ -87,8 +116,6 @@
  * @property {Object<string, unknown>} [attributes]
  * @property {SlotPayloadMap} [slots]
  */
-
-/** @typedef {(value: unknown) => string} SanitizerFunction */
 
 /** @typedef {string | TemplateServiceOptions} TemplateServiceConfig */
 

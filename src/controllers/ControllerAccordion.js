@@ -4,6 +4,7 @@
 /** @typedef {import("../types/schema.js").AccordionItemView} AccordionItemView */
 /** @typedef {import("../types/schema.js").AccordionView} AccordionView */
 import { SchemaService } from "../services/SchemaService.js";
+import { TemplateRenderService } from "../services/TemplateRenderService.js";
 import { ControllerModifierDOM } from "../utils/ControllerModifierDOM.js";
 import { errorMessage, errorName } from "./BaseController.js";
 /** @extends {AccordionHost} */
@@ -20,8 +21,20 @@ class ControllerAccordion {
     if (!this._container) {
       return;
     }
+    const itemsJson = this._container.dataset.items;
     const url = this._container.dataset.url;
-    if (url) {
+    if (typeof itemsJson === "string" && itemsJson.trim() !== "") {
+      try {
+        const parsed = JSON.parse(itemsJson);
+        const items = Array.isArray(parsed) ? parsed : [];
+        const layout = this._container.dataset.layout || this._layout || "default";
+        const singleOpen = this._container.dataset.singleOpen === "true";
+        this._view = SchemaService.accordion(items, { layout, singleOpen });
+        await this.renderAccordion();
+      } catch (error) {
+        this._capture("onReady", error);
+      }
+    } else if (url) {
       await this.loadData(url);
     } else {
       this.scanDomAndBuildView();
@@ -278,7 +291,7 @@ class ControllerAccordion {
       return;
     }
     try {
-      let templateName = this._container.dataset.template || "accordion";
+      let templateName = TemplateRenderService.nameFromHost(this._container) || "accordion";
       if (SchemaService.isLoader(this._view)) {
         templateName = this._container.dataset.loaderTemplate || "loader-spinner";
       }

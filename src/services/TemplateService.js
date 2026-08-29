@@ -1,34 +1,32 @@
-/** @typedef {import("../types/templates.js").SanitizerFunction} SanitizerFunction */
 /** @typedef {import("../types/templates.js").TemplateServiceConfig} TemplateServiceConfig */
 /** @typedef {import("../types/templates.js").TemplateConfig} TemplateConfig */
 /** @typedef {import("../types/templates.js").SlotDef} SlotDef */
-/** @typedef {import("../types/templates.js").TemplatePart} TemplatePart */
 /** @typedef {import("../types/templates.js").NormalizedTemplate} NormalizedTemplate */
 /** @typedef {import("../types/templates.js").CompilePayload} CompilePayload */
-/** @typedef {import("./template/TemplateCatalog.js").TemplateRoute} TemplateRoute */
+/** @typedef {import("../types/templates.js").CatalogResource} CatalogResource */
 import { DebugAgent } from "../agents/DebugAgent.js";
-import { TemplateGuardDOM } from "../utils/TemplateGuardDOM.js";
 import { TemplateCatalog } from "./template/TemplateCatalog.js";
+import { TemplateBrickHydrator } from "../hydrators/TemplateBrickHydrator.js";
+
 class TemplateService {
   #cache = /* @__PURE__ */ new Map();
+  #resources = /* @__PURE__ */ new Map();
   /** Gleicher Name teilt denselben Fetch — compile wartet, statt parallel ins Leere zu laufen. */
   #inflight = /* @__PURE__ */ new Map();
   #basePath;
-  #sanitizer;
   #catalog = null;
   #catalogPromise = null;
   #indexPath;
+
   constructor(config = {}) {
     const options = typeof config === "string" ? { basePath: config } : config;
     const {
       basePath = new URL("../templates/", import.meta.url).href,
-      sanitizer = null,
-      autoInit = true,
+      autoInit = false,
       catalog = null,
       indexPath = "manifests/templates/templates-index-manifest.json"
     } = options;
     this.#basePath = basePath.endsWith("/") ? basePath : `${basePath}/`;
-    this.#sanitizer = sanitizer || this.#defaultSanitizer.bind(this);
     this.#indexPath = indexPath || "manifests/templates/templates-index-manifest.json";
     if (catalog && typeof catalog === "object") {
       this.#catalog = catalog;
@@ -37,70 +35,154 @@ class TemplateService {
       this.init();
     }
   }
+
+  /** Optional: Steine aus `<template data-config>` im Dokument, über denselben Hydrator. */
   init() {
     const templateElements = document.querySelectorAll("template");
     templateElements.forEach((el) => {
-      const configAttr = el.dataset.config || el.getAttribute("data-config") || el.getAttribute("data-aspis-config");
-      if (!configAttr) return;
+      if (!(el instanceof HTMLTemplateElement) || !el.hasAttribute("data-config")) {
+        return;
+      }
       try {
-        const config = JSON.parse(configAttr);
-        const templateData = this.#normalizeTemplate(el.id, config, el.innerHTML);
-        this.#cache.set(config.name || el.id, templateData);
+        const source = TemplateBrickHydrator.hydrate({ html: el.outerHTML });
+        const templateData = this.#normalizeTemplate(source.name, source.config, source.layoutHtml);
+        this.#cache.set(source.name, templateData);
       } catch (error) {
-        DebugAgent.error(`[TemplateService.init()] Aspis [TemplateService]: JSON-Parse-Fehler bei Template #${el.id}`, error);
+        DebugAgent.error(`[TemplateService.init()] JSON-Parse-Fehler bei Template #${el.id}`, error);
       }
     });
-    DebugAgent.info(`[TemplateService.init()] Aspis [TemplateService]: Initialisiert. ${this.#cache.size} Templates aus dem DOM geladen.`);
+    DebugAgent.info(`[TemplateService.init()] ${this.#cache.size} Steine aus dem DOM geladen.`);
   }
+
   has(name) {
     return this.#cache.has(name);
   }
+
   clearCache() {
     this.#cache.clear();
+    this.#resources.clear();
     this.#inflight.clear();
   }
+
   /**
-   * Liefert das normalisierte Template. Cache-Treffer sofort, sonst ein Fetch;
-   * parallele Aufrufe desselben Namens teilen dieselbe Promise.
-   *
+   * Stein oder Blueprint aus dem Katalog (geteilt bei parallelen Aufrufen).
    * @param {string} name
-   * @returns {Promise<import("../types/templates.js").NormalizedTemplate|null>}
+   * @returns {Promise<CatalogResource|null>}
    */
-  async get(name) {
-    if (this.#cache.has(name)) {
-      return this.#cache.get(name) ?? null;
+  async resolve(name) {
+    if (this.#resources.has(name)) {
+      return this.#resources.get(name) ?? null;
     }
     const pending = this.#inflight.get(name);
     if (pending) {
       return pending;
     }
-    DebugAgent.info(`[TemplateService.get()] '${name}' nicht im Cache, lade.`);
-    const loading = this.#loadFromServer(name).then((template) => template, () => null).finally(() => {
+    const loading = this.#loadResource(name).catch((error) => {
+      DebugAgent.error(`[TemplateService.resolve()] '${name}' fehlgeschlagen.`, error);
+      return null;
+    }).finally(() => {
       this.#inflight.delete(name);
     });
     this.#inflight.set(name, loading);
     return loading;
   }
+
+  /**
+   * @param {string} name
+   * @returns {Promise<NormalizedTemplate|null>}
+   */
+  async get(name) {
+    if (this.#cache.has(name)) {
+      return this.#cache.get(name) ?? null;
+    }
+    const resource = await this.resolve(name);
+    if (!resource || resource.kind !== "brick" || !resource.brick) {
+      return this.#cache.get(name) ?? null;
+    }
+    return this.#cache.get(name) ?? null;
+  }
+
+  /**
+   * @param {string} name
+   * @param {CompilePayload | Object<string, unknown>} payload
+   * @returns {Element | null}
+   */
   compile(name, payload = {}) {
     const template = this.#cache.get(name);
     if (!template) {
       return null;
     }
-    return this.#compileHtml(template.html, template.slotDefs ?? [], payload, template);
+    const packed = this.#asPayload(payload);
+    return this.#compileHtml(template.html, template.slotDefs ?? [], packed, template);
   }
+
   getTemplateEvents(name) {
     return this.#cache.get(name)?.events ?? {};
   }
-  /** Ersetzt geordnete Platzhalter in einem HTML-String durch sanitisierte Werte. */
+
+  /**
+   * @param {string} name
+   * @returns {Promise<CatalogResource|null>}
+   */
+  async #loadResource(name) {
+    await this.#ensureCatalog();
+    const resource = await TemplateCatalog.fetch(this.#catalog, name, this.#basePath);
+    this.#resources.set(name, resource);
+    if (resource.kind === "brick" && resource.brick) {
+      const source = resource.brick;
+      const templateData = this.#normalizeTemplate(source.name, source.config, source.layoutHtml, source.parts);
+      this.#cache.set(source.name, templateData);
+      if (name !== source.name) {
+        this.#cache.set(name, templateData);
+      }
+    }
+    return resource;
+  }
+
+  async #ensureCatalog() {
+    if (this.#catalog) {
+      return;
+    }
+    if (!this.#catalogPromise) {
+      this.#catalogPromise = TemplateCatalog.load(this.#indexPath).then((loaded) => {
+        this.#catalog = loaded;
+        return loaded;
+      });
+    }
+    await this.#catalogPromise;
+  }
+
+  /**
+   * @param {CompilePayload | Object<string, unknown>} payload
+   * @returns {CompilePayload}
+   */
+  #asPayload(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return { data: {}, attributes: {}, slots: {} };
+    }
+    const hasSlots = payload.slots && typeof payload.slots === "object";
+    const hasAttributes = payload.attributes && typeof payload.attributes === "object";
+    const nestedData = payload.data && typeof payload.data === "object" && !Array.isArray(payload.data);
+    if (hasSlots || (hasAttributes && nestedData)) {
+      return {
+        data: nestedData ? payload.data : {},
+        attributes: hasAttributes ? payload.attributes : {},
+        slots: hasSlots ? payload.slots : {}
+      };
+    }
+    return { data: payload, attributes: {}, slots: {} };
+  }
+
   #replacePlaceholders(html, sortedEntries, values) {
     let result = html;
     for (const [key, placeholder] of sortedEntries) {
       const rawValue = values[key] ?? "";
-      const cleanValue = this.#sanitizer(rawValue);
+      const cleanValue = TemplateBrickHydrator.clean(rawValue);
       result = result.replaceAll(placeholder, cleanValue);
     }
     return result;
   }
+
   #compileHtml(html, slotDefs, payload, template) {
     const payloadData = payload.data && typeof payload.data === "object" ? payload.data : {};
     const payloadAttributes = payload.attributes && typeof payload.attributes === "object" ? payload.attributes : {};
@@ -108,6 +190,7 @@ class TemplateService {
     workingHtml = this.#replacePlaceholders(workingHtml, template.sortedData, payloadData);
     workingHtml = this.#replacePlaceholders(workingHtml, template.sortedAttributes, payloadAttributes);
     workingHtml = this.#replaceDataTokens(workingHtml, payloadData);
+    workingHtml = this.#stripAttrTokens(workingHtml);
     const packed = this.#packTableFragment(workingHtml);
     const fragment = document.createRange().createContextualFragment(packed.html);
     const element = packed.unwrap(fragment);
@@ -115,13 +198,11 @@ class TemplateService {
       DebugAgent.error("[TemplateService.#compileHtml()] Transformation in den DOM fehlgeschlagen.");
       return null;
     }
+    this.#applyAttributeMap(element, payloadAttributes);
     this.#fillSlots(element, slotDefs, payload, template);
     return element;
   }
-  /**
-   * thead/tbody/tfoot/tr/td parst der HTML-Parser nur im Table-Kontext.
-   * Ohne Hülle wird firstElementChild null und die Slots bleiben leer.
-   */
+
   #packTableFragment(html) {
     const trimmed = String(html).trim();
     const match = trimmed.match(/^<(thead|tbody|tfoot|tr|th|td)\b/i);
@@ -146,6 +227,7 @@ class TemplateService {
       unwrap: (fragment) => fragment.querySelector(tag)
     };
   }
+
   #fillSlots(rootElement, slotDefs, payload, template) {
     const defs = Array.isArray(slotDefs) ? slotDefs : [];
     const payloadSlots = payload.slots && typeof payload.slots === "object" ? payload.slots : {};
@@ -173,6 +255,7 @@ class TemplateService {
       targetNode.remove();
     }
   }
+
   #nodesForSlot(def, payload, template) {
     const part = template.parts && template.parts[def.part];
     if (!part) {
@@ -193,12 +276,14 @@ class TemplateService {
     const node = this.#compileHtml(part.html, part.slotDefs, payload, template);
     return node ? [node] : [];
   }
+
   #loopItems(payload, def) {
     const data = payload.data && typeof payload.data === "object" ? payload.data : {};
     const from = def.from || "rows";
     const list = data[from] ?? data[def.part] ?? data[def.key];
     return Array.isArray(list) ? list : [];
   }
+
   #rowData(item) {
     if (item && typeof item === "object" && "toRenderData" in item && typeof item.toRenderData === "function") {
       const data = item.toRenderData();
@@ -209,6 +294,7 @@ class TemplateService {
     }
     return { value: item };
   }
+
   #findPlaceholderNode(rootElement, placeholder) {
     if (!placeholder) {
       return null;
@@ -226,13 +312,14 @@ class TemplateService {
     }
     return null;
   }
+
   #replaceDataTokens(html, values) {
     const matches = String(html).match(/\{\{([a-zA-Z0-9_-]+)\}\}/g) || [];
     const seen = /* @__PURE__ */ new Set();
     const tokens = [];
     for (let i = 0; i < matches.length; i += 1) {
       const token = matches[i].replace(/\{\{|\}\}/g, "");
-      if (seen.has(token) || token.endsWith("-slot") || token.endsWith("-loop")) {
+      if (seen.has(token) || token.startsWith("slot") || token.endsWith("-slot") || token.endsWith("-loop")) {
         continue;
       }
       seen.add(token);
@@ -242,68 +329,54 @@ class TemplateService {
     let result = html;
     for (let i = 0; i < tokens.length; i += 1) {
       const token = tokens[i];
+      if (token.startsWith("attr")) {
+        continue;
+      }
       const rawValue = token in values ? values[token] : "";
-      result = result.replaceAll(`{{${token}}}`, this.#sanitizer(rawValue));
+      result = result.replaceAll(`{{${token}}}`, TemplateBrickHydrator.clean(rawValue));
     }
     return result;
   }
+
+  /** Übrig gebliebene `{{attr*}}`-Token nicht als Attribut-Blob einsetzen. */
+  #stripAttrTokens(html) {
+    return String(html).replace(/\{\{attr[a-zA-Z0-9_-]*\}\}/g, "");
+  }
+
+  /**
+   * @param {Element} element
+   * @param {Object<string, unknown>} attributes
+   */
+  #applyAttributeMap(element, attributes) {
+    const bag = attributes && typeof attributes === "object" ? attributes : {};
+    const keys = Object.keys(bag);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      if (key.startsWith("attr")) {
+        continue;
+      }
+      const value = bag[key];
+      if (value === null || value === void 0 || value === "") {
+        continue;
+      }
+      element.setAttribute(key, TemplateBrickHydrator.attr(value));
+    }
+  }
+
   #appendSlotChild(parent, targetNode, content) {
     if (content instanceof Node) {
       parent.insertBefore(content, targetNode);
     } else if (typeof content === "string") {
-      const fragment = document.createRange().createContextualFragment(content);
-      parent.insertBefore(fragment, targetNode);
+      parent.insertBefore(document.createTextNode(String(content)), targetNode);
     }
   }
-  /**
-   * Standard-Sanitizer zur Vorbeugung von XSS-Schwachstellen.
-   * Nutzt `TemplateGuardDOM` falls vorhanden oder führt ein HTML-Entities-Escaping durch.
-   */
-  #defaultSanitizer(val) {
-    const text = val === null || val === void 0 ? "" : typeof val === "string" || typeof val === "number" || typeof val === "boolean" ? val : String(val);
-    if (typeof TemplateGuardDOM.clean === "function") {
-      return String(TemplateGuardDOM.clean(text));
-    }
-    if (typeof TemplateGuardDOM.purify === "function") {
-      return String(TemplateGuardDOM.purify(String(text)));
-    }
-    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-  }
-  /**
-   * Lädt Manifest und Teildateien über den Katalog, normalisiert und legt sie in den Cache.
-   *
-   * Wirft, wenn das Manifest oder Teildateien nicht geladen werden können.
-   */
-  async #loadFromServer(name) {
-    await this.#ensureCatalog();
-    try {
-      const source = await TemplateCatalog.fetch(this.#catalog, name, this.#basePath);
-      const templateData = this.#normalizeTemplate(name, source.config, source.layoutHtml, source.parts);
-      this.#cache.set(name, templateData);
-      return templateData;
-    } catch (error) {
-      DebugAgent.error(`[TemplateService.#loadFromServer()] Aspis [TemplateService]: Dynamischer Fetch f\xFCr '${name}' fehlgeschlagen!`, error);
-      throw error;
-    }
-  }
-  async #ensureCatalog() {
-    if (this.#catalog) {
-      return;
-    }
-    if (!this.#catalogPromise) {
-      this.#catalogPromise = TemplateCatalog.load(this.#indexPath).then((loaded) => {
-        this.#catalog = loaded;
-        return loaded;
-      });
-    }
-    await this.#catalogPromise;
-  }
+
   #normalizeTemplate(id, config, htmlString, partHtml = {}) {
     const placeholders = config.placeholder || { ...config.slots, ...config.attributes };
     const classified = this.#classifyPlaceholders(placeholders);
-    const layoutDefs = this.#slotDefsInHtml(htmlString, config, Object.keys(partHtml));
+    const layoutDefs = this.#slotDefsInHtml(htmlString, config, Object.keys(partHtml || {}));
     const parts = {};
-    const partKeys = Object.keys(partHtml);
+    const partKeys = Object.keys(partHtml || {});
     for (let i = 0; i < partKeys.length; i += 1) {
       const key = partKeys[i];
       parts[key] = {
@@ -314,8 +387,8 @@ class TemplateService {
     const sortByLengthDesc = (obj) => Object.entries(obj).sort(([, a], [, b]) => b.length - a.length);
     const defaults = {
       id: id || config.name || "",
-      role: config.partial ? "partial" : "container",
-      isRoot: false,
+      role: config.partial ? "partial" : (config.role || "container"),
+      isRoot: config.isRoot === true,
       childSlot: null,
       allowedChildren: [],
       events: {},
@@ -338,6 +411,7 @@ class TemplateService {
       config
     };
   }
+
   #classifyPlaceholders(placeholders) {
     const slots = {};
     const attributes = {};
@@ -349,10 +423,9 @@ class TemplateService {
       const isValuePlaceholder = String(value).startsWith("{{");
       const placeholder = isValuePlaceholder ? value : key;
       const cleanKey = placeholder.replace(/\{\{|\}\}/g, "");
-      const type = isValuePlaceholder ? key : value;
-      if (cleanKey.startsWith("slot") || cleanKey.endsWith("-slot") || cleanKey.endsWith("-loop") || ["temp", "temp-loop", "container"].includes(type)) {
+      if (cleanKey.startsWith("slot") || cleanKey.endsWith("-slot") || cleanKey.endsWith("-loop")) {
         slots[cleanKey] = placeholder;
-      } else if (cleanKey.startsWith("attr") || type === "attr") {
+      } else if (cleanKey.startsWith("attr")) {
         attributes[cleanKey] = placeholder;
       } else {
         data[cleanKey] = placeholder;
@@ -360,6 +433,7 @@ class TemplateService {
     }
     return { slots, attributes, data };
   }
+
   #slotDefsInHtml(html, config, partKeys) {
     const source = String(html || "");
     const defs = [];
@@ -381,24 +455,6 @@ class TemplateService {
         from: this.#loopFrom(config, key)
       });
     }
-    const loops = config.loops && typeof config.loops === "object" ? config.loops : {};
-    const loopKeys = Object.keys(loops);
-    for (let i = 0; i < loopKeys.length; i += 1) {
-      const key = loopKeys[i];
-      const spec = loops[key];
-      const placeholder = typeof spec === "string" ? spec : String(spec?.placeholder || `{{${key}-loop}}`);
-      if (!source.includes(placeholder) || seen.has(placeholder)) {
-        continue;
-      }
-      seen.add(placeholder);
-      defs.push({
-        key,
-        part: typeof spec === "object" && spec.part ? spec.part : key,
-        placeholder,
-        loop: true,
-        from: typeof spec === "object" && spec.from ? spec.from : this.#loopFrom(config, key)
-      });
-    }
     const tokens = source.match(/\{\{([a-zA-Z0-9_-]+)\}\}/g) || [];
     for (let i = 0; i < tokens.length; i += 1) {
       const placeholder = tokens[i];
@@ -406,30 +462,11 @@ class TemplateService {
         continue;
       }
       const token = placeholder.replace(/\{\{|\}\}/g, "");
-      if (token.endsWith("-loop")) {
-        const part = token.slice(0, -5);
-        if (!partKeys.includes(part)) {
-          continue;
-        }
+      if (token.startsWith("slot") || token.endsWith("-slot")) {
         seen.add(placeholder);
         defs.push({
-          key: part,
-          part,
-          placeholder,
-          loop: true,
-          from: this.#loopFrom(config, part)
-        });
-        continue;
-      }
-      if (token.endsWith("-slot")) {
-        const part = token.slice(0, -5);
-        if (!partKeys.includes(part)) {
-          continue;
-        }
-        seen.add(placeholder);
-        defs.push({
-          key: part,
-          part,
+          key: token,
+          part: token,
           placeholder,
           loop: false,
           from: ""
@@ -438,24 +475,17 @@ class TemplateService {
     }
     return defs;
   }
+
   #loopFrom(config, key) {
     const loops = config.loops && typeof config.loops === "object" ? config.loops : {};
     const spec = loops[key];
     if (spec && typeof spec === "object" && spec.from) {
       return spec.from;
     }
-    if (key === "row" || key === "rows") {
-      return "rows";
-    }
-    if (key === "item" || key === "items") {
-      return "items";
-    }
-    if (key === "option" || key === "options") {
-      return "options";
-    }
     return key;
   }
 }
+
 export {
   TemplateService
 };

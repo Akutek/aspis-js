@@ -1,0 +1,31 @@
+{
+    "kind": "blueprint",
+    "name": "accordion",
+    "root": "accordionListContainer",
+    "branch": "accordionListItem",
+    "from": "items",
+    "classes": {
+        "root": "accordionBase",
+        "branch": "accordionBase__item",
+        "header": "accordionBase__header",
+        "content": "accordionBase__content"
+    },
+    "slots": {
+        "slotListItem": {
+            "template": "accordionListItem",
+            "loop": true,
+            "from": "items",
+            "classKey": "branch",
+            "slots": {
+                "slotAccordionHeader": {
+                    "template": "accordionSimpleHeader",
+                    "classKey": "header"
+                },
+                "slotAccordionContent": {
+                    "template": "accordionContent",
+                    "classKey": "content"
+                }
+            }
+        }
+    }
+}
